@@ -19,4 +19,4 @@ forbidden-words:
   ! grep -rni \
     'dbg!\|fixme\|todo' \
     src
-  echo No forbidden words!
+  @echo No forbidden words!
