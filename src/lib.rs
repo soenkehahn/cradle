@@ -6,15 +6,20 @@ use std::process::Command;
 /// all following words are passed into the executable
 /// as arguments.
 ///
+/// Collects the `stdout` of the child process into a
+/// [`String`] and returns it.
+///
 /// ```
 /// use stir::cmd;
-/// cmd("ls -ls");
+///
+/// let stdout = cmd("echo -n foo");
+/// assert_eq!(stdout, "foo");
 /// ```
-pub fn cmd(input: &str) {
+pub fn cmd(input: &str) -> String {
     let mut words = input.split_whitespace();
     let command = words.next().unwrap();
-    let mut child_process = Command::new(dbg!(command)).args(words).spawn().unwrap();
-    child_process.wait().unwrap();
+    let output = Command::new(dbg!(command)).args(words).output().unwrap();
+    String::from_utf8(output.stdout).unwrap()
 }
 
 #[cfg(test)]
@@ -27,7 +32,7 @@ mod tests {
     };
     use tempfile::TempDir;
 
-    fn test<F>(f: F) -> Result<()>
+    fn in_temporary_directory<F>(f: F) -> Result<()>
     where
         F: FnOnce() -> Result<()>,
     {
@@ -41,10 +46,15 @@ mod tests {
 
     #[test]
     fn allows_to_execute_a_command() -> Result<()> {
-        test(|| {
+        in_temporary_directory(|| {
             cmd("touch foo");
             assert!(PathBuf::from("foo").exists());
             Ok(())
         })
+    }
+
+    #[test]
+    fn allows_to_retrieve_stdout() {
+        assert_eq!(cmd("echo foo"), "foo\n");
     }
 }
