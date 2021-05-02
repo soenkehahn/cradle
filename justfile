@@ -16,7 +16,6 @@ fmt:
   cargo fmt --all -- --check
 
 forbidden-words:
-  ! rg \
-    --ignore-case \
-    'dbg!|fixme|todo|xxx' \
-    ./
+  ! grep -ri \
+    'dbg!\|fixme\|todo' \
+    src

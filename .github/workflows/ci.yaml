@@ -83,5 +83,4 @@ jobs:
           cargo fmt --version
 
       - name: Ci
-        run: |
-          just ci
+        run: just ci
