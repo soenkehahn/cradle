@@ -73,7 +73,8 @@ jobs:
           if ! which just; then
             git clone https://github.com/casey/just
             cd just
-            cargo install
+            echo '1.51.0' > rust-toolchain
+            cargo install --path .
           fi
 
       - name: Info
