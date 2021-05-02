@@ -70,8 +70,10 @@ jobs:
 
       - name: Install just
         run: |
-          if ! which just; then
-            cargo install just
+          if [ ${{ matrix.os }} == "windows-latest" ]; then
+            scoop install just
+          else
+            curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.cargo/bin/
           fi
 
       - name: Info
