@@ -29,8 +29,6 @@ jobs:
           - windows-latest
         rust:
           - stable
-          - "1.50"
-          - "1.45"
           - "1.40"
 
     runs-on: ${{matrix.os}}
