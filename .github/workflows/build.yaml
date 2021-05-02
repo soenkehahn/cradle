@@ -69,7 +69,6 @@ jobs:
           key: cargo-${{ env.CACHE_KEY }}-${{ runner.os }}-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install just
-        if: matrix.os == 'windows-latest'
         run: |
           if ! which just; then
             git clone https://github.com/casey/just
