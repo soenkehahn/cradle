@@ -69,11 +69,12 @@ jobs:
           key: cargo-${{ env.CACHE_KEY }}-${{ runner.os }}-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install just
+        if: matrix.os == 'windows-latest'
         run: |
-          if [ ${{ matrix.os }} == "windows-latest" ]; then
-            scoop install just
-          else
-            curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.cargo/bin/
+          if ! which just; then
+            git clone https://github.com/casey/just
+            cd just
+            cargo install
           fi
 
       - name: Info
@@ -84,4 +85,7 @@ jobs:
           cargo fmt --version
 
       - name: Ci
-        run: just ci
+        run: |
+          pwd
+          bark
+          just ci
