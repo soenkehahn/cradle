@@ -10,12 +10,19 @@ use std::process::Command;
 /// [`String`] and returns it.
 ///
 /// ```
-/// use stir::cmd;
+/// use stir::*;
 ///
-/// let stdout = cmd("echo -n foo");
+/// let stdout = cmd!("echo -n foo");
 /// assert_eq!(stdout, "foo");
 /// ```
-pub fn cmd(input: &str) -> String {
+#[macro_export]
+macro_rules! cmd {
+    ($arg:expr) => {
+        $crate::cmd_($arg)
+    };
+}
+
+pub fn cmd_(input: &str) -> String {
     let mut words = input.split_whitespace();
     let command = words.next().unwrap();
     let output = Command::new(command).args(words).output().unwrap();
@@ -47,7 +54,7 @@ mod tests {
     #[test]
     fn allows_to_execute_a_command() -> Result<()> {
         in_temporary_directory(|| {
-            cmd("touch foo");
+            cmd!("touch foo");
             assert!(PathBuf::from("foo").exists());
             Ok(())
         })
@@ -55,6 +62,11 @@ mod tests {
 
     #[test]
     fn allows_to_retrieve_stdout() {
-        assert_eq!(cmd("echo foo"), "foo\n");
+        assert_eq!(cmd!("echo foo"), "foo\n");
     }
+
+    // #[test]
+    // fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
+    //     assert_eq!(cmd!("echo", args), "foo bar\n");
+    // }
 }
