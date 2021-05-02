@@ -17,7 +17,7 @@ use std::process::Command;
 /// ```
 pub fn cmd(input: &str) -> String {
     let mut words = input.split_whitespace();
-    let command = words.next().unwrap();
+    let command = words.next().unwrap(); // todo
     let output = Command::new(dbg!(command)).args(words).output().unwrap();
     String::from_utf8(output.stdout).unwrap()
 }

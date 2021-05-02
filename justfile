@@ -1,4 +1,4 @@
-ci: test build doc clippy fmt
+ci: test build doc clippy fmt forbidden-words
 
 build:
   cargo build --all
@@ -14,3 +14,9 @@ clippy:
 
 fmt:
   cargo fmt --all -- --check
+
+forbidden-words:
+  ! rg \
+    --ignore-case \
+    'dbg!|fixme|todo|xxx' \
+    ./
