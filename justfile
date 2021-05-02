@@ -16,6 +16,7 @@ fmt:
   cargo fmt --all -- --check
 
 forbidden-words:
-  ! grep -ri \
+  ! grep -rni \
     'dbg!\|fixme\|todo' \
     src
+  echo No forbidden words!
