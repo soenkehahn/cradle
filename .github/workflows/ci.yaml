@@ -1,0 +1,84 @@
+name: Ci
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "*"
+  pull_request:
+    branches:
+      - master
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CACHE_KEY: 1
+
+jobs:
+  all:
+    name: All
+
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+        rust:
+          - stable
+          - "1.40"
+
+    runs-on: ${{matrix.os}}
+
+    env:
+      RUSTFLAGS: "--deny warnings"
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: clippy, rustfmt
+
+      # An issue with BSD Tar causes sporadic failures on macOS.
+      # c.f https://github.com/actions/cache/issues/403
+      - name: Install GNU Tar
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install gnu-tar
+          echo /usr/local/opt/gnu-tar/libexec/gnubin > $GITHUB_PATH
+
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            target
+          key: cargo-${{ env.CACHE_KEY }}-${{ runner.os }}-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install just
+        run: |
+          if ! which just; then
+            git clone https://github.com/casey/just
+            cd just
+            echo '1.51.0' > rust-toolchain
+            cargo install --path .
+          fi
+
+      - name: Info
+        run: |
+          rustup --version
+          cargo --version
+          cargo clippy --version
+          cargo fmt --version
+
+      - name: Ci
+        run: just ci
