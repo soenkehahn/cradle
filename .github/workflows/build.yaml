@@ -27,6 +27,13 @@ jobs:
           - macos-latest
           - ubuntu-latest
           - windows-latest
+        rust:
+          - stable
+          - "1.50"
+          - "1.45"
+          - "1.40"
+          - "1.35"
+          - "1.31"
 
     runs-on: ${{matrix.os}}
 
@@ -35,6 +42,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: clippy, rustfmt
 
       # An issue with BSD Tar causes sporadic failures on macOS.
       # c.f https://github.com/actions/cache/issues/403
@@ -52,17 +66,13 @@ jobs:
             ~/.cargo/git
             ~/.cargo/bin
             target
-          key: cargo-${{ env.CACHE_KEY }}-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-${{ env.CACHE_KEY }}-${{ runner.os }}-{{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install just
         run: |
           if ! which just; then
             cargo install just
           fi
-
-      - name: Install Rust Toolchain Components
-        run: |
-          rustup component add clippy rustfmt
 
       - name: Info
         run: |
