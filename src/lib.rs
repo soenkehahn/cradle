@@ -105,7 +105,7 @@ pub fn cmd(words: Vec<String>) -> String {
         }
         Ok(output) => match String::from_utf8(output.stdout) {
             Ok(stderr) => stderr,
-            Err(_) => panic!("cmd!: invalid utf-8 written to stdout"),
+            Err(_err) => panic!("cmd!: invalid utf-8 written to stdout"),
         },
     }
 }
