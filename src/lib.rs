@@ -4,7 +4,7 @@
 //! ```
 //! use stir::cmd;
 //!
-//! let stdout = cmd!("echo -n foo");
+//! let stdout: String = cmd!("echo -n foo");
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -16,7 +16,7 @@
 //! ```
 //! use stir::cmd;
 //!
-//! let stdout = cmd!("echo", "foo", "bar");
+//! let stdout: String = cmd!("echo", "foo", "bar");
 //! assert_eq!(stdout, "foo bar\n");
 //! ```
 //!
@@ -27,7 +27,7 @@
 //! ```
 //! use stir::cmd;
 //!
-//! let stdout = cmd!("echo", vec!["foo", "bar"]);
+//! let stdout: String = cmd!("echo", vec!["foo", "bar"]);
 //! assert_eq!(stdout, "foo bar\n");
 //! ```
 //!
@@ -38,7 +38,7 @@
 //! use std::path::PathBuf;
 //! use stir::cmd;
 //!
-//! cmd!("touch", vec!["filename with spaces"]);
+//! let () = cmd!("touch", vec!["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
 //! ```
 //!
@@ -55,9 +55,12 @@
 //! use stir::cmd;
 //!
 //! // panics with "ls: exited with exit code: 1"
-//! cmd!("ls does-not-exist");
+//! let () = cmd!("ls does-not-exist");
 //! ```
-use std::{io, process::Command};
+use std::{
+    io,
+    process::{self, Command},
+};
 
 /// Execute child processes. Please, see the module documentation on how to use it.
 #[macro_export]
@@ -71,6 +74,7 @@ macro_rules! cmd {
 
 /// All types that are possible arguments to [`cmd!`] have to implement this trait.
 pub trait CmdArgument {
+    #[doc(hidden)]
     fn add_as_argument(self, accumulator: &mut Vec<String>);
 }
 
@@ -90,8 +94,34 @@ impl CmdArgument for Vec<&str> {
     }
 }
 
+/// All possible return types of [`cmd!`] have to implement this trait.
+pub trait CmdOutput {
+    #[doc(hidden)]
+    fn from_cmd_output(output: Output) -> Self;
+}
+
+impl CmdOutput for () {
+    fn from_cmd_output(_output: Output) -> Self {
+        ()
+    }
+}
+
+impl CmdOutput for String {
+    fn from_cmd_output(output: Output) -> Self {
+        match String::from_utf8(output.output.stdout) {
+            Ok(stdout) => stdout,
+            Err(_err) => panic!("cmd!: invalid utf-8 written to stdout"),
+        }
+    }
+}
+
 #[doc(hidden)]
-pub fn run_cmd(input: Vec<String>) -> String {
+pub struct Output {
+    output: process::Output,
+}
+
+#[doc(hidden)]
+pub fn run_cmd<Output: CmdOutput>(input: Vec<String>) -> Output {
     let mut words = input.iter();
     let command = words.next().expect("cmd!: no arguments given");
     let output = Command::new(&command).args(words).output();
@@ -104,10 +134,7 @@ pub fn run_cmd(input: Vec<String>) -> String {
             let full_command = input.join(" ");
             panic!("{}:\n  exited with {}", full_command, output.status);
         }
-        Ok(output) => match String::from_utf8(output.stdout) {
-            Ok(stderr) => stderr,
-            Err(_err) => panic!("cmd!: invalid utf-8 written to stdout"),
-        },
+        Ok(output) => Output::from_cmd_output(crate::Output { output }),
     }
 }
 
@@ -136,7 +163,7 @@ mod tests {
     #[test]
     fn allows_to_execute_a_command() -> Result<()> {
         in_temporary_directory(|| {
-            cmd!("touch foo");
+            let () = cmd!("touch foo");
             assert!(PathBuf::from("foo").exists());
             Ok(())
         })
@@ -148,19 +175,19 @@ mod tests {
         #[test]
         #[should_panic(expected = "false:\n  exited with exit code: 1")]
         fn non_zero_exit_codes() {
-            cmd!("false");
+            let () = cmd!("false");
         }
 
         #[test]
         #[should_panic(expected = "false foo bar:\n  exited with exit code: 1")]
         fn includes_full_command_on_non_zero_exit_codes() {
-            cmd!("false foo bar");
+            let () = cmd!("false foo bar");
         }
 
         #[test]
         #[should_panic(expected = "exited with exit code: 42")]
         fn other_exit_codes() {
-            cmd!(
+            let () = cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["exit code 42"]
             );
@@ -169,19 +196,19 @@ mod tests {
         #[test]
         #[should_panic(expected = "cmd!: does-not-exist: command not found")]
         fn executable_cannot_be_found() {
-            cmd!("does-not-exist");
+            let () = cmd!("does-not-exist");
         }
 
         #[test]
         #[should_panic(expected = "cmd!: no arguments given")]
         fn no_executable() {
-            cmd!(vec![]);
+            let () = cmd!(vec![]);
         }
 
         #[test]
         #[should_panic(expected = "cmd!: invalid utf-8 written to stdout")]
         fn invalid_utf8_stdout() {
-            cmd!(
+            let _: String = cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["invalid utf-8 stdout"]
             );
@@ -190,22 +217,26 @@ mod tests {
 
     #[test]
     fn allows_to_retrieve_stdout() {
-        assert_eq!(cmd!("echo foo"), "foo\n");
+        let stdout: String = cmd!("echo foo");
+        assert_eq!(stdout, "foo\n");
     }
 
     #[test]
     fn command_and_argument_as_separate_ref_str() {
-        assert_eq!(cmd!("echo", "foo"), "foo\n");
+        let stdout: String = cmd!("echo", "foo");
+        assert_eq!(stdout, "foo\n");
     }
 
     #[test]
     fn multiple_arguments_as_ref_str() {
-        assert_eq!(cmd!("echo", "foo", "bar"), "foo bar\n");
+        let stdout: String = cmd!("echo", "foo", "bar");
+        assert_eq!(stdout, "foo bar\n");
     }
 
     #[test]
     fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
         let args: Vec<&str> = vec!["foo"];
-        assert_eq!(cmd!("echo", args), "foo\n");
+        let stdout: String = cmd!("echo", args);
+        assert_eq!(stdout, "foo\n");
     }
 }
