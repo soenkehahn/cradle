@@ -99,9 +99,7 @@ pub fn cmd(words: Vec<String>) -> String {
         Err(err) if err.kind() == io::ErrorKind::NotFound => {
             panic!("cmd!: {}: command not found", command);
         }
-        Err(err) => {
-            panic!("cmd!: {}", err)
-        }
+        Err(err) => panic!("cmd!: {}", err),
         Ok(output) if !output.status.success() => {
             panic!("{}: exited with {}", command, output.status);
         }
