@@ -151,7 +151,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "stir_test_helper: exited with exit code: 42")]
+        #[should_panic(expected = "exited with exit code: 42")]
         fn other_exit_codes() {
             cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
