@@ -1,11 +1,20 @@
 [package]
 name = "stir"
-version = "0.1.0"
+version = "0.0.0"
 authors = ["Sönke Hahn <soenkehahn@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+
+[dev-dependencies]
+executable-path = "1.0.0"
 anyhow = "1.0.40"
 tempfile = "3.2.0"
+
+[[bin]]
+name = "stir_test_helper"
+path = "src/test_helper.rs"
+required-features = ["build_test_helper"]
+
+[features]
+build_test_helper = []

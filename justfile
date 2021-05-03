@@ -1,9 +1,9 @@
 ci: test build doc clippy fmt forbidden-words
 
 build:
-  cargo build --all
+  cargo build --all --features="build_test_helper"
 
-test:
+test: build
   cargo test --all -- --test-threads=1
   rm 'filename with spaces'
 

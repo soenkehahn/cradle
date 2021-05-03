@@ -142,6 +142,8 @@ mod tests {
     }
 
     mod panics_by_default {
+        use executable_path::executable_path;
+
         #[test]
         #[should_panic(expected = "false: exited with exit code: 1")]
         fn non_zero_exit_codes() {
@@ -169,10 +171,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "cmd!: invalid utf-8 written to stdout")]
         fn invalid_utf8_stdout() {
-            for x in vec![b"\x80", b"\xbf"] {
-                println!("{:?}: {:?}", x, String::from_utf8(x.to_vec()));
-            }
-            cmd!("bash -c", vec!["/bin/echo -en '\\x80'"]);
+            cmd!(executable_path("stir_test_helper").to_str().unwrap());
         }
     }
 
