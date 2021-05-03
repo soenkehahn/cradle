@@ -103,7 +103,10 @@ pub fn cmd(words: Vec<String>) -> String {
         Ok(output) if !output.status.success() => {
             panic!("{}: exited with {}", command, output.status);
         }
-        Ok(output) => String::from_utf8(output.stdout).unwrap(),
+        Ok(output) => match String::from_utf8(output.stdout) {
+            Ok(stderr) => stderr,
+            Err(_) => panic!("cmd!: invalid utf-8 written to stdout"),
+        },
     }
 }
 
@@ -161,6 +164,12 @@ mod tests {
         #[should_panic(expected = "cmd!: no arguments given")]
         fn no_executable() {
             cmd!(vec![]);
+        }
+
+        #[test]
+        #[should_panic(expected = "cmd!: invalid utf-8 written to stdout")]
+        fn invalid_utf8_stdout() {
+            cmd!("echo -e \\x80");
         }
     }
 

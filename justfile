@@ -4,7 +4,7 @@ build:
   cargo build --all
 
 test:
-  cargo test --all -- --test-threads=1 --nocapture
+  cargo test --all -- --test-threads=1
   rm 'filename with spaces'
 
 doc:
