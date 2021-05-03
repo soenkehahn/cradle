@@ -172,7 +172,7 @@ mod tests {
             for x in vec![b"\x80", b"\xbf"] {
                 println!("{:?}: {:?}", x, String::from_utf8(x.to_vec()));
             }
-            cmd!("echo -e \\x80");
+            cmd!("/bin/echo -e \\x80");
         }
     }
 
