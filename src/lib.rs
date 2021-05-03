@@ -167,13 +167,12 @@ mod tests {
         }
 
         #[test]
-        // #[should_panic(expected = "cmd!: invalid utf-8 written to stdout")]
+        #[should_panic(expected = "cmd!: invalid utf-8 written to stdout")]
         fn invalid_utf8_stdout() {
             for x in vec![b"\x80", b"\xbf"] {
                 println!("{:?}: {:?}", x, String::from_utf8(x.to_vec()));
             }
             cmd!("echo -e \\x80");
-            todo!()
         }
     }
 
