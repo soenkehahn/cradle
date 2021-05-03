@@ -151,9 +151,12 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "bash: exited with exit code: 42")]
+        #[should_panic(expected = "stir_test_helper: exited with exit code: 42")]
         fn other_exit_codes() {
-            cmd!("bash -c", vec!["exit 42"]);
+            cmd!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["exit code 42"]
+            );
         }
 
         #[test]
@@ -171,7 +174,10 @@ mod tests {
         #[test]
         #[should_panic(expected = "cmd!: invalid utf-8 written to stdout")]
         fn invalid_utf8_stdout() {
-            cmd!(executable_path("stir_test_helper").to_str().unwrap());
+            cmd!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["invalid utf-8 stdout"]
+            );
         }
     }
 
