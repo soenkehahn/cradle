@@ -91,8 +91,8 @@ impl CmdArgument for Vec<&str> {
 }
 
 #[doc(hidden)]
-pub fn cmd(words: Vec<String>) -> String {
-    let mut words = words.into_iter();
+pub fn cmd(input: Vec<String>) -> String {
+    let mut words = input.iter();
     let command = words.next().expect("cmd!: no arguments given");
     let output = Command::new(&command).args(words).output();
     match output {
@@ -101,7 +101,8 @@ pub fn cmd(words: Vec<String>) -> String {
         }
         Err(err) => panic!("cmd!: {}", err),
         Ok(output) if !output.status.success() => {
-            panic!("{}: exited with {}", command, output.status);
+            let full_command = input.join(" ");
+            panic!("{}:\n  exited with {}", full_command, output.status);
         }
         Ok(output) => match String::from_utf8(output.stdout) {
             Ok(stderr) => stderr,
@@ -145,9 +146,15 @@ mod tests {
         use executable_path::executable_path;
 
         #[test]
-        #[should_panic(expected = "false: exited with exit code: 1")]
+        #[should_panic(expected = "false:\n  exited with exit code: 1")]
         fn non_zero_exit_codes() {
             cmd!("false");
+        }
+
+        #[test]
+        #[should_panic(expected = "false foo bar:\n  exited with exit code: 1")]
+        fn includes_full_command_on_non_zero_exit_codes() {
+            cmd!("false foo bar");
         }
 
         #[test]
