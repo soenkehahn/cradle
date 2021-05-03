@@ -91,8 +91,8 @@ impl CmdArgument for Vec<&str> {
 }
 
 #[doc(hidden)]
-pub fn run_cmd(words: Vec<String>) -> String {
-    let mut words = words.iter();
+pub fn run_cmd(input: Vec<String>) -> String {
+    let mut words = input.iter();
     let command = words.next().expect("cmd!: no arguments given");
     let output = Command::new(&command).args(words).output();
     match output {
