@@ -65,7 +65,7 @@ macro_rules! cmd {
     ($($args:expr),+) => {{
         let mut args = vec![];
         $($crate::CmdArgument::add_as_argument($args, &mut args);)+
-        $crate::cmd(args)
+        $crate::run_cmd(args)
     }}
 }
 
@@ -91,7 +91,7 @@ impl CmdArgument for Vec<&str> {
 }
 
 #[doc(hidden)]
-pub fn cmd(words: Vec<String>) -> String {
+pub fn run_cmd(words: Vec<String>) -> String {
     let mut words = words.into_iter();
     let command = words.next().expect("cmd!: no arguments given");
     let output = Command::new(&command).args(words).output();
