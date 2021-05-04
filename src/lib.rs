@@ -103,18 +103,37 @@
 //! assert_eq!(result, Ok("foo\n".to_string()));
 //! ```
 
+mod cmd_output;
+#[doc(hidden)]
+pub mod context;
 mod error;
 
-pub use crate::error::{Error, Result};
-use std::process::{Command, Output};
+pub use crate::{
+    cmd_output::CmdOutput,
+    context::Context,
+    error::{Error, Result},
+};
+use std::{
+    io::Write,
+    process::{Command, ExitStatus, Stdio},
+};
 
 /// Execute child processes. Please, see the module documentation on how to use it.
 #[macro_export]
 macro_rules! cmd {
     ($($args:expr),+) => {{
+        let context = &mut $crate::context::Context::production();
+        $crate::cmd_with_context!(context, $($args),+)
+    }}
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! cmd_with_context {
+    ($context:expr, $($args:expr),+) => {{
         let mut args = vec![];
         $($crate::CmdArgument::add_as_argument($args, &mut args);)+
-        $crate::run_cmd(args)
+        $crate::run_cmd($context, args)
     }}
 }
 
@@ -140,76 +159,63 @@ impl CmdArgument for Vec<&str> {
     }
 }
 
-/// All possible return types of [`cmd!`] have to implement this trait.
-pub trait CmdOutput: Sized {
-    #[doc(hidden)]
-    fn from_cmd_output(output: Result<Output>) -> Result<Self>;
-}
-
-/// Use this when you don't need any result from the child process.
-impl CmdOutput for () {
-    #[doc(hidden)]
-    fn from_cmd_output(output: Result<Output>) -> Result<Self> {
-        output?;
-        Ok(())
-    }
-}
-
-/// Returns what the child process writes to `stdout`.
-impl CmdOutput for String {
-    #[doc(hidden)]
-    fn from_cmd_output(output: Result<Output>) -> Result<Self> {
-        let output = output?;
-        String::from_utf8(output.stdout).map_err(|_| Error::InvalidUtf8ToStdout)
-    }
-}
-
-/// To turn all possible panics of [`cmd!`] into [`std::result::Result::Err`]s
-/// you can use a return type of `Result<T, Error>`. `T` can be any type that
-/// implements [`CmdOutput`] and [`Error`] is stir's custom error type.
-impl<T> CmdOutput for Result<T>
+#[doc(hidden)]
+pub fn run_cmd<Stdout, T>(context: &mut Context<Stdout>, input: Vec<String>) -> T
 where
+    Stdout: Write + Clone + Send + 'static,
     T: CmdOutput,
 {
-    #[doc(hidden)]
-    fn from_cmd_output(output: Result<Output>) -> Result<Self> {
-        Ok(match output {
-            Ok(_) => T::from_cmd_output(output),
-            Err(error) => Err(error),
-        })
+    T::prepare_context(context);
+    match T::from_cmd_output(run_cmd_safe(context, input)) {
+        Ok(result) => result,
+        Err(error) => panic!("{}", error),
     }
 }
 
-#[doc(hidden)]
-pub fn run_cmd<T: CmdOutput>(input: Vec<String>) -> T {
-    let mut words = input.iter();
-    let result = T::from_cmd_output({
+pub struct RunResult {
+    stdout: Vec<u8>,
+}
+
+fn run_cmd_safe<Stdout>(context: &mut Context<Stdout>, input: Vec<String>) -> Result<RunResult>
+where
+    Stdout: Write + Clone + Send + 'static,
+{
+    let (command, arguments) = parse_input(input.clone())?;
+    let mut child = Command::new(&command)
+        .args(arguments)
+        .stdout(Stdio::piped())
+        .spawn()
+        .map_err(|error| Error::command_io_error(&command, error))?;
+    let collected_stdout = context
+        .clone()
+        .spawn_stdout_relaying(child.stdout.take().unwrap());
+    let exit_status = child.wait().unwrap();
+    let collected_stdout = collected_stdout.join().unwrap();
+    check_exit_status(input, exit_status)?;
+    Ok(RunResult {
+        stdout: collected_stdout,
+    })
+}
+
+fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = String>)> {
+    let mut words = input.into_iter();
+    {
         match words.next() {
             None => Err(Error::NoArgumentsGiven),
-            Some(command) => {
-                let output = Command::new(&command).args(words).output();
-                match output {
-                    Err(err) => Err(Error::CommandIoError {
-                        message: format!("cmd!: {}: {}", command, err),
-                    }),
-                    Ok(output) => {
-                        if output.status.success() {
-                            Ok(output)
-                        } else {
-                            let full_command = input.join(" ");
-                            Err(Error::NonZeroExitCode {
-                                full_command,
-                                exit_status: output.status,
-                            })
-                        }
-                    }
-                }
-            }
+            Some(command) => Ok((command, words)),
         }
-    });
-    match result {
-        Ok(result) => result,
-        Err(error) => panic!("{}", error),
+    }
+}
+
+fn check_exit_status(input: Vec<String>, exit_status: ExitStatus) -> Result<()> {
+    if !exit_status.success() {
+        let full_command = input.join(" ");
+        Err(Error::NonZeroExitCode {
+            full_command,
+            exit_status,
+        })
+    } else {
+        Ok(())
     }
 }
 
@@ -421,5 +427,64 @@ mod tests {
         let args: Vec<&str> = vec!["foo"];
         let stdout: String = cmd!("echo", args);
         assert_eq!(stdout, "foo\n");
+    }
+
+    mod stdout {
+        use super::*;
+        use std::{thread, time::Duration};
+
+        #[test]
+        fn inherits_stdout_by_default() {
+            let context = &mut Context::test();
+            let () = cmd_with_context!(context, "echo foo");
+            assert_eq!(context.stdout(), "foo\n");
+        }
+
+        #[test]
+        fn streams_stdout_for_non_zero_exit_codes() {
+            let context = &mut Context::test();
+            let _: Result<()> = cmd_with_context!(
+                context,
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["output foo and exit with 42"]
+            );
+            assert_eq!(context.stdout(), "foo\n");
+        }
+
+        #[test]
+        fn streams_stdout() {
+            in_temporary_directory(|| {
+                let context = Context::test();
+                let mut context_clone = context.clone();
+                let thread = thread::spawn(move || {
+                    let () = cmd_with_context!(
+                        &mut context_clone,
+                        executable_path("stir_test_helper").to_str().unwrap(),
+                        vec!["stream chunk then wait for file"]
+                    );
+                });
+                while (context.stdout()) != "foo\n" {
+                    thread::sleep(Duration::from_secs_f32(0.05));
+                }
+                let () = cmd!("touch file");
+                thread.join().unwrap();
+                Ok(())
+            })
+            .unwrap()
+        }
+
+        #[test]
+        fn suppress_output_when_collecting_stdout_into_string() {
+            let context = Context::test();
+            let _: String = cmd_with_context!(&mut context.clone(), "echo foo");
+            assert_eq!(context.stdout(), "");
+        }
+
+        #[test]
+        fn suppress_output_when_collecting_stdout_into_result_of_string() {
+            let context = Context::test();
+            let _: Result<String> = cmd_with_context!(&mut context.clone(), "echo foo");
+            assert_eq!(context.stdout(), "");
+        }
     }
 }

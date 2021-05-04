@@ -1,4 +1,4 @@
-use std::{fmt::Display, process::ExitStatus};
+use std::{fmt::Display, io, process::ExitStatus};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -13,6 +13,14 @@ pub enum Error {
         exit_status: ExitStatus,
     },
     InvalidUtf8ToStdout,
+}
+
+impl Error {
+    pub(crate) fn command_io_error(command: &str, error: io::Error) -> Error {
+        Error::CommandIoError {
+            message: format!("cmd!: {}: {}", command, error),
+        }
+    }
 }
 
 impl Display for Error {
