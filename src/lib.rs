@@ -311,7 +311,7 @@ mod tests {
             fn non_zero_exit_codes() {
                 let result: Result<()> = cmd!("false");
                 assert_eq!(
-                    format!("{}", result.unwrap_err()),
+                    result.unwrap_err().to_string(),
                     "false:\n  exited with exit code: 1"
                 );
             }
@@ -324,15 +324,15 @@ mod tests {
 
             #[test]
             fn combine_ok_with_other_outputs() {
-                let result: Result<String> = cmd!("echo foo");
-                assert_eq!(result, Ok("foo\n".to_string()));
+                let result: Result<String> = cmd!("echo -n foo");
+                assert_eq!(result, Ok("foo".to_string()));
             }
 
             #[test]
             fn combine_err_with_other_outputs() {
                 let result: Result<String> = cmd!("false");
                 assert_eq!(
-                    format!("{}", result.unwrap_err()),
+                    result.unwrap_err().to_string(),
                     "false:\n  exited with exit code: 1"
                 );
             }
@@ -341,7 +341,7 @@ mod tests {
             fn includes_full_command_on_non_zero_exit_codes() {
                 let result: Result<()> = cmd!("false foo bar");
                 assert_eq!(
-                    format!("{}", result.unwrap_err()),
+                    result.unwrap_err().to_string(),
                     "false foo bar:\n  exited with exit code: 1"
                 );
             }
@@ -352,14 +352,17 @@ mod tests {
                     executable_path("stir_test_helper").to_str().unwrap(),
                     vec!["exit code 42"]
                 );
-                assert!(format!("{}", result.unwrap_err()).contains("exited with exit code: 42"));
+                assert!(result
+                    .unwrap_err()
+                    .to_string()
+                    .contains("exited with exit code: 42"));
             }
 
             #[test]
             fn executable_cannot_be_found() {
                 let result: Result<()> = cmd!("does-not-exist");
                 assert_eq!(
-                    format!("{}", result.unwrap_err()),
+                    result.unwrap_err().to_string(),
                     "cmd!: does-not-exist: No such file or directory (os error 2)"
                 );
             }
@@ -367,10 +370,7 @@ mod tests {
             #[test]
             fn no_executable() {
                 let result: Result<()> = cmd!(vec![]);
-                assert_eq!(
-                    format!("{}", result.unwrap_err()),
-                    "cmd!: no arguments given"
-                );
+                assert_eq!(result.unwrap_err().to_string(), "cmd!: no arguments given");
             }
 
             #[test]
@@ -380,7 +380,7 @@ mod tests {
                     vec!["invalid utf-8 stdout"]
                 );
                 assert_eq!(
-                    format!("{}", result.unwrap_err()),
+                    result.unwrap_err().to_string(),
                     "cmd!: invalid utf-8 written to stdout"
                 );
             }
