@@ -4,7 +4,7 @@
 //! ```
 //! use stir::cmd;
 //!
-//! let stdout = cmd!("echo -n foo");
+//! let stdout: String = cmd!("echo -n foo");
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -16,7 +16,7 @@
 //! ```
 //! use stir::cmd;
 //!
-//! let stdout = cmd!("echo", "foo", "bar");
+//! let stdout: String = cmd!("echo", "foo", "bar");
 //! assert_eq!(stdout, "foo bar\n");
 //! ```
 //!
@@ -27,7 +27,7 @@
 //! ```
 //! use stir::cmd;
 //!
-//! let stdout = cmd!("echo", vec!["foo", "bar"]);
+//! let stdout: String = cmd!("echo", vec!["foo", "bar"]);
 //! assert_eq!(stdout, "foo bar\n");
 //! ```
 //!
@@ -38,26 +38,75 @@
 //! use std::path::PathBuf;
 //! use stir::cmd;
 //!
-//! cmd!("touch", vec!["filename with spaces"]);
+//! let () = cmd!("touch", vec!["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
 //! ```
 //!
 //! # Output
 //!
-//! [`cmd!`] collects the `stdout` of the child process into a
-//! [`String`] and returns it.
+//! You can choose which return type you want [`cmd!`] to return,
+//! as long as the chosen return type implements [`CmdOutput`].
+//! For example you can use [`()`] if you don't want any result:
+//!
+//! ```
+//! use stir::cmd;
+//!
+//! let () = cmd!("touch foo");
+//! ```
+//!
+//! Or you can use e.g. [`String`] to collect what the child process
+//! writes to `stdout`:
+//!
+//! ```
+//! use stir::cmd;
+//!
+//! let output: String = cmd!("echo foo");
+//! assert_eq!(output, "foo\n");
+//! ```
+//!
+//! See the implementations for [`CmdOutput`] for all the supported types.
 //!
 //! # Error Handling
 //!
-//! [`cmd!`] panics when the child process exits with a non-zero exitcode:
+//! By default [`cmd!`] panics for a few reasons, e.g.:
+//!
+//! - when the child process exits with a non-zero exitcode,
+//! - when the given executable cannot be found,
+//! - when no strings are given as arguments to [`cmd!`].
+//!
+//! For example:
 //!
 //! ``` should_panic
 //! use stir::cmd;
 //!
 //! // panics with "ls: exited with exit code: 1"
-//! cmd!("ls does-not-exist");
+//! let () = cmd!("ls does-not-exist");
 //! ```
-use std::{io, process::Command};
+//!
+//! You can turn these panics into [`std::result::Result::Err`]s
+//! by fixing the return type of [`cmd!`] to `Result<T>`, where
+//! `T` is any type that implements [`CmdOutput`] and
+//! [`Result`] is stir's custom result type, which uses [`Error`].
+//! Here's some examples:
+//!
+//! ```
+//! use stir::{cmd, Result};
+//!
+//! let result: Result<()> = cmd!("false");
+//! let error_message = format!("{}", result.unwrap_err());
+//! assert_eq!(
+//!     error_message,
+//!     "false:\n  exited with exit code: 1"
+//! );
+//!
+//! let result: Result<String> = cmd!("echo foo");
+//! assert_eq!(result, Ok("foo\n".to_string()));
+//! ```
+
+mod error;
+
+pub use crate::error::{Error, Result};
+use std::process::{Command, Output};
 
 /// Execute child processes. Please, see the module documentation on how to use it.
 #[macro_export]
@@ -71,6 +120,7 @@ macro_rules! cmd {
 
 /// All types that are possible arguments to [`cmd!`] have to implement this trait.
 pub trait CmdArgument {
+    #[doc(hidden)]
     fn add_as_argument(self, accumulator: &mut Vec<String>);
 }
 
@@ -90,40 +140,95 @@ impl CmdArgument for Vec<&str> {
     }
 }
 
+/// All possible return types of [`cmd!`] have to implement this trait.
+pub trait CmdOutput: Sized {
+    #[doc(hidden)]
+    fn from_cmd_output(output: Result<Output>) -> Result<Self>;
+}
+
+/// Use this when you don't need any result from the child process.
+impl CmdOutput for () {
+    #[doc(hidden)]
+    fn from_cmd_output(output: Result<Output>) -> Result<Self> {
+        output?;
+        Ok(())
+    }
+}
+
+/// Returns what the child process writes to `stdout`.
+impl CmdOutput for String {
+    #[doc(hidden)]
+    fn from_cmd_output(output: Result<Output>) -> Result<Self> {
+        let output = output?;
+        String::from_utf8(output.stdout).map_err(|_| Error::InvalidUtf8ToStdout)
+    }
+}
+
+/// To turn all possible panics of [`cmd!`] into [`std::result::Result::Err`]s
+/// you can use a return type of `Result<T, Error>`. `T` can be any type that
+/// implements [`CmdOutput`] and [`Error`] is stir's custom error type.
+impl<T> CmdOutput for Result<T>
+where
+    T: CmdOutput,
+{
+    #[doc(hidden)]
+    fn from_cmd_output(output: Result<Output>) -> Result<Self> {
+        Ok(match output {
+            Ok(_) => T::from_cmd_output(output),
+            Err(error) => Err(error),
+        })
+    }
+}
+
 #[doc(hidden)]
-pub fn run_cmd(input: Vec<String>) -> String {
+pub fn run_cmd<T: CmdOutput>(input: Vec<String>) -> T {
     let mut words = input.iter();
-    let command = words.next().expect("cmd!: no arguments given");
-    let output = Command::new(&command).args(words).output();
-    match output {
-        Err(err) if err.kind() == io::ErrorKind::NotFound => {
-            panic!("cmd!: {}: command not found", command);
+    let result = T::from_cmd_output({
+        match words.next() {
+            None => Err(Error::NoArgumentsGiven),
+            Some(command) => {
+                let output = Command::new(&command).args(words).output();
+                match output {
+                    Err(err) => Err(Error::CommandIoError {
+                        message: format!("cmd!: {}: {}", command, err),
+                    }),
+                    Ok(output) => {
+                        if output.status.success() {
+                            Ok(output)
+                        } else {
+                            let full_command = input.join(" ");
+                            Err(Error::NonZeroExitCode {
+                                full_command,
+                                exit_status: output.status,
+                            })
+                        }
+                    }
+                }
+            }
         }
-        Err(err) => panic!("cmd!: {}", err),
-        Ok(output) if !output.status.success() => {
-            let full_command = input.join(" ");
-            panic!("{}:\n  exited with {}", full_command, output.status);
-        }
-        Ok(output) => match String::from_utf8(output.stdout) {
-            Ok(stderr) => stderr,
-            Err(_err) => panic!("cmd!: invalid utf-8 written to stdout"),
-        },
+    });
+    match result {
+        Ok(result) => result,
+        Err(error) => panic!("{}", error),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anyhow::Result;
+    use executable_path::executable_path;
     use std::{
         env::{current_dir, set_current_dir},
         path::PathBuf,
+        result,
     };
     use tempfile::TempDir;
 
-    fn in_temporary_directory<F>(f: F) -> Result<()>
+    type R<T> = result::Result<T, Box<dyn std::error::Error>>;
+
+    fn in_temporary_directory<F>(f: F) -> R<()>
     where
-        F: FnOnce() -> Result<()>,
+        F: FnOnce() -> R<()>,
     {
         let temp_dir = TempDir::new()?;
         let original_working_directory = current_dir()?;
@@ -134,78 +239,187 @@ mod tests {
     }
 
     #[test]
-    fn allows_to_execute_a_command() -> Result<()> {
+    fn allows_to_execute_a_command() -> R<()> {
         in_temporary_directory(|| {
-            cmd!("touch foo");
+            let () = cmd!("touch foo");
             assert!(PathBuf::from("foo").exists());
             Ok(())
         })
     }
 
-    mod panics_by_default {
-        use executable_path::executable_path;
+    mod errors {
+        use super::*;
 
-        #[test]
-        #[should_panic(expected = "false:\n  exited with exit code: 1")]
-        fn non_zero_exit_codes() {
-            cmd!("false");
+        mod panics_by_default {
+            use super::*;
+
+            #[test]
+            #[should_panic(expected = "false:\n  exited with exit code: 1")]
+            fn non_zero_exit_codes() {
+                let () = cmd!("false");
+            }
+
+            #[test]
+            #[should_panic(expected = "false:\n  exited with exit code: 1")]
+            fn combine_panics_with_other_outputs() {
+                let _: String = cmd!("false");
+            }
+
+            #[test]
+            #[should_panic(expected = "false foo bar:\n  exited with exit code: 1")]
+            fn includes_full_command_on_non_zero_exit_codes() {
+                let () = cmd!("false foo bar");
+            }
+
+            #[test]
+            #[should_panic(expected = "exited with exit code: 42")]
+            fn other_exit_codes() {
+                let () = cmd!(
+                    executable_path("stir_test_helper").to_str().unwrap(),
+                    vec!["exit code 42"]
+                );
+            }
+
+            #[test]
+            #[cfg_attr(
+                target_family = "unix",
+                should_panic(
+                    expected = "cmd!: does-not-exist: No such file or directory (os error 2)"
+                )
+            )]
+            #[cfg_attr(
+                target_family = "windows",
+                should_panic(
+                    expected = "cmd!: does-not-exist: The system cannot find the file specified. (os error 2)"
+                )
+            )]
+            fn executable_cannot_be_found() {
+                let () = cmd!("does-not-exist");
+            }
+
+            #[test]
+            #[should_panic(expected = "cmd!: no arguments given")]
+            fn no_executable() {
+                let () = cmd!(vec![]);
+            }
+
+            #[test]
+            #[should_panic(expected = "cmd!: invalid utf-8 written to stdout")]
+            fn invalid_utf8_stdout() {
+                let _: String = cmd!(
+                    executable_path("stir_test_helper").to_str().unwrap(),
+                    vec!["invalid utf-8 stdout"]
+                );
+            }
         }
 
-        #[test]
-        #[should_panic(expected = "false foo bar:\n  exited with exit code: 1")]
-        fn includes_full_command_on_non_zero_exit_codes() {
-            cmd!("false foo bar");
-        }
+        mod result_types {
+            use super::*;
 
-        #[test]
-        #[should_panic(expected = "exited with exit code: 42")]
-        fn other_exit_codes() {
-            cmd!(
-                executable_path("stir_test_helper").to_str().unwrap(),
-                vec!["exit code 42"]
-            );
-        }
+            #[test]
+            fn non_zero_exit_codes() {
+                let result: Result<()> = cmd!("false");
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    "false:\n  exited with exit code: 1"
+                );
+            }
 
-        #[test]
-        #[should_panic(expected = "cmd!: does-not-exist: command not found")]
-        fn executable_cannot_be_found() {
-            cmd!("does-not-exist");
-        }
+            #[test]
+            fn no_errors() {
+                let result: Result<()> = cmd!("true");
+                assert_eq!(result, Ok(()));
+            }
 
-        #[test]
-        #[should_panic(expected = "cmd!: no arguments given")]
-        fn no_executable() {
-            cmd!(vec![]);
-        }
+            #[test]
+            fn combine_ok_with_other_outputs() {
+                let result: Result<String> = cmd!("echo -n foo");
+                assert_eq!(result, Ok("foo".to_string()));
+            }
 
-        #[test]
-        #[should_panic(expected = "cmd!: invalid utf-8 written to stdout")]
-        fn invalid_utf8_stdout() {
-            cmd!(
-                executable_path("stir_test_helper").to_str().unwrap(),
-                vec!["invalid utf-8 stdout"]
-            );
+            #[test]
+            fn combine_err_with_other_outputs() {
+                let result: Result<String> = cmd!("false");
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    "false:\n  exited with exit code: 1"
+                );
+            }
+
+            #[test]
+            fn includes_full_command_on_non_zero_exit_codes() {
+                let result: Result<()> = cmd!("false foo bar");
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    "false foo bar:\n  exited with exit code: 1"
+                );
+            }
+
+            #[test]
+            fn other_exit_codes() {
+                let result: Result<()> = cmd!(
+                    executable_path("stir_test_helper").to_str().unwrap(),
+                    vec!["exit code 42"]
+                );
+                assert!(result
+                    .unwrap_err()
+                    .to_string()
+                    .contains("exited with exit code: 42"));
+            }
+
+            #[test]
+            fn executable_cannot_be_found() {
+                let result: Result<()> = cmd!("does-not-exist");
+                let expected = if cfg!(target_os = "windows") {
+                    "cmd!: does-not-exist: The system cannot find the file specified. (os error 2)"
+                } else {
+                    "cmd!: does-not-exist: No such file or directory (os error 2)"
+                };
+                assert_eq!(result.unwrap_err().to_string(), expected);
+            }
+
+            #[test]
+            fn no_executable() {
+                let result: Result<()> = cmd!(vec![]);
+                assert_eq!(result.unwrap_err().to_string(), "cmd!: no arguments given");
+            }
+
+            #[test]
+            fn invalid_utf8_stdout() {
+                let result: Result<String> = cmd!(
+                    executable_path("stir_test_helper").to_str().unwrap(),
+                    vec!["invalid utf-8 stdout"]
+                );
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    "cmd!: invalid utf-8 written to stdout"
+                );
+            }
         }
     }
 
     #[test]
     fn allows_to_retrieve_stdout() {
-        assert_eq!(cmd!("echo foo"), "foo\n");
+        let stdout: String = cmd!("echo foo");
+        assert_eq!(stdout, "foo\n");
     }
 
     #[test]
     fn command_and_argument_as_separate_ref_str() {
-        assert_eq!(cmd!("echo", "foo"), "foo\n");
+        let stdout: String = cmd!("echo", "foo");
+        assert_eq!(stdout, "foo\n");
     }
 
     #[test]
     fn multiple_arguments_as_ref_str() {
-        assert_eq!(cmd!("echo", "foo", "bar"), "foo bar\n");
+        let stdout: String = cmd!("echo", "foo", "bar");
+        assert_eq!(stdout, "foo bar\n");
     }
 
     #[test]
     fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
         let args: Vec<&str> = vec!["foo"];
-        assert_eq!(cmd!("echo", args), "foo\n");
+        let stdout: String = cmd!("echo", args);
+        assert_eq!(stdout, "foo\n");
     }
 }
