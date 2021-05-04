@@ -44,8 +44,25 @@
 //!
 //! # Output
 //!
-//! [`cmd!`] collects the `stdout` of the child process into a
-//! [`String`] and returns it.
+//! You can choose which return type you want [`cmd!`] to return,
+//! as long as the chosen return type implements [`CmdOutput`].
+//! For example you can use [`()`] if you don't want any result:
+//!
+//! ```
+//! use stir::cmd;
+//!
+//! let () = cmd!("touch foo");
+//! ```
+//!
+//! Or you can use e.g. [`String`] to collect what the child process
+//! writes to `stdout`:
+//!
+//! ```
+//! use stir::cmd;
+//!
+//! let output: String = cmd!("echo foo");
+//! assert_eq!(output, "foo\n");
+//! ```
 //!
 //! # Error Handling
 //!
