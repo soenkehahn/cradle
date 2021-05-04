@@ -49,7 +49,13 @@
 //!
 //! # Error Handling
 //!
-//! [`cmd!`] panics when the child process exits with a non-zero exitcode:
+//! By default [`cmd!`] panics for a few reasons, e.g.:
+//!
+//! - when the child process exits with a non-zero exitcode,
+//! - when the given executable cannot be found,
+//! - when no strings are given as arguments to [`cmd!`].
+//!
+//! For example:
 //!
 //! ``` should_panic
 //! use stir::cmd;
@@ -57,11 +63,31 @@
 //! // panics with "ls: exited with exit code: 1"
 //! let () = cmd!("ls does-not-exist");
 //! ```
+//!
+//! You can turn these panics into [`std::result::Result::Err`]s
+//! by fixing the return type of [`cmd!`] to `Result<T>`, where
+//! `T` is any type that implements [`CmdOutput`] and
+//! [`Result`] is stir's custom result type, which uses [`Error`].
+//! Here's some examples:
+//!
+//! ```
+//! use stir::{cmd, Result};
+//!
+//! let result: Result<()> = cmd!("ls does-not-exist");
+//! let error_message = format!("{}", result.unwrap_err());
+//! assert_eq!(
+//!     error_message,
+//!     "ls does-not-exist:\n  exited with exit code: 2"
+//! );
+//!
+//! let result: Result<String> = cmd!("echo foo");
+//! assert_eq!(result, Ok("foo\n".to_string()));
+//! ```
 use std::process::{Command, Output};
 
 mod error;
 
-use error::{Error, Result};
+pub use error::{Error, Result};
 
 /// Execute child processes. Please, see the module documentation on how to use it.
 #[macro_export]
@@ -167,10 +193,11 @@ mod tests {
     use std::{
         env::{current_dir, set_current_dir},
         path::PathBuf,
+        result,
     };
     use tempfile::TempDir;
 
-    type R<T> = Result<T, Box<dyn std::error::Error>>;
+    type R<T> = result::Result<T, Box<dyn std::error::Error>>;
 
     fn in_temporary_directory<F>(f: F) -> R<()>
     where

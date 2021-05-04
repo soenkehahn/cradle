@@ -1,6 +1,6 @@
 use std::{fmt::Display, process::ExitStatus};
 
-pub(crate) type Result<T, E = Error> = std::result::Result<T, E>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(PartialEq, Debug)]
 pub enum Error {
