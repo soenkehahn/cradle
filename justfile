@@ -3,8 +3,8 @@ ci: test build doc clippy fmt forbidden-words
 build:
   cargo build --all --features="build_test_helper"
 
-test: build
-  cargo test --all -- --test-threads=1
+test pattern="": build
+  cargo test --all -- --test-threads=1 {{ pattern }}
   rm 'filename with spaces'
 
 doc:
@@ -18,6 +18,6 @@ fmt:
 
 forbidden-words:
   ! grep -rni \
-    'dbg!\|fixme\|todo' \
+    'dbg!\|fixme\|todo\|ignore' \
     src
   @echo No forbidden words found
