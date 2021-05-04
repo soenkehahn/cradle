@@ -102,11 +102,11 @@
 //! let result: Result<String> = cmd!("echo foo");
 //! assert_eq!(result, Ok("foo\n".to_string()));
 //! ```
-use std::process::{Command, Output};
 
 mod error;
 
-pub use error::{Error, Result};
+pub use crate::error::{Error, Result};
+use std::process::{Command, Output};
 
 /// Execute child processes. Please, see the module documentation on how to use it.
 #[macro_export]
