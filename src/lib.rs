@@ -281,8 +281,17 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(
-                expected = "cmd!: does-not-exist: No such file or directory (os error 2)"
+            #[cfg_attr(
+                target_family = "unix",
+                should_panic(
+                    expected = "cmd!: does-not-exist: No such file or directory (os error 2)"
+                )
+            )]
+            #[cfg_attr(
+                target_family = "windows",
+                should_panic(
+                    expected = "cmd!: does-not-exist: The system cannot find the file specified. (os error 2)"
+                )
             )]
             fn executable_cannot_be_found() {
                 let () = cmd!("does-not-exist");
@@ -361,10 +370,12 @@ mod tests {
             #[test]
             fn executable_cannot_be_found() {
                 let result: Result<()> = cmd!("does-not-exist");
-                assert_eq!(
-                    result.unwrap_err().to_string(),
+                let expected = if cfg!(target_os = "windows") {
+                    "cmd!: does-not-exist: The system cannot find the file specified. (os error 2)"
+                } else {
                     "cmd!: does-not-exist: No such file or directory (os error 2)"
-                );
+                };
+                assert_eq!(result.unwrap_err().to_string(), expected);
             }
 
             #[test]
