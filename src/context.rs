@@ -33,12 +33,13 @@ impl Context<Stdout> {
 
 impl<Stdout> Context<Stdout>
 where
-    Stdout: Write + Send + 'static,
+    Stdout: Write + Send + Clone + 'static,
 {
     pub(crate) fn spawn_stdout_relaying(
-        mut self,
+        &self,
         mut child_stdout: ChildStdout,
     ) -> JoinHandle<Vec<u8>> {
+        let mut context = self.clone();
         thread::spawn(move || {
             let mut collected_stdout = Vec::new();
             let buffer = &mut [0; 256];
@@ -47,7 +48,7 @@ where
                 if (length) == 0 {
                     break;
                 }
-                if let Some(stdout) = &mut self.stdout {
+                if let Some(stdout) = &mut context.stdout {
                     stdout.write_all(&buffer[..length]).unwrap();
                 }
                 collected_stdout.extend(&buffer[..length]);

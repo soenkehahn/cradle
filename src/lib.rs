@@ -130,8 +130,8 @@ macro_rules! cmd {
     }}
 }
 
-#[macro_export]
 #[doc(hidden)]
+#[macro_export]
 macro_rules! cmd_with_context {
     ($context:expr, $($args:expr),+) => {{
         let mut args = vec![];
@@ -180,7 +180,7 @@ pub struct RunResult {
     stdout: Vec<u8>,
 }
 
-fn run_cmd_safe<Stdout>(context: &mut Context<Stdout>, input: Vec<String>) -> Result<RunResult>
+fn run_cmd_safe<Stdout>(context: &Context<Stdout>, input: Vec<String>) -> Result<RunResult>
 where
     Stdout: Write + Clone + Send + 'static,
 {
@@ -190,9 +190,7 @@ where
         .stdout(Stdio::piped())
         .spawn()
         .map_err(|error| Error::command_io_error(&command, error))?;
-    let collected_stdout = context
-        .clone()
-        .spawn_stdout_relaying(child.stdout.take().unwrap());
+    let collected_stdout = context.spawn_stdout_relaying(child.stdout.take().unwrap());
     let exit_status = child.wait().unwrap();
     let collected_stdout = collected_stdout.join().unwrap();
     check_exit_status(input, exit_status)?;
@@ -438,14 +436,14 @@ mod tests {
         use std::{thread, time::Duration};
 
         #[test]
-        fn inherits_stdout_by_default() {
+        fn relays_stdout_by_default() {
             let context = &mut Context::test();
             let () = cmd_with_context!(context, "echo foo");
             assert_eq!(context.stdout(), "foo\n");
         }
 
         #[test]
-        fn streams_stdout_for_non_zero_exit_codes() {
+        fn relays_stdout_for_non_zero_exit_codes() {
             let context = &mut Context::test();
             let _: Result<()> = cmd_with_context!(
                 context,
@@ -474,18 +472,18 @@ mod tests {
                 thread.join().unwrap();
                 Ok(())
             })
-            .unwrap()
+            .unwrap();
         }
 
         #[test]
-        fn suppress_output_when_collecting_stdout_into_string() {
+        fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
             let _: String = cmd_with_context!(&mut context.clone(), "echo foo");
             assert_eq!(context.stdout(), "");
         }
 
         #[test]
-        fn suppress_output_when_collecting_stdout_into_result_of_string() {
+        fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
             let _: Result<String> = cmd_with_context!(&mut context.clone(), "echo foo");
             assert_eq!(context.stdout(), "");
