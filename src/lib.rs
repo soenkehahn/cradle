@@ -68,7 +68,7 @@
 //! let () = cmd!("touch foo");
 //! ```
 //!
-//! Since thas very common case, `stir` provides the [`cmd_unit!`]
+//! Since that's a very common case, `stir` provides the [`cmd_unit!`]
 //! shortcut, that behaves exactly like [`cmd!`], but pins the return
 //! type down to `()`:
 //!
