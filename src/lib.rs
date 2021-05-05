@@ -459,7 +459,7 @@ mod tests {
         #[test]
         fn works_for_string() {
             let command: String = "true".to_string();
-            let () = cmd!(command);
+            cmd_unit!(command);
         }
 
         #[test]
@@ -488,7 +488,7 @@ mod tests {
         fn does_not_split_strings_in_vectors() {
             in_temporary_directory(|| {
                 let argument: Vec<String> = vec!["filename with spaces".to_string()];
-                let () = cmd!("touch", argument);
+                cmd_unit!("touch", argument);
                 assert!(PathBuf::from("filename with spaces").exists());
             });
         }
