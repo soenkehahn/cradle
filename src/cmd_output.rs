@@ -19,7 +19,10 @@ impl CmdOutput for () {
     fn prepare_context<Stdout>(_context: &mut Context<Stdout>) {}
 }
 
-/// Returns what the child process writes to `stdout`.
+/// Returns what the child process writes to `stdout`, interpreted as utf-8,
+/// collected into a string. This also suppresses output of the child's `stdout`
+/// to the parent's `stdout`. (Which is the default when not using [`String`]
+/// as the return value.)
 impl CmdOutput for String {
     #[doc(hidden)]
     fn from_cmd_output(output: Result<RunResult>) -> Result<Self> {

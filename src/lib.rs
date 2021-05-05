@@ -64,6 +64,9 @@
 //! assert_eq!(output, "foo\n");
 //! ```
 //!
+//! (By default, the child's `stdout` is written to the parent's `stdout`.
+//! Using `String` as the return type suppresses that.)
+//!
 //! See the implementations for [`CmdOutput`] for all the supported types.
 //!
 //! # Error Handling
