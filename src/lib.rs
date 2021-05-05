@@ -38,7 +38,7 @@
 //! use std::path::PathBuf;
 //! use stir::cmd;
 //!
-//! let () = cmd!("touch", vec!["filename with spaces"]);
+//! let _: String = cmd!("touch", vec!["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
 //! ```
 //!
@@ -46,16 +46,8 @@
 //!
 //! You can choose which return type you want [`cmd!`] to return,
 //! as long as the chosen return type implements [`CmdOutput`].
-//! For example you can use [`()`] if you don't want any result:
-//!
-//! ```
-//! use stir::cmd;
-//!
-//! let () = cmd!("touch foo");
-//! ```
-//!
-//! Or you can use e.g. [`String`] to collect what the child process
-//! writes to `stdout`:
+//! For example you can use e.g. [`String`] to collect what the
+//! child process writes to `stdout`:
 //!
 //! ```
 //! use stir::cmd;
@@ -66,6 +58,25 @@
 //!
 //! (By default, the child's `stdout` is written to the parent's `stdout`.
 //! Using `String` as the return type suppresses that.)
+//!
+//! If you don't want any result from [`cmd!`], you can use `()`
+//! as the return value:
+//!
+//! ```
+//! use stir::cmd;
+//!
+//! let () = cmd!("touch foo");
+//! ```
+//!
+//! Since thas very common case, `stir` provides the [`cmd_unit!`]
+//! shortcut, that behaves exactly like [`cmd!`], but pins the return
+//! type down to `()`:
+//!
+//! ```
+//! use stir::cmd_unit;
+//!
+//! cmd_unit!("touch foo");
+//! ```
 //!
 //! See the implementations for [`CmdOutput`] for all the supported types.
 //!
@@ -80,10 +91,10 @@
 //! For example:
 //!
 //! ``` should_panic
-//! use stir::cmd;
+//! use stir::cmd_unit;
 //!
 //! // panics with "ls: exited with exit code: 1"
-//! let () = cmd!("ls does-not-exist");
+//! cmd_unit!("ls does-not-exist");
 //! ```
 //!
 //! You can turn these panics into [`std::result::Result::Err`]s
@@ -127,6 +138,15 @@ macro_rules! cmd {
     ($($args:expr),+) => {{
         let context = &mut $crate::Context::production();
         $crate::cmd_with_context!(context, $($args),+)
+    }}
+}
+
+/// Like [`cmd!`], but fixes the return type to `()`.
+#[macro_export]
+macro_rules! cmd_unit {
+    ($($args:expr),+) => {{
+        let context = &mut $crate::Context::production();
+        let () = $crate::cmd_with_context!(context, $($args),+);
     }}
 }
 
@@ -264,7 +284,7 @@ mod tests {
     #[test]
     fn allows_to_execute_a_command() {
         in_temporary_directory(|| {
-            let () = cmd!("touch foo");
+            cmd_unit!("touch foo");
             assert!(PathBuf::from("foo").exists());
         })
     }
@@ -278,7 +298,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "false:\n  exited with exit code: 1")]
             fn non_zero_exit_codes() {
-                let () = cmd!("false");
+                cmd_unit!("false");
             }
 
             #[test]
@@ -290,13 +310,13 @@ mod tests {
             #[test]
             #[should_panic(expected = "false foo bar:\n  exited with exit code: 1")]
             fn includes_full_command_on_non_zero_exit_codes() {
-                let () = cmd!("false foo bar");
+                cmd_unit!("false foo bar");
             }
 
             #[test]
             #[should_panic(expected = "exited with exit code: 42")]
             fn other_exit_codes() {
-                let () = cmd!(
+                cmd_unit!(
                     executable_path("stir_test_helper").to_str().unwrap(),
                     vec!["exit code 42"]
                 );
@@ -316,13 +336,13 @@ mod tests {
                 )
             )]
             fn executable_cannot_be_found() {
-                let () = cmd!("does-not-exist");
+                cmd_unit!("does-not-exist");
             }
 
             #[test]
             #[should_panic(expected = "cmd!: no arguments given")]
             fn no_executable() {
-                let () = cmd!(vec![]);
+                cmd_unit!(vec![]);
             }
 
             #[test]
@@ -482,7 +502,7 @@ mod tests {
                 while (context.stdout()) != "foo\n" {
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
-                let () = cmd!("touch file");
+                cmd_unit!("touch file");
                 thread.join().unwrap();
             });
         }
@@ -543,7 +563,7 @@ mod tests {
                 while (context.stderr()) != "foo\n" {
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
-                let () = cmd!("touch file");
+                cmd_unit!("touch file");
                 thread.join().unwrap();
             });
         }
