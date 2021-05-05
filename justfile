@@ -6,6 +6,7 @@ build:
 test pattern="": build
   cargo test --all -- --test-threads=1 {{ pattern }}
   rm 'filename with spaces'
+  rm foo
 
 doc:
   cargo doc --all
