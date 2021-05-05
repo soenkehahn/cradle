@@ -1,7 +1,7 @@
 ci: test build doc clippy fmt integration forbidden-words
 
 build:
-  cargo build --all --features="test_executables"
+  cargo build --all-targets --all-features
 
 test pattern="": build
   cargo test --all -- --test-threads=1 {{ pattern }}
@@ -14,7 +14,7 @@ doc:
   cargo doc --all
 
 clippy:
-  cargo clippy --all --features="test_executables"
+  cargo clippy --all-targets --all-features
 
 fmt:
   cargo fmt --all -- --check
