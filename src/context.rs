@@ -46,6 +46,18 @@ impl Context<Stdout, Stderr> {
     }
 }
 
+pub(crate) struct Waiter {
+    stdout: JoinHandle<io::Result<Vec<u8>>>,
+    stderr: JoinHandle<()>,
+}
+
+impl Waiter {
+    pub(crate) fn join(self) -> io::Result<Vec<u8>> {
+        self.stderr.join().expect("stderr relaying thread panicked");
+        self.stdout.join().expect("stdout relaying thread panicked")
+    }
+}
+
 impl<Stdout, Stderr> Context<Stdout, Stderr>
 where
     Stdout: Write + Send + Clone + 'static,
@@ -55,7 +67,7 @@ where
         &self,
         mut child_stdout: ChildStdout,
         mut child_stderr: ChildStderr,
-    ) -> JoinHandle<io::Result<Vec<u8>>> {
+    ) -> Waiter {
         let mut context = self.clone();
         let stdout_join_handle = thread::spawn(move || {
             let mut collected_stdout = Vec::new();
@@ -73,7 +85,7 @@ where
             Ok(collected_stdout)
         });
         let mut context = self.clone();
-        thread::spawn(move || {
+        let stderr_join_handle = thread::spawn(move || {
             let buffer = &mut [0; 256];
             loop {
                 let length = child_stderr.read(buffer).expect("fixme");
@@ -83,7 +95,10 @@ where
                 context.stderr.write_all(&buffer[..length]).expect("fixme");
             }
         });
-        stdout_join_handle
+        Waiter {
+            stdout: stdout_join_handle,
+            stderr: stderr_join_handle,
+        }
     }
 }
 

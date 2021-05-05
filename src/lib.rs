@@ -211,7 +211,6 @@ where
         .map_err(|error| Error::command_io_error(&command, error))?;
     let collected_stdout = collected_stdout
         .join()
-        .expect("stdout relaying thread panicked")
         .map_err(|error| Error::command_io_error(&command, error))?;
     check_exit_status(input, exit_status)?;
     Ok(RunResult {
