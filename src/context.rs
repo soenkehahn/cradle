@@ -38,22 +38,22 @@ where
     pub(crate) fn spawn_stdout_relaying(
         &self,
         mut child_stdout: ChildStdout,
-    ) -> JoinHandle<Vec<u8>> {
+    ) -> JoinHandle<io::Result<Vec<u8>>> {
         let mut context = self.clone();
         thread::spawn(move || {
             let mut collected_stdout = Vec::new();
             let buffer = &mut [0; 256];
             loop {
-                let length = child_stdout.read(buffer).unwrap();
+                let length = child_stdout.read(buffer)?;
                 if (length) == 0 {
                     break;
                 }
                 if let Some(stdout) = &mut context.stdout {
-                    stdout.write_all(&buffer[..length]).unwrap();
+                    stdout.write_all(&buffer[..length])?;
                 }
                 collected_stdout.extend(&buffer[..length]);
             }
-            collected_stdout
+            Ok(collected_stdout)
         })
     }
 }

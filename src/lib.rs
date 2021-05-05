@@ -190,9 +190,19 @@ where
         .stdout(Stdio::piped())
         .spawn()
         .map_err(|error| Error::command_io_error(&command, error))?;
-    let collected_stdout = context.spawn_stdout_relaying(child.stdout.take().unwrap());
-    let exit_status = child.wait().unwrap();
-    let collected_stdout = collected_stdout.join().unwrap();
+    let collected_stdout = context.spawn_stdout_relaying(
+        child
+            .stdout
+            .take()
+            .expect("child process should have stdout"),
+    );
+    let exit_status = child
+        .wait()
+        .map_err(|error| Error::command_io_error(&command, error))?;
+    let collected_stdout = collected_stdout
+        .join()
+        .expect("stdout relaying thread panicked")
+        .map_err(|error| Error::command_io_error(&command, error))?;
     check_exit_status(input, exit_status)?;
     Ok(RunResult {
         stdout: collected_stdout,
