@@ -280,6 +280,12 @@ mod tests {
         set_current_dir(original_working_directory).unwrap();
     }
 
+    macro_rules! cmd_with_context_unit {
+        ($context:expr, $($args:expr),+) => {{
+            let () = $crate::cmd_with_context!($context, $($args),+);
+        }}
+    }
+
     #[test]
     fn allows_to_execute_a_command() {
         in_temporary_directory(|| {
@@ -471,7 +477,7 @@ mod tests {
         #[test]
         fn relays_stdout_by_default() {
             let context = &mut Context::test();
-            let () = cmd_with_context!(context, "echo foo");
+            cmd_with_context_unit!(context, "echo foo");
             assert_eq!(context.stdout(), "foo\n");
         }
 
@@ -492,7 +498,7 @@ mod tests {
                 let context = Context::test();
                 let mut context_clone = context.clone();
                 let thread = thread::spawn(move || {
-                    let () = cmd_with_context!(
+                    cmd_with_context_unit!(
                         &mut context_clone,
                         executable_path("stir_test_helper").to_str().unwrap(),
                         vec!["stream chunk then wait for file"]
@@ -528,7 +534,7 @@ mod tests {
         #[test]
         fn relays_stderr_by_default() {
             let context = &mut Context::test();
-            let () = cmd_with_context!(
+            cmd_with_context_unit!(
                 context,
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["write to stderr"]
@@ -553,7 +559,7 @@ mod tests {
                 let context = Context::test();
                 let mut context_clone = context.clone();
                 let thread = thread::spawn(move || {
-                    let () = cmd_with_context!(
+                    cmd_with_context_unit!(
                         &mut context_clone,
                         executable_path("stir_test_helper").to_str().unwrap(),
                         vec!["stream chunk to stderr then wait for file"]
