@@ -145,8 +145,7 @@ macro_rules! cmd {
 #[macro_export]
 macro_rules! cmd_unit {
     ($($args:expr),+) => {{
-        let context = &mut $crate::Context::production();
-        let () = $crate::cmd_with_context!(context, $($args),+);
+        let () = $crate::cmd!($($args),+);
     }}
 }
 
