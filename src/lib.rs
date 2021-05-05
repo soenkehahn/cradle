@@ -117,6 +117,7 @@
 //! assert_eq!(result, Ok("foo\n".to_string()));
 //! ```
 
+mod cmd_argument;
 mod cmd_output;
 mod context;
 mod error;
@@ -124,6 +125,7 @@ mod error;
 #[doc(hidden)]
 pub use crate::context::Context;
 pub use crate::{
+    cmd_argument::CmdArgument,
     cmd_output::CmdOutput,
     error::{Error, Result},
 };
@@ -157,28 +159,6 @@ macro_rules! cmd_with_context {
         $($crate::CmdArgument::add_as_argument($args, &mut args);)+
         $crate::run_cmd($context, args)
     }}
-}
-
-/// All types that are possible arguments to [`cmd!`] have to implement this trait.
-pub trait CmdArgument {
-    #[doc(hidden)]
-    fn add_as_argument(self, accumulator: &mut Vec<String>);
-}
-
-impl CmdArgument for &str {
-    fn add_as_argument(self, accumulator: &mut Vec<String>) {
-        for argument in self.split_whitespace() {
-            accumulator.push(argument.to_string());
-        }
-    }
-}
-
-impl CmdArgument for Vec<&str> {
-    fn add_as_argument(self, accumulator: &mut Vec<String>) {
-        for argument in self {
-            accumulator.push(argument.to_string());
-        }
-    }
 }
 
 #[doc(hidden)]
@@ -347,7 +327,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "cmd!: no arguments given")]
             fn no_executable() {
-                cmd_unit!(vec![]);
+                cmd_unit!("");
             }
 
             #[test]
@@ -427,7 +407,7 @@ mod tests {
 
             #[test]
             fn no_executable() {
-                let result: Result<()> = cmd!(vec![]);
+                let result: Result<()> = cmd!("");
                 assert_eq!(result.unwrap_err().to_string(), "cmd!: no arguments given");
             }
 
@@ -468,6 +448,47 @@ mod tests {
         let args: Vec<&str> = vec!["foo"];
         let stdout: String = cmd!("echo", args);
         assert_eq!(stdout, "foo\n");
+    }
+
+    mod strings {
+        use super::*;
+
+        #[test]
+        fn works_for_string() {
+            let command: String = "true".to_string();
+            let () = cmd!(command);
+        }
+
+        #[test]
+        fn splits_strings_into_words() {
+            let command: String = "echo foo".to_string();
+            let output: String = cmd!(command);
+            assert_eq!(output, "foo\n");
+        }
+
+        #[test]
+        fn multiple_strings() {
+            let command: String = "echo".to_string();
+            let argument: String = "foo".to_string();
+            let output: String = cmd!(command, argument);
+            assert_eq!(output, "foo\n");
+        }
+
+        #[test]
+        fn mix_ref_str_and_string() {
+            let argument: String = "foo".to_string();
+            let output: String = cmd!("echo", argument);
+            assert_eq!(output, "foo\n");
+        }
+
+        #[test]
+        fn does_not_split_strings_in_vectors() {
+            in_temporary_directory(|| {
+                let argument: Vec<String> = vec!["filename with spaces".to_string()];
+                let () = cmd!("touch", argument);
+                assert!(PathBuf::from("filename with spaces").exists());
+            });
+        }
     }
 
     mod stdout {
