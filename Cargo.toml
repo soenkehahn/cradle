@@ -4,14 +4,6 @@ version = "0.0.0"
 authors = ["Sönke Hahn <soenkehahn@gmail.com>"]
 edition = "2018"
 
-[target.'cfg(not(target_os = "windows"))'.dependencies.gag]
-version = "0.1.10"
-optional = true
-
-[target.'cfg(not(target_os = "windows"))'.dependencies.executable-path]
-version = "1.0.0"
-optional = true
-
 [dev-dependencies]
 executable-path = "1.0.0"
 tempfile = "3.2.0"
@@ -20,6 +12,14 @@ tempfile = "3.2.0"
 name = "stir_test_helper"
 path = "src/test_helper.rs"
 required-features = ["test_executables"]
+
+[target.'cfg(not(target_os = "windows"))'.dependencies.gag]
+version = "0.1.10"
+optional = true
+
+[target.'cfg(not(target_os = "windows"))'.dependencies.executable-path]
+version = "1.0.0"
+optional = true
 
 [[bin]]
 name = "context_integration_tests"

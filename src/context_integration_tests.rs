@@ -1,5 +1,6 @@
 fn main() {
-    if cfg!(not(target_os = "windows")) {
+    #[cfg(not(target_os = "windows"))]
+    {
         use executable_path::executable_path;
         use gag::BufferRedirect;
         use std::io::{self, Read};
