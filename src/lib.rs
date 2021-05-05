@@ -51,7 +51,7 @@
 //! ```
 //! use stir::cmd;
 //!
-//! let () = cmd!("echo foo");
+//! let () = cmd!("touch foo");
 //! ```
 //!
 //! Or you can use e.g. [`String`] to collect what the child process
@@ -509,30 +509,27 @@ mod tests {
         #[test]
         fn relays_stderr_by_default() {
             let context = &mut Context::test();
-            let result: Result<()> = cmd_with_context!(
+            let () = cmd_with_context!(
                 context,
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["write to stderr"]
             );
-            let _ = dbg!(result);
             assert_eq!(context.stderr(), "foo\n");
         }
 
         #[test]
-        #[ignore]
-        fn relays_stdout_for_non_zero_exit_codes() {
+        fn relays_stderr_for_non_zero_exit_codes() {
             let context = &mut Context::test();
             let _: Result<()> = cmd_with_context!(
                 context,
                 executable_path("stir_test_helper").to_str().unwrap(),
-                vec!["output foo and exit with 42"]
+                vec!["write to stderr and exit with 42"]
             );
-            assert_eq!(context.stdout(), "foo\n");
+            assert_eq!(context.stderr(), "foo\n");
         }
 
         #[test]
-        #[ignore]
-        fn streams_stdout() {
+        fn streams_stderr() {
             in_temporary_directory(|| {
                 let context = Context::test();
                 let mut context_clone = context.clone();
@@ -540,31 +537,15 @@ mod tests {
                     let () = cmd_with_context!(
                         &mut context_clone,
                         executable_path("stir_test_helper").to_str().unwrap(),
-                        vec!["stream chunk then wait for file"]
+                        vec!["stream chunk to stderr then wait for file"]
                     );
                 });
-                while (context.stdout()) != "foo\n" {
+                while (context.stderr()) != "foo\n" {
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
                 let () = cmd!("touch file");
                 thread.join().unwrap();
             });
-        }
-
-        #[test]
-        #[ignore]
-        fn does_not_relay_stdout_when_collecting_into_string() {
-            let context = Context::test();
-            let _: String = cmd_with_context!(&mut context.clone(), "echo foo");
-            assert_eq!(context.stdout(), "");
-        }
-
-        #[test]
-        #[ignore]
-        fn does_not_relay_stdout_when_collecting_into_result_of_string() {
-            let context = Context::test();
-            let _: Result<String> = cmd_with_context!(&mut context.clone(), "echo foo");
-            assert_eq!(context.stdout(), "");
         }
     }
 }

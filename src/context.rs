@@ -48,12 +48,14 @@ impl Context<Stdout, Stderr> {
 
 pub(crate) struct Waiter {
     stdout: JoinHandle<io::Result<Vec<u8>>>,
-    stderr: JoinHandle<()>,
+    stderr: JoinHandle<io::Result<()>>,
 }
 
 impl Waiter {
     pub(crate) fn join(self) -> io::Result<Vec<u8>> {
-        self.stderr.join().expect("stderr relaying thread panicked");
+        self.stderr
+            .join()
+            .expect("stderr relaying thread panicked")?;
         self.stdout.join().expect("stdout relaying thread panicked")
     }
 }
@@ -88,12 +90,13 @@ where
         let stderr_join_handle = thread::spawn(move || {
             let buffer = &mut [0; 256];
             loop {
-                let length = child_stderr.read(buffer).expect("fixme");
+                let length = child_stderr.read(buffer)?;
                 if (length) == 0 {
                     break;
                 }
-                context.stderr.write_all(&buffer[..length]).expect("fixme");
+                context.stderr.write_all(&buffer[..length])?;
             }
+            Ok(())
         });
         Waiter {
             stdout: stdout_join_handle,

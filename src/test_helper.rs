@@ -26,6 +26,18 @@ fn main() {
         "write to stderr" => {
             eprintln!("foo");
         }
+        "write to stderr and exit with 42" => {
+            eprintln!("foo");
+            std::process::exit(42)
+        }
+        "stream chunk to stderr then wait for file" => {
+            eprintln!("foo");
+            io::stdout().flush().unwrap();
+            let file = PathBuf::from("./file");
+            while !file.exists() {
+                sleep(Duration::from_secs_f32(0.1));
+            }
+        }
         arg => panic!("stir_test_helper: invalid arg: {}", arg),
     }
 }
