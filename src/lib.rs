@@ -107,13 +107,13 @@
 //! ```
 
 mod cmd_output;
-#[doc(hidden)]
-pub mod context;
+mod context;
 mod error;
 
+#[doc(hidden)]
+pub use crate::context::Context;
 pub use crate::{
     cmd_output::CmdOutput,
-    context::Context,
     error::{Error, Result},
 };
 use std::{
@@ -125,7 +125,7 @@ use std::{
 #[macro_export]
 macro_rules! cmd {
     ($($args:expr),+) => {{
-        let context = &mut $crate::context::Context::production();
+        let context = &mut $crate::Context::production();
         $crate::cmd_with_context!(context, $($args),+)
     }}
 }

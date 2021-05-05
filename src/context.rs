@@ -66,15 +66,15 @@ mod test {
     };
 
     #[derive(Clone)]
-    pub(crate) struct Stdout(Arc<Mutex<Cursor<Vec<u8>>>>);
+    pub(crate) struct TestStdout(Arc<Mutex<Cursor<Vec<u8>>>>);
 
-    impl Stdout {
-        fn new() -> Stdout {
-            Stdout(Arc::new(Mutex::new(Cursor::new(Vec::new()))))
+    impl TestStdout {
+        fn new() -> TestStdout {
+            TestStdout(Arc::new(Mutex::new(Cursor::new(Vec::new()))))
         }
     }
 
-    impl Write for Stdout {
+    impl Write for TestStdout {
         fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
             let mut lock = self.0.lock().unwrap();
             lock.write(buf)
@@ -86,10 +86,10 @@ mod test {
         }
     }
 
-    impl Context<Stdout> {
+    impl Context<TestStdout> {
         pub(crate) fn test() -> Self {
             Context {
-                stdout: Some(Stdout::new()),
+                stdout: Some(TestStdout::new()),
             }
         }
 
