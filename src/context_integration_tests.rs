@@ -17,20 +17,16 @@ where
 fn main() {
     {
         assert_eq!(
-            with_gag(BufferRedirect::stdout, || {
-                let () = cmd!("echo foo");
-            }),
+            with_gag(BufferRedirect::stdout, || cmd!("echo foo")),
             "foo\n"
         );
     }
     {
         assert_eq!(
-            with_gag(BufferRedirect::stderr, || {
-                let () = cmd!(
-                    executable_path("stir_test_helper").to_str().unwrap(),
-                    vec!["write to stderr"]
-                );
-            }),
+            with_gag(BufferRedirect::stderr, || cmd!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["write to stderr"]
+            )),
             "foo\n"
         );
     }
