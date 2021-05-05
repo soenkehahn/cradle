@@ -11,7 +11,8 @@
 //! # Arguments
 //!
 //! You can pass in multiple arguments (of different types) to [`cmd!`]
-//! to specify arguments:
+//! to specify arguments, as long as they implement the [`CmdArgument`]
+//! trait:
 //!
 //! ```
 //! use stir::cmd;
@@ -41,6 +42,8 @@
 //! let _: String = cmd!("touch", vec!["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
 //! ```
+//!
+//! For all possible inputs to [`cmd!`], see [`CmdArgument`].
 //!
 //! # Output
 //!
