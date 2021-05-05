@@ -34,9 +34,11 @@ impl CmdArgument for String {
 /// to encode a single argument:
 ///
 /// ```
+/// use std::path::PathBuf;
 /// use stir::cmd_unit;
 ///
 /// cmd_unit!("touch", vec!["filename with spaces"]);
+/// assert!(PathBuf::from("filename with spaces").exists());
 /// ```
 impl CmdArgument for Vec<&str> {
     #[doc(hidden)]
