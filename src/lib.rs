@@ -51,7 +51,7 @@
 //! ```
 //! use stir::cmd;
 //!
-//! let () = cmd!("touch foo");
+//! let () = cmd!("echo foo");
 //! ```
 //!
 //! Or you can use e.g. [`String`] to collect what the child process
@@ -163,9 +163,10 @@ impl CmdArgument for Vec<&str> {
 }
 
 #[doc(hidden)]
-pub fn run_cmd<Stdout, T>(context: &mut Context<Stdout>, input: Vec<String>) -> T
+pub fn run_cmd<Stdout, Stderr, T>(context: &mut Context<Stdout, Stderr>, input: Vec<String>) -> T
 where
     Stdout: Write + Clone + Send + 'static,
+    Stderr: Write + Clone + Send + 'static,
     T: CmdOutput,
 {
     T::prepare_context(context);
@@ -180,21 +181,30 @@ pub struct RunResult {
     stdout: Vec<u8>,
 }
 
-fn run_cmd_safe<Stdout>(context: &Context<Stdout>, input: Vec<String>) -> Result<RunResult>
+fn run_cmd_safe<Stdout, Stderr>(
+    context: &Context<Stdout, Stderr>,
+    input: Vec<String>,
+) -> Result<RunResult>
 where
     Stdout: Write + Clone + Send + 'static,
+    Stderr: Write + Clone + Send + 'static,
 {
     let (command, arguments) = parse_input(input.clone())?;
     let mut child = Command::new(&command)
         .args(arguments)
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .map_err(|error| Error::command_io_error(&command, error))?;
-    let collected_stdout = context.spawn_stdout_relaying(
+    let collected_stdout = context.spawn_standard_stream_relaying(
         child
             .stdout
             .take()
             .expect("child process should have stdout"),
+        child
+            .stderr
+            .take()
+            .expect("child process should have stderr"),
     );
     let exit_status = child
         .wait()
@@ -486,6 +496,72 @@ mod tests {
         }
 
         #[test]
+        fn does_not_relay_stdout_when_collecting_into_result_of_string() {
+            let context = Context::test();
+            let _: Result<String> = cmd_with_context!(&mut context.clone(), "echo foo");
+            assert_eq!(context.stdout(), "");
+        }
+    }
+
+    mod stderr {
+        use super::*;
+        use std::{thread, time::Duration};
+
+        #[test]
+        fn relays_stderr_by_default() {
+            let context = &mut Context::test();
+            let result: Result<()> = cmd_with_context!(
+                context,
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["write to stderr"]
+            );
+            let _ = dbg!(result);
+            assert_eq!(context.stderr(), "foo\n");
+        }
+
+        #[test]
+        #[ignore]
+        fn relays_stdout_for_non_zero_exit_codes() {
+            let context = &mut Context::test();
+            let _: Result<()> = cmd_with_context!(
+                context,
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["output foo and exit with 42"]
+            );
+            assert_eq!(context.stdout(), "foo\n");
+        }
+
+        #[test]
+        #[ignore]
+        fn streams_stdout() {
+            in_temporary_directory(|| {
+                let context = Context::test();
+                let mut context_clone = context.clone();
+                let thread = thread::spawn(move || {
+                    let () = cmd_with_context!(
+                        &mut context_clone,
+                        executable_path("stir_test_helper").to_str().unwrap(),
+                        vec!["stream chunk then wait for file"]
+                    );
+                });
+                while (context.stdout()) != "foo\n" {
+                    thread::sleep(Duration::from_secs_f32(0.05));
+                }
+                let () = cmd!("touch file");
+                thread.join().unwrap();
+            });
+        }
+
+        #[test]
+        #[ignore]
+        fn does_not_relay_stdout_when_collecting_into_string() {
+            let context = Context::test();
+            let _: String = cmd_with_context!(&mut context.clone(), "echo foo");
+            assert_eq!(context.stdout(), "");
+        }
+
+        #[test]
+        #[ignore]
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
             let _: Result<String> = cmd_with_context!(&mut context.clone(), "echo foo");

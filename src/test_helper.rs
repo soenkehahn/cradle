@@ -23,6 +23,9 @@ fn main() {
             println!("foo");
             std::process::exit(42)
         }
+        "write to stderr" => {
+            eprintln!("foo");
+        }
         arg => panic!("stir_test_helper: invalid arg: {}", arg),
     }
 }
