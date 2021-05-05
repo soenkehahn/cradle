@@ -3,7 +3,7 @@ use crate::{error::Result, Context, Error, RunResult};
 /// All possible return types of [`cmd!`] have to implement this trait.
 pub trait CmdOutput: Sized {
     #[doc(hidden)]
-    fn prepare_context<Stdout>(context: &mut Context<Stdout>);
+    fn prepare_context<Stdout, Stderr>(context: &mut Context<Stdout, Stderr>);
 
     #[doc(hidden)]
     fn from_run_result(output: Result<RunResult>) -> Result<Self>;
@@ -12,7 +12,7 @@ pub trait CmdOutput: Sized {
 /// Use this when you don't need any result from the child process.
 impl CmdOutput for () {
     #[doc(hidden)]
-    fn prepare_context<Stdout>(_context: &mut Context<Stdout>) {}
+    fn prepare_context<Stdout, Stderr>(_context: &mut Context<Stdout, Stderr>) {}
 
     #[doc(hidden)]
     fn from_run_result(output: Result<RunResult>) -> Result<Self> {
@@ -27,7 +27,7 @@ impl CmdOutput for () {
 /// as the return value.)
 impl CmdOutput for String {
     #[doc(hidden)]
-    fn prepare_context<Stdout>(context: &mut Context<Stdout>) {
+    fn prepare_context<Stdout, Stderr>(context: &mut Context<Stdout, Stderr>) {
         context.stdout = None;
     }
 
@@ -46,7 +46,7 @@ where
     T: CmdOutput,
 {
     #[doc(hidden)]
-    fn prepare_context<Stdout>(context: &mut Context<Stdout>) {
+    fn prepare_context<Stdout, Stderr>(context: &mut Context<Stdout, Stderr>) {
         T::prepare_context(context);
     }
 

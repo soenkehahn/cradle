@@ -1,6 +1,6 @@
 use std::{
     io::{self, Read, Write},
-    process::ChildStdout,
+    process::{ChildStderr, ChildStdout},
     thread::{self, JoinHandle},
 };
 
@@ -17,30 +17,61 @@ impl Write for Stdout {
     }
 }
 
-#[doc(hidden)]
 #[derive(Clone)]
-pub struct Context<Stdout> {
-    pub(crate) stdout: Option<Stdout>,
+pub struct Stderr;
+
+impl Write for Stderr {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        io::stderr().write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        io::stderr().flush()
+    }
 }
 
-impl Context<Stdout> {
+#[doc(hidden)]
+#[derive(Clone)]
+pub struct Context<Stdout, Stderr> {
+    pub(crate) stdout: Option<Stdout>,
+    pub(crate) stderr: Stderr,
+}
+
+impl Context<Stdout, Stderr> {
     pub fn production() -> Self {
         Context {
             stdout: Some(Stdout),
+            stderr: Stderr,
         }
     }
 }
 
-impl<Stdout> Context<Stdout>
+pub(crate) struct Waiter {
+    stdout: JoinHandle<io::Result<Vec<u8>>>,
+    stderr: JoinHandle<io::Result<()>>,
+}
+
+impl Waiter {
+    pub(crate) fn join(self) -> io::Result<Vec<u8>> {
+        self.stderr
+            .join()
+            .expect("stderr relaying thread panicked")?;
+        self.stdout.join().expect("stdout relaying thread panicked")
+    }
+}
+
+impl<Stdout, Stderr> Context<Stdout, Stderr>
 where
     Stdout: Write + Send + Clone + 'static,
+    Stderr: Write + Send + Clone + 'static,
 {
-    pub(crate) fn spawn_stdout_relaying(
+    pub(crate) fn spawn_standard_stream_relaying(
         &self,
         mut child_stdout: ChildStdout,
-    ) -> JoinHandle<io::Result<Vec<u8>>> {
+        mut child_stderr: ChildStderr,
+    ) -> Waiter {
         let mut context = self.clone();
-        thread::spawn(move || {
+        let stdout_join_handle = thread::spawn(move || {
             let mut collected_stdout = Vec::new();
             let buffer = &mut [0; 256];
             loop {
@@ -54,7 +85,23 @@ where
                 collected_stdout.extend(&buffer[..length]);
             }
             Ok(collected_stdout)
-        })
+        });
+        let mut context = self.clone();
+        let stderr_join_handle = thread::spawn(move || {
+            let buffer = &mut [0; 256];
+            loop {
+                let length = child_stderr.read(buffer)?;
+                if (length) == 0 {
+                    break;
+                }
+                context.stderr.write_all(&buffer[..length])?;
+            }
+            Ok(())
+        });
+        Waiter {
+            stdout: stdout_join_handle,
+            stderr: stderr_join_handle,
+        }
     }
 }
 
@@ -67,15 +114,15 @@ mod test {
     };
 
     #[derive(Clone)]
-    pub(crate) struct TestStdout(Arc<Mutex<Cursor<Vec<u8>>>>);
+    pub(crate) struct TestOutput(Arc<Mutex<Cursor<Vec<u8>>>>);
 
-    impl TestStdout {
-        fn new() -> TestStdout {
-            TestStdout(Arc::new(Mutex::new(Cursor::new(Vec::new()))))
+    impl TestOutput {
+        fn new() -> TestOutput {
+            TestOutput(Arc::new(Mutex::new(Cursor::new(Vec::new()))))
         }
     }
 
-    impl Write for TestStdout {
+    impl Write for TestOutput {
         fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
             let mut lock = self.0.lock().unwrap();
             lock.write(buf)
@@ -87,10 +134,11 @@ mod test {
         }
     }
 
-    impl Context<TestStdout> {
+    impl Context<TestOutput, TestOutput> {
         pub(crate) fn test() -> Self {
             Context {
-                stdout: Some(TestStdout::new()),
+                stdout: Some(TestOutput::new()),
+                stderr: TestOutput::new(),
             }
         }
 
@@ -102,6 +150,11 @@ mod test {
                     String::from_utf8(lock.clone().into_inner()).unwrap()
                 }
             }
+        }
+
+        pub fn stderr(&self) -> String {
+            let lock = self.stderr.0.lock().unwrap();
+            String::from_utf8(lock.clone().into_inner()).unwrap()
         }
     }
 }
