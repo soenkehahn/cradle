@@ -228,30 +228,25 @@ mod tests {
     use std::{
         env::{current_dir, set_current_dir},
         path::PathBuf,
-        result,
     };
     use tempfile::TempDir;
 
-    type R<T> = result::Result<T, Box<dyn std::error::Error>>;
-
-    fn in_temporary_directory<F>(f: F) -> R<()>
+    fn in_temporary_directory<F>(f: F)
     where
-        F: FnOnce() -> R<()>,
+        F: FnOnce(),
     {
-        let temp_dir = TempDir::new()?;
-        let original_working_directory = current_dir()?;
-        set_current_dir(&temp_dir)?;
-        f()?;
-        set_current_dir(original_working_directory)?;
-        Ok(())
+        let temp_dir = TempDir::new().unwrap();
+        let original_working_directory = current_dir().unwrap();
+        set_current_dir(&temp_dir).unwrap();
+        f();
+        set_current_dir(original_working_directory).unwrap();
     }
 
     #[test]
-    fn allows_to_execute_a_command() -> R<()> {
+    fn allows_to_execute_a_command() {
         in_temporary_directory(|| {
             let () = cmd!("touch foo");
             assert!(PathBuf::from("foo").exists());
-            Ok(())
         })
     }
 
@@ -470,9 +465,7 @@ mod tests {
                 }
                 let () = cmd!("touch file");
                 thread.join().unwrap();
-                Ok(())
-            })
-            .unwrap();
+            });
         }
 
         #[test]
