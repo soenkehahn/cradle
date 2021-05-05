@@ -4,11 +4,11 @@ version = "0.0.0"
 authors = ["Sönke Hahn <soenkehahn@gmail.com>"]
 edition = "2018"
 
-[dependencies.gag]
+[target.'cfg(not(target_os = "windows"))'.dependencies.gag]
 version = "0.1.10"
 optional = true
 
-[dependencies.executable-path]
+[target.'cfg(not(target_os = "windows"))'.dependencies.executable-path]
 version = "1.0.0"
 optional = true
 
