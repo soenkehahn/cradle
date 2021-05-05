@@ -4,7 +4,13 @@ version = "0.0.0"
 authors = ["Sönke Hahn <soenkehahn@gmail.com>"]
 edition = "2018"
 
-[dependencies]
+[dependencies.gag]
+version = "0.1.10"
+optional = true
+
+[dependencies.executable-path]
+version = "1.0.0"
+optional = true
 
 [dev-dependencies]
 executable-path = "1.0.0"
@@ -13,7 +19,12 @@ tempfile = "3.2.0"
 [[bin]]
 name = "stir_test_helper"
 path = "src/test_helper.rs"
-required-features = ["build_test_helper"]
+required-features = ["test_executables"]
+
+[[bin]]
+name = "context_integration_tests"
+path = "src/context_integration_tests.rs"
+required-features = ["test_executables"]
 
 [features]
-build_test_helper = []
+test_executables = ["gag", "executable-path"]
