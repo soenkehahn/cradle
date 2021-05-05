@@ -169,12 +169,13 @@ where
     T: CmdOutput,
 {
     T::prepare_context(context);
-    match T::from_cmd_output(run_cmd_safe(context, input)) {
+    match T::from_run_result(run_cmd_safe(context, input)) {
         Ok(result) => result,
         Err(error) => panic!("{}", error),
     }
 }
 
+#[doc(hidden)]
 pub struct RunResult {
     stdout: Vec<u8>,
 }

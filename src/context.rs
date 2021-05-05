@@ -17,6 +17,7 @@ impl Write for Stdout {
     }
 }
 
+#[doc(hidden)]
 #[derive(Clone)]
 pub struct Context<Stdout> {
     pub(crate) stdout: Option<Stdout>,

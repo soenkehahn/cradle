@@ -3,35 +3,38 @@ use crate::{error::Result, Context, Error, RunResult};
 /// All possible return types of [`cmd!`] have to implement this trait.
 pub trait CmdOutput: Sized {
     #[doc(hidden)]
-    fn from_cmd_output(output: Result<RunResult>) -> Result<Self>;
-
     fn prepare_context<Stdout>(context: &mut Context<Stdout>);
+
+    #[doc(hidden)]
+    fn from_run_result(output: Result<RunResult>) -> Result<Self>;
 }
 
 /// Use this when you don't need any result from the child process.
 impl CmdOutput for () {
     #[doc(hidden)]
-    fn from_cmd_output(output: Result<RunResult>) -> Result<Self> {
+    fn prepare_context<Stdout>(_context: &mut Context<Stdout>) {}
+
+    #[doc(hidden)]
+    fn from_run_result(output: Result<RunResult>) -> Result<Self> {
         output?;
         Ok(())
     }
-
-    fn prepare_context<Stdout>(_context: &mut Context<Stdout>) {}
 }
 
 /// Returns what the child process writes to `stdout`, interpreted as utf-8,
 /// collected into a string. This also suppresses output of the child's `stdout`
-/// to the parent's `stdout`. (Which is the default when not using [`String`]
+/// to the parent's `stdout`. (Which would be the default when not using [`String`]
 /// as the return value.)
 impl CmdOutput for String {
     #[doc(hidden)]
-    fn from_cmd_output(output: Result<RunResult>) -> Result<Self> {
-        let output = output?;
-        String::from_utf8(output.stdout).map_err(|_| Error::InvalidUtf8ToStdout)
-    }
-
     fn prepare_context<Stdout>(context: &mut Context<Stdout>) {
         context.stdout = None;
+    }
+
+    #[doc(hidden)]
+    fn from_run_result(output: Result<RunResult>) -> Result<Self> {
+        let output = output?;
+        String::from_utf8(output.stdout).map_err(|_| Error::InvalidUtf8ToStdout)
     }
 }
 
@@ -43,14 +46,15 @@ where
     T: CmdOutput,
 {
     #[doc(hidden)]
-    fn from_cmd_output(output: Result<RunResult>) -> Result<Self> {
-        Ok(match output {
-            Ok(_) => T::from_cmd_output(output),
-            Err(error) => Err(error),
-        })
-    }
-
     fn prepare_context<Stdout>(context: &mut Context<Stdout>) {
         T::prepare_context(context);
+    }
+
+    #[doc(hidden)]
+    fn from_run_result(output: Result<RunResult>) -> Result<Self> {
+        Ok(match output {
+            Ok(_) => T::from_run_result(output),
+            Err(error) => Err(error),
+        })
     }
 }
