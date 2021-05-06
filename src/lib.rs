@@ -194,7 +194,8 @@ where
 {
     let (command, arguments) = parse_input(config.arguments.clone())?;
     if config.log_commands {
-        write!(context.stderr, "+ {}", config.full_command()).expect("fixme");
+        write!(context.stderr, "+ {}", config.full_command())
+            .map_err(|error| Error::command_io_error(&command, error))?;
     }
     let mut child = Command::new(&command)
         .args(arguments)
