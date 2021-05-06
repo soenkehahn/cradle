@@ -60,15 +60,44 @@ where
     }
 }
 
-/// todo
+/// Please, see [**here**](trait.CmdOutput.html#impl-CmdOutput).
+/// (The documentation for the [`CmdOutput`] implementation for
+/// [`Exit`].)
 pub struct Exit(pub ExitStatus);
 
-/// todo
+/// Using [`Exit`] as the return type for [`cmd!`] allows to
+/// retrieve the [`ExitStatus`] of the child process:
+///
+/// ```
+/// use stir::{cmd, Exit};
+///
+/// let Exit(status) = cmd!("echo foo");
+/// assert!(status.success());
+/// ```
+///
+/// Also, when using [`Exit`], non-zero exit codes won't
+/// result in neither a panic nor a [`std::result::Result::Err`]:
+///
+/// ```
+/// use stir::{cmd, Result, Exit};
+///
+/// let Exit(status) = cmd!("false");
+/// assert_eq!(status.code(), Some(1));
+/// let result: Result<Exit> = cmd!("false");
+/// assert!(result.is_ok());
+/// assert_eq!(result.unwrap().0.code(), Some(1));
+/// ```
+///
+/// Also see the
+/// [section about error handling](index.html#error-handling) in
+/// the module documentation.
 impl CmdOutput for Exit {
+    #[doc(hidden)]
     fn prepare_config(config: &mut Config) {
         config.error_on_non_zero_exit_code = false;
     }
 
+    #[doc(hidden)]
     fn from_run_result(result: Result<RunResult>) -> Result<Self> {
         Ok(Exit(result?.exit_status))
     }
