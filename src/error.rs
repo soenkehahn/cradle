@@ -2,7 +2,7 @@ use std::{fmt::Display, io, process::ExitStatus};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Error {
     NoArgumentsGiven,
     CommandIoError {

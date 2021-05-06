@@ -60,6 +60,36 @@ where
     }
 }
 
+/// Allows to combine multiple types that implement [`CmdOutput`]:
+///
+/// ```
+/// use stir::{cmd, Exit};
+///
+/// let (stdout, Exit(status)) = cmd!("echo foo");
+/// let _: String = stdout;
+/// assert_eq!(stdout, "foo\n");
+/// assert!(status.success());
+/// ```
+impl<A, B> CmdOutput for (A, B)
+where
+    A: CmdOutput,
+    B: CmdOutput,
+{
+    #[doc(hidden)]
+    fn prepare_config(config: &mut Config) {
+        A::prepare_config(config);
+        B::prepare_config(config);
+    }
+
+    #[doc(hidden)]
+    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+        Ok((
+            A::from_run_result(result.clone())?,
+            B::from_run_result(result)?,
+        ))
+    }
+}
+
 /// Please, see the [`CmdOutput`] implementation for [`Exit`] below.
 pub struct Exit(pub ExitStatus);
 
