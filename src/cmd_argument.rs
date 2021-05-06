@@ -61,9 +61,23 @@ impl CmdArgument for Vec<String> {
     }
 }
 
+/// Please, see [**here**](trait.CmdArgument.html#impl-CmdArgument).
+/// (The documentation for the [`CmdArgument`] implementation for
+/// [`LogCommand`].)
 pub struct LogCommand;
 
+/// Passing in [`LogCommand`] as an argument to [`cmd!`] will cause it
+/// to log the commands including arguments to `stderr`. This is similar
+/// to what `bash` does after executing `set -x`.
+///
+/// ```
+/// use stir::{cmd_unit, LogCommand};
+///
+/// cmd_unit!(LogCommand, "echo foo");
+/// // writes '+ echo foo' to stderr
+/// ```
 impl CmdArgument for LogCommand {
+    #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         config.log_commands = true;
     }
