@@ -149,10 +149,12 @@ pub struct Stderr(String);
 /// [`Stderr`] allows to capture the `stderr` of a child process:
 ///
 /// ```
-/// use stir::cmd;
+/// use stir::{cmd, Exit, Stderr};
 ///
-/// let output: String = cmd!("python3 -c", vec!["import sys; print('foo', file=sys.stdout)"]);
-/// assert_eq!(output, "foo\n");
+/// // (`Exit` is used here to suppress panics caused by `ls`
+/// // terminating with a non-zero exit code.)
+/// let (Stderr(stderr), Exit(_)) = cmd!("ls does-not-exist");
+/// assert_eq!(stderr, "ls: cannot access 'does-not-exist': No such file or directory");
 /// ```
 /// todo: example
 /// todo: assume utf-8
