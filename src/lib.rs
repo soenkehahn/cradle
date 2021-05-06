@@ -220,7 +220,7 @@ where
     let collected_stdout = collected_stdout
         .join()
         .map_err(|error| Error::command_io_error(&command, error))?;
-    check_exit_status(config, exit_status)?;
+    check_exit_status(&config, exit_status)?;
     Ok(RunResult {
         stdout: collected_stdout,
     })
@@ -236,7 +236,7 @@ fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = Strin
     }
 }
 
-fn check_exit_status(config: Config, exit_status: ExitStatus) -> Result<()> {
+fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<()> {
     if !exit_status.success() {
         Err(Error::NonZeroExitCode {
             full_command: config.full_command(),
