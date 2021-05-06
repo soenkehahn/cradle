@@ -625,6 +625,17 @@ mod tests {
                 thread.join().unwrap();
             });
         }
+
+        #[test]
+        fn capture_stderr() {}
+
+        #[test]
+        #[ignore]
+        fn assumes_stderr_is_utf_8() {}
+
+        #[test]
+        #[ignore]
+        fn do_not_relay_stderr_when_catpuring() {}
     }
 
     mod log_commands {

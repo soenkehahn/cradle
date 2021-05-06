@@ -142,3 +142,27 @@ impl CmdOutput for Exit {
         Ok(Exit(result?.exit_status))
     }
 }
+
+/// Please, see the [`CmdOutput`] implementation for [`Stderr`] below.
+pub struct Stderr(String);
+
+/// [`Stderr`] allows to capture the `stderr` of a child process:
+///
+/// ```
+/// use stir::cmd;
+///
+/// let output: String = cmd!("python3 -c", vec!["import sys; print('foo', file=sys.stdout)"]);
+/// assert_eq!(output, "foo\n");
+/// ```
+/// todo: example
+/// todo: assume utf-8
+/// todo: don't relay to parent's stderr
+impl CmdOutput for i32 {
+    fn prepare_config(config: &mut Config) {
+        todo!()
+    }
+
+    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+        todo!()
+    }
+}
