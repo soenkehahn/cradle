@@ -190,6 +190,7 @@ where
 }
 
 #[doc(hidden)]
+#[derive(Clone)]
 pub struct RunResult {
     stdout: Vec<u8>,
     exit_status: ExitStatus,
@@ -674,6 +675,70 @@ mod tests {
             );
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
+        }
+    }
+
+    mod tuple_outputs {
+        use super::*;
+
+        #[test]
+        fn two_tuple_1() {
+            let (output, Exit(status)) = cmd!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["output foo and exit with 42"]
+            );
+            let _: String = output;
+            assert_eq!(output, "foo\n");
+            assert_eq!(status.code(), Some(42));
+        }
+
+        #[test]
+        fn two_tuple_2() {
+            let (Exit(status), output) = cmd!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["output foo and exit with 42"]
+            );
+            let _: String = output;
+            assert_eq!(output, "foo\n");
+            assert_eq!(status.code(), Some(42));
+        }
+
+        #[test]
+        fn result_of_tuple() {
+            let result: Result<(String, Exit)> = cmd!("echo foo");
+            let (output, Exit(status)) = result.unwrap();
+            assert_eq!(output, "foo\n");
+            assert!(status.success());
+        }
+
+        #[test]
+        fn result_of_tuple_when_erroring() {
+            let result: Result<(String, Exit)> = cmd!("false");
+            let (output, Exit(status)) = result.unwrap();
+            assert_eq!(output, "");
+            assert_eq!(status.code(), Some(1));
+        }
+
+        #[test]
+        fn tuple_containing_result() {
+            let (result, output): (Result<Exit>, String) = cmd!("echo foo");
+            assert!(result.unwrap().0.success());
+            assert_eq!(output, "foo\n");
+        }
+
+        #[test]
+        fn tuple_containing_result_when_erroring() {
+            let (result, output): (Result<Exit>, String) = cmd!("false");
+            assert!(!result.unwrap().0.success());
+            assert_eq!(output, "");
+        }
+
+        #[test]
+        fn three_tuples() {
+            let (result, output, Exit(status)): (Result<()>, String, Exit) = cmd!("echo foo");
+            assert!(result.is_ok());
+            assert_eq!(output, "foo\n");
+            assert_eq!(status.code(), Some(0));
         }
     }
 }
