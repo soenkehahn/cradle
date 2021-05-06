@@ -632,7 +632,7 @@ mod tests {
         }
 
         #[test]
-        fn quotes_arguments_with_spaces_in_single_quotes() {
+        fn quotes_arguments_with_spaces() {
             let context = Context::test();
             cmd_with_context_unit!(context.clone(), LogCommand, "echo", vec!["foo bar"]);
             assert_eq!(context.stderr(), "+ echo 'foo bar'");
