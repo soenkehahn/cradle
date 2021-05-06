@@ -96,8 +96,8 @@
 //! ``` should_panic
 //! use stir::cmd_unit;
 //!
-//! // panics with "ls: exited with exit code: 2"
-//! cmd_unit!("ls does-not-exist");
+//! // panics with "false:\n  exited with exit code: 1"
+//! cmd_unit!("false");
 //! ```
 //!
 //! You can suppress these panics by using the [`Exit`] type as
@@ -106,8 +106,8 @@
 //! ```
 //! use stir::{cmd, Exit};
 //!
-//! let Exit(exit_status) = cmd!("ls does-not-exist");
-//! assert_eq!(exit_status.code(), Some(2));
+//! let Exit(exit_status) = cmd!("false");
+//! assert_eq!(exit_status.code(), Some(1));
 //! ```
 //!
 //! Or you can turn the panics into [`std::result::Result::Err`]s
@@ -119,11 +119,11 @@
 //! ```
 //! use stir::{cmd, Result};
 //!
-//! let result: Result<()> = cmd!("ls does-not-exist");
+//! let result: Result<()> = cmd!("false");
 //! let error_message = format!("{}", result.unwrap_err());
 //! assert_eq!(
 //!     error_message,
-//!     "ls does-not-exist:\n  exited with exit code: 2"
+//!     "false:\n  exited with exit code: 1"
 //! );
 //!
 //! let result: Result<String> = cmd!("echo foo");
