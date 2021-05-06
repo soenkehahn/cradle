@@ -7,6 +7,9 @@ test pattern="": build
   cargo test --all -- --test-threads=1 {{ pattern }}
   rm -f 'filename with spaces' foo
 
+test_lib pattern="": build
+  cargo test --lib -- --test-threads=1 {{ pattern }}
+
 integration: build
   cargo run --features "test_executables" --bin context_integration_tests
 
