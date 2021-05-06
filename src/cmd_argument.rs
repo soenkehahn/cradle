@@ -61,9 +61,7 @@ impl CmdArgument for Vec<String> {
     }
 }
 
-/// Please, see [**here**](trait.CmdArgument.html#impl-CmdArgument).
-/// (The documentation for the [`CmdArgument`] implementation for
-/// [`LogCommand`].)
+/// Please, see the [`CmdArgument`] implementation for [`LogCommand`] below.
 pub struct LogCommand;
 
 /// Passing in [`LogCommand`] as an argument to [`cmd!`] will cause it

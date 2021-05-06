@@ -60,9 +60,7 @@ where
     }
 }
 
-/// Please, see [**here**](trait.CmdOutput.html#impl-CmdOutput).
-/// (The documentation for the [`CmdOutput`] implementation for
-/// [`Exit`].)
+/// Please, see the [`CmdOutput`] implementation for [`Exit`] below.
 pub struct Exit(pub ExitStatus);
 
 /// Using [`Exit`] as the return type for [`cmd!`] allows to
