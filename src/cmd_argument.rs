@@ -67,8 +67,8 @@ impl CmdArgument for Vec<String> {
 pub struct LogCommand;
 
 /// Passing in [`LogCommand`] as an argument to [`cmd!`] will cause it
-/// to log the commands including arguments to `stderr`. This is similar
-/// to what `bash` does after executing `set -x`.
+/// to log the commands (including all arguments) to `stderr`.
+/// (This is similar `bash`'s `-x` option.)
 ///
 /// ```
 /// use stir::{cmd_unit, LogCommand};
