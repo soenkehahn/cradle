@@ -194,7 +194,7 @@ where
 {
     let (command, arguments) = parse_input(config.arguments.clone())?;
     if config.log_commands {
-        write!(context.stderr, "+ {}", config.full_command())
+        writeln!(context.stderr, "+ {}", config.full_command())
             .map_err(|error| Error::command_io_error(&command, error))?;
     }
     let mut child = Command::new(&command)
@@ -621,21 +621,21 @@ mod tests {
         fn logs_simple_commands() {
             let context = Context::test();
             cmd_with_context_unit!(context.clone(), LogCommand, "true");
-            assert_eq!(context.stderr(), "+ true");
+            assert_eq!(context.stderr(), "+ true\n");
         }
 
         #[test]
         fn logs_commands_with_arguments() {
             let context = Context::test();
             cmd_with_context_unit!(context.clone(), LogCommand, "echo foo");
-            assert_eq!(context.stderr(), "+ echo foo");
+            assert_eq!(context.stderr(), "+ echo foo\n");
         }
 
         #[test]
         fn quotes_arguments_with_spaces() {
             let context = Context::test();
             cmd_with_context_unit!(context.clone(), LogCommand, "echo", vec!["foo bar"]);
-            assert_eq!(context.stderr(), "+ echo 'foo bar'");
+            assert_eq!(context.stderr(), "+ echo 'foo bar'\n");
         }
     }
 }
