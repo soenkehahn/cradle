@@ -2,6 +2,23 @@ use crate::{error::Result, Config, Error, RunResult};
 use std::process::ExitStatus;
 
 /// All possible return types of [`cmd!`] have to implement this trait.
+/// For documentation about what these return types do, see the
+/// individual implementations below.
+///
+/// Except for tuples: All [`CmdOutput`] implementations for tuples serve
+/// the same purpose: combining multiple types that implement [`CmdOutput`]
+/// to retrieve more information from a child process. The following code
+/// for example retrieves what's written to `stdout` **and** the
+/// [`ExitStatus`]:
+///
+/// ```
+/// use stir::{cmd, Exit};
+///
+/// let (stdout, Exit(status)) = cmd!("echo foo");
+/// let _: String = stdout;
+/// assert_eq!(stdout, "foo\n");
+/// assert!(status.success());
+/// ```
 pub trait CmdOutput: Sized {
     #[doc(hidden)]
     fn prepare_config(config: &mut Config);
@@ -60,35 +77,30 @@ where
     }
 }
 
-/// Allows to combine multiple types that implement [`CmdOutput`]:
-///
-/// ```
-/// use stir::{cmd, Exit};
-///
-/// let (stdout, Exit(status)) = cmd!("echo foo");
-/// let _: String = stdout;
-/// assert_eq!(stdout, "foo\n");
-/// assert!(status.success());
-/// ```
-impl<A, B> CmdOutput for (A, B)
-where
-    A: CmdOutput,
-    B: CmdOutput,
-{
-    #[doc(hidden)]
-    fn prepare_config(config: &mut Config) {
-        A::prepare_config(config);
-        B::prepare_config(config);
-    }
+macro_rules! tuple_impl {
+    ($($generics:ident,)+) => {
+        impl<$($generics),+> CmdOutput for ($($generics,)+)
+        where
+            $($generics: CmdOutput,)+
+        {
+            #[doc(hidden)]
+            fn prepare_config(config: &mut Config) {
+                $($generics::prepare_config(config);)+
+            }
 
-    #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
-        Ok((
-            A::from_run_result(result.clone())?,
-            B::from_run_result(result)?,
-        ))
-    }
+            #[doc(hidden)]
+            fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+                Ok((
+                    $($generics::from_run_result(result.clone())?,)+
+                ))
+            }
+        }
+    };
 }
+
+tuple_impl!(A,);
+tuple_impl!(A, B,);
+tuple_impl!(A, B, C,);
 
 /// Please, see the [`CmdOutput`] implementation for [`Exit`] below.
 pub struct Exit(pub ExitStatus);

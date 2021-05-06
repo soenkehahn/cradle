@@ -732,5 +732,13 @@ mod tests {
             assert!(!result.unwrap().0.success());
             assert_eq!(output, "");
         }
+
+        #[test]
+        fn three_tuples() {
+            let (result, output, Exit(status)): (Result<()>, String, Exit) = cmd!("echo foo");
+            assert!(result.is_ok());
+            assert_eq!(output, "foo\n");
+            assert_eq!(status.code(), Some(0));
+        }
     }
 }
