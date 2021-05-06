@@ -64,5 +64,7 @@ impl CmdArgument for Vec<String> {
 pub struct LogCommand;
 
 impl CmdArgument for LogCommand {
-    fn prepare_config(self, _config: &mut Config) {}
+    fn prepare_config(self, config: &mut Config) {
+        config.log_commands = true;
+    }
 }

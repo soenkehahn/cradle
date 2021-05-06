@@ -185,7 +185,7 @@ pub struct RunResult {
 }
 
 fn run_cmd_safe<Stdout, Stderr>(
-    context: &Context<Stdout, Stderr>,
+    context: &mut Context<Stdout, Stderr>,
     config: Config,
 ) -> Result<RunResult>
 where
@@ -193,6 +193,9 @@ where
     Stderr: Write + Clone + Send + 'static,
 {
     let (command, arguments) = parse_input(config.arguments.clone())?;
+    if config.log_commands {
+        write!(context.stderr, "+ {}", config.full_command()).expect("fixme");
+    }
     let mut child = Command::new(&command)
         .args(arguments)
         .stdout(Stdio::piped())
@@ -590,7 +593,18 @@ mod tests {
                         vec!["stream chunk to stderr then wait for file"]
                     );
                 });
-                while (context.stderr()) != "foo\n" {
+                loop {
+                    let expected = "foo\n";
+                    let stderr = context.stderr();
+                    if stderr == expected {
+                        break;
+                    }
+                    assert!(
+                        stderr.len() <= expected.len(),
+                        "expected: {}, got: {}",
+                        expected,
+                        stderr
+                    );
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
                 cmd_unit!("touch file");
@@ -599,11 +613,28 @@ mod tests {
         }
     }
 
-    #[test]
-    #[ignore]
-    fn log_commands() {
-        let mut context = Context::test();
-        cmd_with_context_unit!(&mut context, "true", LogCommand);
-        assert_eq!(context.stderr(), "+ true");
+    mod log_commands {
+        use super::*;
+
+        #[test]
+        fn logs_simple_commands() {
+            let mut context = Context::test();
+            cmd_with_context_unit!(&mut context, LogCommand, "true");
+            assert_eq!(context.stderr(), "+ true");
+        }
+
+        #[test]
+        fn logs_commands_with_arguments() {
+            let mut context = Context::test();
+            cmd_with_context_unit!(&mut context, LogCommand, "echo foo");
+            assert_eq!(context.stderr(), "+ echo foo");
+        }
+
+        #[test]
+        fn quotes_arguments_with_spaces_in_single_quotes() {
+            let mut context = Context::test();
+            cmd_with_context_unit!(&mut context, LogCommand, "echo", vec!["foo bar"]);
+            assert_eq!(context.stderr(), "+ echo 'foo bar'");
+        }
     }
 }
