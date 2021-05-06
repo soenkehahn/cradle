@@ -1,3 +1,4 @@
+use crate::config::Config;
 use std::{
     io::{self, Read, Write},
     process::{ChildStderr, ChildStdout},
@@ -33,14 +34,14 @@ impl Write for Stderr {
 #[doc(hidden)]
 #[derive(Clone)]
 pub struct Context<Stdout, Stderr> {
-    pub(crate) stdout: Option<Stdout>,
+    pub(crate) stdout: Stdout,
     pub(crate) stderr: Stderr,
 }
 
 impl Context<Stdout, Stderr> {
     pub fn production() -> Self {
         Context {
-            stdout: Some(Stdout),
+            stdout: Stdout,
             stderr: Stderr,
         }
     }
@@ -67,6 +68,7 @@ where
 {
     pub(crate) fn spawn_standard_stream_relaying(
         &self,
+        config: Config,
         mut child_stdout: ChildStdout,
         mut child_stderr: ChildStderr,
     ) -> Waiter {
@@ -79,8 +81,8 @@ where
                 if (length) == 0 {
                     break;
                 }
-                if let Some(stdout) = &mut context.stdout {
-                    stdout.write_all(&buffer[..length])?;
+                if config.relay_stdout {
+                    context.stdout.write_all(&buffer[..length])?;
                 }
                 collected_stdout.extend(&buffer[..length]);
             }
@@ -137,19 +139,14 @@ mod test {
     impl Context<TestOutput, TestOutput> {
         pub(crate) fn test() -> Self {
             Context {
-                stdout: Some(TestOutput::new()),
+                stdout: TestOutput::new(),
                 stderr: TestOutput::new(),
             }
         }
 
         pub fn stdout(&self) -> String {
-            match &self.stdout {
-                None => panic!("test context should have stdout"),
-                Some(stdout) => {
-                    let lock = stdout.0.lock().unwrap();
-                    String::from_utf8(lock.clone().into_inner()).unwrap()
-                }
-            }
+            let lock = self.stdout.0.lock().unwrap();
+            String::from_utf8(lock.clone().into_inner()).unwrap()
         }
 
         pub fn stderr(&self) -> String {

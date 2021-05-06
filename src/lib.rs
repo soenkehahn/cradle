@@ -122,16 +122,17 @@
 
 mod cmd_argument;
 mod cmd_output;
+mod config;
 mod context;
 mod error;
 
-#[doc(hidden)]
-pub use crate::context::Context;
 pub use crate::{
-    cmd_argument::CmdArgument,
+    cmd_argument::{CmdArgument, LogCommand},
     cmd_output::CmdOutput,
     error::{Error, Result},
 };
+#[doc(hidden)]
+pub use crate::{config::Config, context::Context};
 use std::{
     io::Write,
     process::{Command, ExitStatus, Stdio},
@@ -158,21 +159,21 @@ macro_rules! cmd_unit {
 #[macro_export]
 macro_rules! cmd_with_context {
     ($context:expr, $($args:expr),+) => {{
-        let mut args = vec![];
-        $($crate::CmdArgument::add_as_argument($args, &mut args);)+
-        $crate::run_cmd($context, args)
+        let mut config = $crate::Config::default();
+        $($crate::CmdArgument::prepare_config($args, &mut config);)+
+        $crate::run_cmd($context, config)
     }}
 }
 
 #[doc(hidden)]
-pub fn run_cmd<Stdout, Stderr, T>(context: &mut Context<Stdout, Stderr>, input: Vec<String>) -> T
+pub fn run_cmd<Stdout, Stderr, T>(context: &mut Context<Stdout, Stderr>, mut config: Config) -> T
 where
     Stdout: Write + Clone + Send + 'static,
     Stderr: Write + Clone + Send + 'static,
     T: CmdOutput,
 {
-    T::prepare_context(context);
-    match T::from_run_result(run_cmd_safe(context, input)) {
+    T::prepare_config(&mut config);
+    match T::from_run_result(run_cmd_safe(context, config)) {
         Ok(result) => result,
         Err(error) => panic!("{}", error),
     }
@@ -185,13 +186,13 @@ pub struct RunResult {
 
 fn run_cmd_safe<Stdout, Stderr>(
     context: &Context<Stdout, Stderr>,
-    input: Vec<String>,
+    config: Config,
 ) -> Result<RunResult>
 where
     Stdout: Write + Clone + Send + 'static,
     Stderr: Write + Clone + Send + 'static,
 {
-    let (command, arguments) = parse_input(input.clone())?;
+    let (command, arguments) = parse_input(config.arguments.clone())?;
     let mut child = Command::new(&command)
         .args(arguments)
         .stdout(Stdio::piped())
@@ -199,6 +200,7 @@ where
         .spawn()
         .map_err(|error| Error::command_io_error(&command, error))?;
     let collected_stdout = context.spawn_standard_stream_relaying(
+        config.clone(),
         child
             .stdout
             .take()
@@ -214,7 +216,7 @@ where
     let collected_stdout = collected_stdout
         .join()
         .map_err(|error| Error::command_io_error(&command, error))?;
-    check_exit_status(input, exit_status)?;
+    check_exit_status(config, exit_status)?;
     Ok(RunResult {
         stdout: collected_stdout,
     })
@@ -230,11 +232,10 @@ fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = Strin
     }
 }
 
-fn check_exit_status(input: Vec<String>, exit_status: ExitStatus) -> Result<()> {
+fn check_exit_status(config: Config, exit_status: ExitStatus) -> Result<()> {
     if !exit_status.success() {
-        let full_command = input.join(" ");
         Err(Error::NonZeroExitCode {
-            full_command,
+            full_command: config.full_command(),
             exit_status,
         })
     } else {
@@ -596,5 +597,13 @@ mod tests {
                 thread.join().unwrap();
             });
         }
+    }
+
+    #[test]
+    #[ignore]
+    fn log_commands() {
+        let mut context = Context::test();
+        cmd_with_context_unit!(&mut context, "true", LogCommand);
+        assert_eq!(context.stderr(), "+ true");
     }
 }
