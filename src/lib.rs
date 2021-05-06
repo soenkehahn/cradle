@@ -96,11 +96,21 @@
 //! ``` should_panic
 //! use stir::cmd_unit;
 //!
-//! // panics with "ls: exited with exit code: 1"
+//! // panics with "ls: exited with exit code: 2"
 //! cmd_unit!("ls does-not-exist");
 //! ```
 //!
-//! You can turn these panics into [`std::result::Result::Err`]s
+//! You can suppress these panics by using the [`Exit`] type as
+//! a return type of [`cmd!`]:
+//!
+//! ```
+//! use stir::{cmd, Exit};
+//!
+//! let Exit(exit_status) = cmd!("ls does-not-exist");
+//! assert_eq!(exit_status.code(), Some(2));
+//! ```
+//!
+//! Or you can turn the panics into [`std::result::Result::Err`]s
 //! by fixing the return type of [`cmd!`] to `Result<T>`, where
 //! `T` is any type that implements [`CmdOutput`] and
 //! [`Result`] is stir's custom result type, which uses [`Error`].
@@ -109,11 +119,11 @@
 //! ```
 //! use stir::{cmd, Result};
 //!
-//! let result: Result<()> = cmd!("false");
+//! let result: Result<()> = cmd!("ls does-not-exist");
 //! let error_message = format!("{}", result.unwrap_err());
 //! assert_eq!(
 //!     error_message,
-//!     "false:\n  exited with exit code: 1"
+//!     "ls does-not-exist:\n  exited with exit code: 2"
 //! );
 //!
 //! let result: Result<String> = cmd!("echo foo");
@@ -128,7 +138,7 @@ mod error;
 
 pub use crate::{
     cmd_argument::{CmdArgument, LogCommand},
-    cmd_output::CmdOutput,
+    cmd_output::{CmdOutput, Exit},
     error::{Error, Result},
 };
 #[doc(hidden)]
@@ -182,6 +192,7 @@ where
 #[doc(hidden)]
 pub struct RunResult {
     stdout: Vec<u8>,
+    exit_status: ExitStatus,
 }
 
 fn run_cmd_safe<Stdout, Stderr>(
@@ -193,7 +204,7 @@ where
     Stderr: Write + Clone + Send + 'static,
 {
     let (command, arguments) = parse_input(config.arguments.clone())?;
-    if config.log_commands {
+    if config.log_command {
         writeln!(context.stderr, "+ {}", config.full_command())
             .map_err(|error| Error::command_io_error(&command, error))?;
     }
@@ -223,6 +234,7 @@ where
     check_exit_status(&config, exit_status)?;
     Ok(RunResult {
         stdout: collected_stdout,
+        exit_status,
     })
 }
 
@@ -237,7 +249,7 @@ fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = Strin
 }
 
 fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<()> {
-    if !exit_status.success() {
+    if config.error_on_non_zero_exit_code && !exit_status.success() {
         Err(Error::NonZeroExitCode {
             full_command: config.full_command(),
             exit_status,
@@ -636,6 +648,32 @@ mod tests {
             let context = Context::test();
             cmd_with_context_unit!(context.clone(), LogCommand, "echo", vec!["foo bar"]);
             assert_eq!(context.stderr(), "+ echo 'foo bar'\n");
+        }
+    }
+
+    mod exit_status {
+        use super::*;
+
+        #[test]
+        fn zero() {
+            let Exit(exit_status) = cmd!("true");
+            assert!(exit_status.success());
+        }
+
+        #[test]
+        fn one() {
+            let Exit(exit_status) = cmd!("false");
+            assert!(!exit_status.success());
+        }
+
+        #[test]
+        fn forty_two() {
+            let Exit(exit_status) = cmd!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["exit code 42"]
+            );
+            assert!(!exit_status.success());
+            assert_eq!(exit_status.code(), Some(42));
         }
     }
 }

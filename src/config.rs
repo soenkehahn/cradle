@@ -2,8 +2,9 @@
 #[derive(Clone)]
 pub struct Config {
     pub(crate) arguments: Vec<String>,
+    pub(crate) log_command: bool,
     pub(crate) relay_stdout: bool,
-    pub(crate) log_commands: bool,
+    pub(crate) error_on_non_zero_exit_code: bool,
 }
 
 impl Config {
@@ -30,8 +31,9 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             arguments: Vec::new(),
+            log_command: false,
             relay_stdout: true,
-            log_commands: false,
+            error_on_non_zero_exit_code: true,
         }
     }
 }

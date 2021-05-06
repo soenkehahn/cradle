@@ -1,4 +1,5 @@
 use crate::{error::Result, Config, Error, RunResult};
+use std::process::ExitStatus;
 
 /// All possible return types of [`cmd!`] have to implement this trait.
 pub trait CmdOutput: Sized {
@@ -6,7 +7,7 @@ pub trait CmdOutput: Sized {
     fn prepare_config(config: &mut Config);
 
     #[doc(hidden)]
-    fn from_run_result(output: Result<RunResult>) -> Result<Self>;
+    fn from_run_result(result: Result<RunResult>) -> Result<Self>;
 }
 
 /// Use this when you don't need any result from the child process.
@@ -15,8 +16,8 @@ impl CmdOutput for () {
     fn prepare_config(_config: &mut Config) {}
 
     #[doc(hidden)]
-    fn from_run_result(output: Result<RunResult>) -> Result<Self> {
-        output?;
+    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+        result?;
         Ok(())
     }
 }
@@ -32,9 +33,9 @@ impl CmdOutput for String {
     }
 
     #[doc(hidden)]
-    fn from_run_result(output: Result<RunResult>) -> Result<Self> {
-        let output = output?;
-        String::from_utf8(output.stdout).map_err(|_| Error::InvalidUtf8ToStdout)
+    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+        let result = result?;
+        String::from_utf8(result.stdout).map_err(|_| Error::InvalidUtf8ToStdout)
     }
 }
 
@@ -51,10 +52,24 @@ where
     }
 
     #[doc(hidden)]
-    fn from_run_result(output: Result<RunResult>) -> Result<Self> {
-        Ok(match output {
-            Ok(_) => T::from_run_result(output),
+    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+        Ok(match result {
+            Ok(_) => T::from_run_result(result),
             Err(error) => Err(error),
         })
+    }
+}
+
+/// todo
+pub struct Exit(pub ExitStatus);
+
+/// todo
+impl CmdOutput for Exit {
+    fn prepare_config(config: &mut Config) {
+        config.error_on_non_zero_exit_code = false;
+    }
+
+    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+        Ok(Exit(result?.exit_status))
     }
 }

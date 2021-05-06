@@ -79,6 +79,6 @@ pub struct LogCommand;
 impl CmdArgument for LogCommand {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.log_commands = true;
+        config.log_command = true;
     }
 }
