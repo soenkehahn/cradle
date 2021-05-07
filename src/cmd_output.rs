@@ -144,7 +144,8 @@ impl CmdOutput for Exit {
 }
 
 /// Please, see the [`CmdOutput`] implementation for [`Stderr`] below.
-pub struct Stderr(String);
+#[derive(Debug)]
+pub struct Stderr(pub String);
 
 /// [`Stderr`] allows to capture the `stderr` of a child process:
 ///
@@ -154,17 +155,17 @@ pub struct Stderr(String);
 /// // (`Exit` is used here to suppress panics caused by `ls`
 /// // terminating with a non-zero exit code.)
 /// let (Stderr(stderr), Exit(_)) = cmd!("ls does-not-exist");
-/// assert_eq!(stderr, "ls: cannot access 'does-not-exist': No such file or directory");
+/// assert_eq!(stderr, "ls: cannot access 'does-not-exist': No such file or directory\n");
 /// ```
-/// todo: example
+///
 /// todo: assume utf-8
 /// todo: don't relay to parent's stderr
-impl CmdOutput for i32 {
-    fn prepare_config(config: &mut Config) {
-        todo!()
-    }
+impl CmdOutput for Stderr {
+    fn prepare_config(_config: &mut Config) {}
 
     fn from_run_result(result: Result<RunResult>) -> Result<Self> {
-        todo!()
+        Ok(Stderr(
+            String::from_utf8(result?.stderr).map_err(|_| Error::InvalidUtf8ToStderr)?,
+        ))
     }
 }

@@ -132,13 +132,16 @@
 
 mod cmd_argument;
 mod cmd_output;
+mod collected_output;
 mod config;
 mod context;
 mod error;
 
+use collected_output::Waiter;
+
 pub use crate::{
     cmd_argument::{CmdArgument, LogCommand},
-    cmd_output::{CmdOutput, Exit},
+    cmd_output::{CmdOutput, Exit, Stderr},
     error::{Error, Result},
 };
 #[doc(hidden)]
@@ -193,6 +196,7 @@ where
 #[derive(Clone)]
 pub struct RunResult {
     stdout: Vec<u8>,
+    stderr: Vec<u8>,
     exit_status: ExitStatus,
 }
 
@@ -215,7 +219,8 @@ where
         .stderr(Stdio::piped())
         .spawn()
         .map_err(|error| Error::command_io_error(&command, error))?;
-    let collected_stdout = context.spawn_standard_stream_relaying(
+    let waiter = Waiter::spawn_standard_stream_relaying(
+        &context,
         config.clone(),
         child
             .stdout
@@ -229,12 +234,13 @@ where
     let exit_status = child
         .wait()
         .map_err(|error| Error::command_io_error(&command, error))?;
-    let collected_stdout = collected_stdout
+    let collected_output = waiter
         .join()
         .map_err(|error| Error::command_io_error(&command, error))?;
     check_exit_status(&config, exit_status)?;
     Ok(RunResult {
-        stdout: collected_stdout,
+        stdout: collected_output.stdout,
+        stderr: collected_output.stderr,
         exit_status,
     })
 }
@@ -627,11 +633,30 @@ mod tests {
         }
 
         #[test]
-        fn capture_stderr() {}
+        fn capture_stderr() {
+            let Stderr(stderr) = cmd!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["write to stderr"]
+            );
+            assert_eq!(stderr, "foo\n");
+        }
+
+        #[test]
+        fn assumes_stderr_is_utf_8() {
+            let result: Result<Stderr> = cmd!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["invalid utf-8 stderr"]
+            );
+            assert_eq!(
+                result.unwrap_err().to_string(),
+                "cmd!: invalid utf-8 written to stderr"
+            );
+        }
 
         #[test]
         #[ignore]
-        fn assumes_stderr_is_utf_8() {}
+        fn does_allow_invalid_utf_8_to_stderr_when_not_capturing() {}
+        // fixme: also for stdout?
 
         #[test]
         #[ignore]

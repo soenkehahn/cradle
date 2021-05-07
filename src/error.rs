@@ -13,6 +13,7 @@ pub enum Error {
         exit_status: ExitStatus,
     },
     InvalidUtf8ToStdout,
+    InvalidUtf8ToStderr,
 }
 
 impl Error {
@@ -33,6 +34,7 @@ impl Display for Error {
                 exit_status,
             } => write!(f, "{}:\n  exited with {}", full_command, exit_status),
             Error::InvalidUtf8ToStdout => write!(f, "cmd!: invalid utf-8 written to stdout"),
+            Error::InvalidUtf8ToStderr => write!(f, "cmd!: invalid utf-8 written to stderr"),
         }
     }
 }
