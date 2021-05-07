@@ -654,8 +654,12 @@ mod tests {
         }
 
         #[test]
-        #[ignore]
-        fn does_allow_invalid_utf_8_to_stderr_when_not_capturing() {}
+        fn does_allow_invalid_utf_8_to_stderr_when_not_capturing() {
+            cmd_unit!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["invalid utf-8 stderr"]
+            );
+        }
         // fixme: also for stdout?
 
         #[test]
