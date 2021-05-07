@@ -61,15 +61,16 @@ impl Waiter {
     }
 
     pub(crate) fn join(self) -> io::Result<CollectedOutput> {
-        let stdout = self
-            .stdout
-            .join()
-            .expect("stdout relaying thread panicked")?;
-        let stderr = self
-            .stderr
-            .join()
-            .expect("stderr relaying thread panicked")?;
-        Ok(CollectedOutput { stdout, stderr })
+        Ok(CollectedOutput {
+            stdout: self
+                .stdout
+                .join()
+                .expect("stdout relaying thread panicked")?,
+            stderr: self
+                .stderr
+                .join()
+                .expect("stderr relaying thread panicked")?,
+        })
     }
 }
 
