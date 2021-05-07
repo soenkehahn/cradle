@@ -158,17 +158,19 @@ pub struct Stderr(pub String);
 /// assert_eq!(stderr, "ls: cannot access 'does-not-exist': No such file or directory\n");
 /// ```
 ///
-/// Using [`Stderr`] will assume that output written to `stderr`
-/// is encoded as utf-8. Invalid utf-8 will cause errors.
+/// This assumes that the output written to `stderr` is encoded
+/// as utf-8, and will error otherwise.
 ///
 /// By default, what is written to `stderr` by the child process
 /// is relayed to the parent's `stderr`. When [`Stderr`] is used,
-/// this relaying of `stderr` is switched off.
+/// this is switched off.
 impl CmdOutput for Stderr {
+    #[doc(hidden)]
     fn prepare_config(config: &mut Config) {
         config.relay_stderr = false;
     }
 
+    #[doc(hidden)]
     fn from_run_result(result: Result<RunResult>) -> Result<Self> {
         Ok(Stderr(
             String::from_utf8(result?.stderr).map_err(|_| Error::InvalidUtf8ToStderr)?,
