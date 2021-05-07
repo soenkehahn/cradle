@@ -162,8 +162,8 @@ pub struct Stderr(pub String);
 /// as utf-8, and will error otherwise.
 ///
 /// By default, what is written to `stderr` by the child process
-/// is relayed to the parent's `stderr`. When [`Stderr`] is used,
-/// this is switched off.
+/// is relayed to the parent's `stderr`. However, when [`Stderr`]
+/// is used, this is switched off.
 impl CmdOutput for Stderr {
     #[doc(hidden)]
     fn prepare_config(config: &mut Config) {
