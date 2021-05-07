@@ -669,7 +669,7 @@ mod tests {
         }
 
         #[test]
-        fn do_not_relay_stderr_when_catpuring() {
+        fn does_not_relay_stderr_when_catpuring() {
             let context = Context::test();
             let Stderr(_) = cmd_with_context!(
                 context.clone(),
