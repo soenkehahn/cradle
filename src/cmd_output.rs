@@ -155,7 +155,7 @@ pub struct Stderr(pub String);
 /// // (`Exit` is used here to suppress panics caused by `ls`
 /// // terminating with a non-zero exit code.)
 /// let (Stderr(stderr), Exit(_)) = cmd!("ls does-not-exist");
-/// assert_eq!(stderr, "ls: cannot access 'does-not-exist': No such file or directory\n");
+/// assert!(stderr.contains("No such file or directory"));
 /// ```
 ///
 /// This assumes that the output written to `stderr` is encoded
