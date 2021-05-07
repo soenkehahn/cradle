@@ -4,6 +4,7 @@ pub struct Config {
     pub(crate) arguments: Vec<String>,
     pub(crate) log_command: bool,
     pub(crate) relay_stdout: bool,
+    pub(crate) relay_stderr: bool,
     pub(crate) error_on_non_zero_exit_code: bool,
 }
 
@@ -33,6 +34,7 @@ impl Default for Config {
             arguments: Vec::new(),
             log_command: false,
             relay_stdout: true,
+            relay_stderr: true,
             error_on_non_zero_exit_code: true,
         }
     }

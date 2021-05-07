@@ -142,3 +142,38 @@ impl CmdOutput for Exit {
         Ok(Exit(result?.exit_status))
     }
 }
+
+/// Please, see the [`CmdOutput`] implementation for [`Stderr`] below.
+#[derive(Debug)]
+pub struct Stderr(pub String);
+
+/// [`Stderr`] allows to capture the `stderr` of a child process:
+///
+/// ```
+/// use stir::{cmd, Exit, Stderr};
+///
+/// // (`Exit` is used here to suppress panics caused by `ls`
+/// // terminating with a non-zero exit code.)
+/// let (Stderr(stderr), Exit(_)) = cmd!("ls does-not-exist");
+/// assert!(stderr.contains("No such file or directory"));
+/// ```
+///
+/// This assumes that the output written to `stderr` is encoded
+/// as utf-8, and will error otherwise.
+///
+/// By default, what is written to `stderr` by the child process
+/// is relayed to the parent's `stderr`. However, when [`Stderr`]
+/// is used, this is switched off.
+impl CmdOutput for Stderr {
+    #[doc(hidden)]
+    fn prepare_config(config: &mut Config) {
+        config.relay_stderr = false;
+    }
+
+    #[doc(hidden)]
+    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+        Ok(Stderr(
+            String::from_utf8(result?.stderr).map_err(|_| Error::InvalidUtf8ToStderr)?,
+        ))
+    }
+}
