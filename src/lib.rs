@@ -365,6 +365,14 @@ mod tests {
                     vec!["invalid utf-8 stdout"]
                 );
             }
+
+            #[test]
+            fn invalid_utf8_to_stdout_is_allowed_when_not_captured() {
+                cmd_unit!(
+                    executable_path("stir_test_helper").to_str().unwrap(),
+                    vec!["invalid utf-8 stdout"]
+                );
+            }
         }
 
         mod result_types {
@@ -660,7 +668,6 @@ mod tests {
                 vec!["invalid utf-8 stderr"]
             );
         }
-        // fixme: also for stdout?
 
         #[test]
         #[ignore]
