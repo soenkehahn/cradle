@@ -161,7 +161,9 @@ pub struct Stderr(pub String);
 /// todo: assume utf-8
 /// todo: don't relay to parent's stderr
 impl CmdOutput for Stderr {
-    fn prepare_config(_config: &mut Config) {}
+    fn prepare_config(config: &mut Config) {
+        config.relay_stderr = false;
+    }
 
     fn from_run_result(result: Result<RunResult>) -> Result<Self> {
         Ok(Stderr(

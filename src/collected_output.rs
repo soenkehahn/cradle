@@ -22,6 +22,7 @@ impl Waiter {
         Stderr: Write + Send + Clone + 'static,
     {
         let mut context_clone = context.clone();
+        let config_clone = config.clone();
         let stdout_join_handle = thread::spawn(move || {
             let mut collected_stdout = Vec::new();
             let buffer = &mut [0; 256];
@@ -30,7 +31,7 @@ impl Waiter {
                 if (length) == 0 {
                     break;
                 }
-                if config.relay_stdout {
+                if config_clone.relay_stdout {
                     context_clone.stdout.write_all(&buffer[..length])?;
                 }
                 collected_stdout.extend(&buffer[..length]);
@@ -46,7 +47,9 @@ impl Waiter {
                 if (length) == 0 {
                     break;
                 }
-                context_clone.stderr.write_all(&buffer[..length])?;
+                if config.relay_stderr {
+                    context_clone.stderr.write_all(&buffer[..length])?;
+                }
                 collected_stderr.extend(&buffer[..length]);
             }
             Ok(collected_stderr)
