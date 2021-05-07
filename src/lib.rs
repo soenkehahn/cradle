@@ -137,8 +137,7 @@ mod config;
 mod context;
 mod error;
 
-use collected_output::Waiter;
-
+use crate::collected_output::Waiter;
 pub use crate::{
     cmd_argument::{CmdArgument, LogCommand},
     cmd_output::{CmdOutput, Exit, Stderr},
