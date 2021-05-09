@@ -484,6 +484,20 @@ mod tests {
         assert_eq!(stdout, "foo\n");
     }
 
+    #[test]
+    fn slices_as_arguments() {
+        let stdout: String = cmd!(&["echo", "foo"]);
+        assert_eq!(stdout, "foo\n");
+    }
+
+    #[test]
+    fn elements_in_slices_are_not_split_by_whitespace() {
+        in_temporary_directory(|| {
+            cmd_unit!("touch", &["foo bar"]);
+            assert!(PathBuf::from("foo bar").exists());
+        });
+    }
+
     mod strings {
         use super::*;
 

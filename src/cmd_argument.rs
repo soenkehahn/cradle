@@ -51,13 +51,25 @@ impl CmdArgument for Vec<&str> {
     }
 }
 
-/// Similar to the implementation above for [`Vec<&str>`].
+/// Similar to the implementation for [`Vec<&str>`].
 /// All elements of the given [`Vec`] are being passed into the child
 /// process as arguments, **without** splitting them by whitespace.
 impl CmdArgument for Vec<String> {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         config.arguments.extend(self);
+    }
+}
+
+/// Similar to the implementation for [`Vec<&str>`].
+/// All elements of the slice will be passed into the child
+/// process as arguments, **without** splitting them by whitespace.
+impl<const N: usize> CmdArgument for &[&str; N] {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        for argument in self.iter() {
+            config.arguments.push(argument.to_string());
+        }
     }
 }
 
