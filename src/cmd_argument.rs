@@ -86,7 +86,7 @@ impl CmdArgument for &[&str] {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         for argument in self.iter() {
-            config.arguments.push(argument.to_string());
+            config.arguments.push((*argument).to_string());
         }
     }
 }
