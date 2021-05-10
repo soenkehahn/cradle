@@ -503,7 +503,7 @@ mod tests {
     #[rustversion::since(1.51)]
     #[test]
     fn arrays_as_arguments() {
-        let args: &[&str; 2] = &["echo", "foo"];
+        let args: [&str; 2] = ["echo", "foo"];
         let stdout: String = cmd!(args);
         assert_eq!(stdout, "foo\n");
     }
@@ -512,7 +512,7 @@ mod tests {
     #[test]
     fn elements_in_arrays_are_not_split_by_whitespace() {
         in_temporary_directory(|| {
-            let args: &[&str; 1] = &["foo bar"];
+            let args: [&str; 1] = ["foo bar"];
             cmd_unit!("touch", args);
             assert!(PathBuf::from("foo bar").exists());
         });

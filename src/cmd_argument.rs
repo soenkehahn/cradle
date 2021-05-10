@@ -68,11 +68,11 @@ impl CmdArgument for Vec<String> {
 /// ```
 /// use stir::cmd;
 ///
-/// let output: String = cmd!(&["echo", "foo"]);
+/// let output: String = cmd!(["echo", "foo"]);
 /// assert_eq!(output, "foo\n");
 /// ```
 #[rustversion::since(1.51)]
-impl<const N: usize> CmdArgument for &[&str; N] {
+impl<const N: usize> CmdArgument for [&str; N] {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         self[..].prepare_config(config);
