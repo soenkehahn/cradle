@@ -62,10 +62,27 @@ impl CmdArgument for Vec<String> {
 }
 
 /// Similar to the implementation for [`Vec<&str>`].
-/// All elements of the slice will be passed into the child
+/// All elements of the array will be passed into the child
 /// process as arguments, **without** splitting them by whitespace.
+///
+/// ```
+/// use stir::cmd;
+///
+/// let output: String = cmd!(&["echo", "foo"]);
+/// assert_eq!(output, "foo\n");
+/// ```
 #[rustversion::since(1.51)]
 impl<const N: usize> CmdArgument for &[&str; N] {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        self[..].prepare_config(config);
+    }
+}
+
+/// Similar to the implementation for [`Vec<&str>`].
+/// All elements of the slice will be passed into the child
+/// process as arguments, **without** splitting them by whitespace.
+impl CmdArgument for &[&str] {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         for argument in self.iter() {
