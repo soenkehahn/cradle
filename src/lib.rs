@@ -484,12 +484,14 @@ mod tests {
         assert_eq!(stdout, "foo\n");
     }
 
+    #[rustversion::since(1.51)]
     #[test]
     fn slices_as_arguments() {
         let stdout: String = cmd!(&["echo", "foo"]);
         assert_eq!(stdout, "foo\n");
     }
 
+    #[rustversion::since(1.51)]
     #[test]
     fn elements_in_slices_are_not_split_by_whitespace() {
         in_temporary_directory(|| {

@@ -64,6 +64,7 @@ impl CmdArgument for Vec<String> {
 /// Similar to the implementation for [`Vec<&str>`].
 /// All elements of the slice will be passed into the child
 /// process as arguments, **without** splitting them by whitespace.
+#[rustversion::since(1.51)]
 impl<const N: usize> CmdArgument for &[&str; N] {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
