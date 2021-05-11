@@ -22,18 +22,40 @@
 //! ```
 //!
 //! Arguments of type [`&str`] will be split by whitespace into words.
-//! You can also pass in values of type [`Vec<&str>`]. All elements will
+//! You can also pass in arrays of type [`[&str]`]. All elements will
 //! be used as arguments:
 //!
 //! ```
 //! use stir::cmd;
 //!
-//! let stdout: String = cmd!("echo", vec!["foo", "bar"]);
+//! # #[rustversion::since(1.51)]
+//! # fn test() {
+//! let stdout: String = cmd!("echo", ["foo", "bar"]);
 //! assert_eq!(stdout, "foo bar\n");
+//! # }
+//! # #[rustversion::before(1.51)]
+//! # fn test() {}
+//! # test();
 //! ```
 //!
-//! Elements of vectors are **not** being split by whitespace, so you can
+//! Elements of arrays are **not** being split by whitespace, so you can
 //! use that to avoid whitespace splitting:
+//!
+//! ```
+//! use std::path::PathBuf;
+//! use stir::cmd;
+//!
+//! # #[rustversion::since(1.51)]
+//! # fn test() {
+//! let _: String = cmd!("touch", ["filename with spaces"]);
+//! assert!(PathBuf::from("filename with spaces").exists());
+//! # }
+//! # #[rustversion::before(1.51)]
+//! # fn test() {}
+//! # test();
+//! ```
+//!
+//! Before rust version `1.51`, instead of arrays, please use [`Vec<&str>`]:
 //!
 //! ```
 //! use std::path::PathBuf;
@@ -485,6 +507,58 @@ mod tests {
         let args: Vec<&str> = vec!["foo"];
         let stdout: String = cmd!("echo", args);
         assert_eq!(stdout, "foo\n");
+    }
+
+    #[rustversion::since(1.51)]
+    #[test]
+    fn arrays_as_arguments() {
+        let args: [&str; 2] = ["echo", "foo"];
+        let stdout: String = cmd!(args);
+        assert_eq!(stdout, "foo\n");
+    }
+
+    #[rustversion::since(1.51)]
+    #[test]
+    fn elements_in_arrays_are_not_split_by_whitespace() {
+        in_temporary_directory(|| {
+            let args: [&str; 1] = ["foo bar"];
+            cmd_unit!("touch", args);
+            assert!(PathBuf::from("foo bar").exists());
+        });
+    }
+
+    #[rustversion::since(1.51)]
+    #[test]
+    fn array_refs_as_arguments() {
+        let args: &[&str; 2] = &["echo", "foo"];
+        let stdout: String = cmd!(args);
+        assert_eq!(stdout, "foo\n");
+    }
+
+    #[rustversion::since(1.51)]
+    #[test]
+    fn elements_in_array_refs_are_not_split_by_whitespace() {
+        in_temporary_directory(|| {
+            let args: &[&str; 1] = &["foo bar"];
+            cmd_unit!("touch", args);
+            assert!(PathBuf::from("foo bar").exists());
+        });
+    }
+
+    #[test]
+    fn slices_as_arguments() {
+        let args: &[&str] = &["echo", "foo"];
+        let stdout: String = cmd!(args);
+        assert_eq!(stdout, "foo\n");
+    }
+
+    #[test]
+    fn elements_in_slices_are_not_split_by_whitespace() {
+        in_temporary_directory(|| {
+            let args: &[&str] = &["foo bar"];
+            cmd_unit!("touch", args);
+            assert!(PathBuf::from("foo bar").exists());
+        });
     }
 
     mod strings {
