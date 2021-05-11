@@ -4,6 +4,9 @@ version = "0.0.0"
 authors = ["Sönke Hahn <soenkehahn@gmail.com>"]
 edition = "2018"
 
+[dependencies]
+rustversion = "1.0.4"
+
 [dev-dependencies]
 executable-path = "1.0.0"
 tempfile = "3.2.0"
@@ -28,6 +31,3 @@ required-features = ["test_executables"]
 
 [features]
 test_executables = ["gag", "executable-path"]
-
-[dependencies]
-rustversion = "1.0.4"
