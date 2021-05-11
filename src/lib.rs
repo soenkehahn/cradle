@@ -207,7 +207,7 @@ where
     T: CmdOutput,
 {
     <T as CmdOutput>::prepare_config(&mut config);
-    match T::from_run_result(run_cmd_safe(context, config)) {
+    match T::from_run_result(&config, run_cmd_safe(context, &config)) {
         Ok(result) => result,
         Err(error) => panic!("cmd!: {}", error),
     }
@@ -223,7 +223,7 @@ pub struct RunResult {
 
 fn run_cmd_safe<Stdout, Stderr>(
     mut context: Context<Stdout, Stderr>,
-    config: Config,
+    config: &Config,
 ) -> Result<RunResult>
 where
     Stdout: Write + Clone + Send + 'static,
@@ -505,13 +505,15 @@ mod tests {
 
             #[test]
             fn invalid_utf8_stdout() {
-                let result: Result<String> = cmd!(
-                    executable_path("stir_test_helper").to_str().unwrap(),
-                    vec!["invalid utf-8 stdout"]
-                );
+                let test_helper = executable_path("stir_test_helper");
+                let test_helper = test_helper.to_str().unwrap();
+                let result: Result<String> = cmd!(test_helper, vec!["invalid utf-8 stdout"]);
                 assert_eq!(
                     result.unwrap_err().to_string(),
-                    "invalid utf-8 written to stdout"
+                    format!(
+                        "{} 'invalid utf-8 stdout':\n  invalid utf-8 written to stdout",
+                        test_helper
+                    )
                 );
             }
         }
@@ -694,6 +696,7 @@ mod tests {
 
     mod stderr {
         use super::*;
+        use pretty_assertions::assert_eq;
         use std::{thread, time::Duration};
 
         #[test]
@@ -760,13 +763,15 @@ mod tests {
 
         #[test]
         fn assumes_stderr_is_utf_8() {
-            let result: Result<Stderr> = cmd!(
-                executable_path("stir_test_helper").to_str().unwrap(),
-                vec!["invalid utf-8 stderr"]
-            );
+            let test_helper = executable_path("stir_test_helper");
+            let test_helper = test_helper.to_str().unwrap();
+            let result: Result<Stderr> = cmd!(test_helper, vec!["invalid utf-8 stderr"]);
             assert_eq!(
                 result.unwrap_err().to_string(),
-                "invalid utf-8 written to stderr"
+                format!(
+                    "{} 'invalid utf-8 stderr':\n  invalid utf-8 written to stderr",
+                    test_helper
+                )
             );
         }
 

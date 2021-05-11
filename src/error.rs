@@ -13,8 +13,12 @@ pub enum Error {
         full_command: String,
         exit_status: ExitStatus,
     },
-    InvalidUtf8ToStdout,
-    InvalidUtf8ToStderr,
+    InvalidUtf8ToStdout {
+        full_command: String,
+    },
+    InvalidUtf8ToStderr {
+        full_command: String,
+    },
 }
 
 impl Error {
@@ -34,8 +38,12 @@ impl Display for Error {
                 full_command,
                 exit_status,
             } => write!(f, "{}:\n  exited with {}", full_command, exit_status),
-            Error::InvalidUtf8ToStdout => write!(f, "invalid utf-8 written to stdout"),
-            Error::InvalidUtf8ToStderr => write!(f, "invalid utf-8 written to stderr"),
+            Error::InvalidUtf8ToStdout { full_command } => {
+                write!(f, "{}:\n  invalid utf-8 written to stdout", full_command)
+            }
+            Error::InvalidUtf8ToStderr { full_command } => {
+                write!(f, "{}:\n  invalid utf-8 written to stderr", full_command)
+            }
         }
     }
 }

@@ -24,7 +24,7 @@ pub trait CmdOutput: Sized {
     fn prepare_config(config: &mut Config);
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self>;
+    fn from_run_result(config: &Config, result: Result<RunResult>) -> Result<Self>;
 }
 
 /// Use this when you don't need any result from the child process.
@@ -33,7 +33,7 @@ impl CmdOutput for () {
     fn prepare_config(_config: &mut Config) {}
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+    fn from_run_result(_config: &Config, result: Result<RunResult>) -> Result<Self> {
         result?;
         Ok(())
     }
@@ -50,9 +50,11 @@ impl CmdOutput for String {
     }
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+    fn from_run_result(config: &Config, result: Result<RunResult>) -> Result<Self> {
         let result = result?;
-        String::from_utf8(result.stdout).map_err(|_| Error::InvalidUtf8ToStdout)
+        String::from_utf8(result.stdout).map_err(|_| Error::InvalidUtf8ToStdout {
+            full_command: config.full_command(),
+        })
     }
 }
 
@@ -69,9 +71,9 @@ where
     }
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+    fn from_run_result(config: &Config, result: Result<RunResult>) -> Result<Self> {
         Ok(match result {
-            Ok(_) => T::from_run_result(result),
+            Ok(_) => T::from_run_result(config, result),
             Err(error) => Err(error),
         })
     }
@@ -89,9 +91,9 @@ macro_rules! tuple_impl {
             }
 
             #[doc(hidden)]
-            fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+            fn from_run_result(config: &Config, result: Result<RunResult>) -> Result<Self> {
                 Ok((
-                    $($generics::from_run_result(result.clone())?,)+
+                    $($generics::from_run_result(config, result.clone())?,)+
                 ))
             }
         }
@@ -138,7 +140,7 @@ impl CmdOutput for Exit {
     }
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+    fn from_run_result(_config: &Config, result: Result<RunResult>) -> Result<Self> {
         Ok(Exit(result?.exit_status))
     }
 }
@@ -171,9 +173,11 @@ impl CmdOutput for Stderr {
     }
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
-        Ok(Stderr(
-            String::from_utf8(result?.stderr).map_err(|_| Error::InvalidUtf8ToStderr)?,
-        ))
+    fn from_run_result(config: &Config, result: Result<RunResult>) -> Result<Self> {
+        Ok(Stderr(String::from_utf8(result?.stderr).map_err(|_| {
+            Error::InvalidUtf8ToStderr {
+                full_command: config.full_command(),
+            }
+        })?))
     }
 }
