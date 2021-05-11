@@ -100,9 +100,9 @@
 //! ```
 //! use stir::{cmd, Exit};
 //!
-//! let (Exit(status), stdout): (_, String) = cmd!("which ls");
+//! let (Exit(status), stdout): (_, String) = cmd!("echo foo");
 //! assert_eq!(status.code(), Some(0));
-//! assert_eq!(stdout, "/usr/bin/ls");
+//! assert_eq!(stdout, "foo");
 //! ```
 //!
 //! See the implementations for [`CmdOutput`] for all the supported types.
