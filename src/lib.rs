@@ -277,13 +277,16 @@ mod tests {
 
     fn in_temporary_directory<F>(f: F)
     where
-        F: FnOnce(),
+        F: FnOnce() + std::panic::UnwindSafe,
     {
         let temp_dir = TempDir::new().unwrap();
         let original_working_directory = current_dir().unwrap();
         set_current_dir(&temp_dir).unwrap();
-        f();
+        let result = std::panic::catch_unwind(|| {
+            f();
+        });
         set_current_dir(original_working_directory).unwrap();
+        result.unwrap();
     }
 
     macro_rules! cmd_with_context_unit {
