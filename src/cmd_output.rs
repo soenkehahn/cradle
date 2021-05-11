@@ -16,7 +16,7 @@ use std::process::ExitStatus;
 ///
 /// let (stdout, Exit(status)) = cmd!("echo foo");
 /// let _: String = stdout;
-/// assert_eq!(stdout, "foo\n");
+/// assert_eq!(stdout, "foo");
 /// assert!(status.success());
 /// ```
 pub trait CmdOutput: Sized {
@@ -42,7 +42,17 @@ impl CmdOutput for () {
 /// Returns what the child process writes to `stdout`, interpreted as utf-8,
 /// collected into a string. This also suppresses output of the child's `stdout`
 /// to the parent's `stdout`. (Which would be the default when not using [`String`]
-/// as the return value.)
+/// as the return value.) Also, this trims trailing `\n` or `\r\n` characters, if
+/// they exist:
+///
+/// ```
+/// use stir::cmd;
+///
+/// let output: String = cmd!("echo foo");
+/// assert_eq!(output, "foo"); // trims '\n' character at the end
+/// let output: String = cmd!("echo", ["\nfoo "]);
+/// assert_eq!(output, "\nfoo "); // does not trim other whitespace
+/// ```
 impl CmdOutput for String {
     #[doc(hidden)]
     fn prepare_config(config: &mut Config) {
@@ -52,7 +62,47 @@ impl CmdOutput for String {
     #[doc(hidden)]
     fn from_run_result(result: Result<RunResult>) -> Result<Self> {
         let result = result?;
-        String::from_utf8(result.stdout).map_err(|_| Error::InvalidUtf8ToStdout)
+        Ok(trim_trailing_newline(
+            String::from_utf8(result.stdout).map_err(|_| Error::InvalidUtf8ToStdout)?,
+        ))
+    }
+}
+
+fn trim_trailing_newline(input: String) -> String {
+    if input.as_bytes().last() == Some(&b'\n') {
+        if input.as_bytes()[input.len() - 2] == b'\r' {
+            input[..input.len() - 2].to_string()
+        } else {
+            input[..input.len() - 1].to_string()
+        }
+    } else {
+        input
+    }
+}
+
+/// Please, see the [`CmdOutput`] implementation for [`UntrimmedStdout`] below.
+pub struct UntrimmedStdout(pub String);
+
+/// Returns what the child process writes to `stdout`, interpreted as utf-8,
+/// collected into a string. This also suppresses output of the child's `stdout`
+/// to the parent's `stdout`, which otherwise would be done by default.
+/// Contrary to [`String`] this does **not** trim trailing `\n` or `\r\n` characters:
+///
+/// ```
+/// use stir::{cmd, UntrimmedStdout};
+///
+/// let UntrimmedStdout(output) = cmd!("echo foo");
+/// assert_eq!(output, "foo\n");
+/// ```
+impl CmdOutput for UntrimmedStdout {
+    #[doc(hidden)]
+    fn prepare_config(_config: &mut Config) {}
+
+    #[doc(hidden)]
+    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+        Ok(UntrimmedStdout(
+            String::from_utf8(result?.stdout).map_err(|_| Error::InvalidUtf8ToStdout)?,
+        ))
     }
 }
 
@@ -175,5 +225,40 @@ impl CmdOutput for Stderr {
         Ok(Stderr(
             String::from_utf8(result?.stderr).map_err(|_| Error::InvalidUtf8ToStderr)?,
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod trim_trailing_newline {
+        use super::*;
+
+        macro_rules! test {
+            ($name:ident, $input:expr, $expected:expr) => {
+                #[test]
+                fn $name() {
+                    assert_eq!(trim_trailing_newline($input.to_string()), $expected);
+                }
+            };
+        }
+
+        test!(trims_trailing_newline, "foo\n", "foo");
+        test!(
+            does_not_modify_strings_without_trailing_newline,
+            "foo",
+            "foo"
+        );
+        test!(trims_trailing_carriage_return_and_newline, "foo\r\n", "foo");
+        test!(does_not_trim_other_whitespace_at_the_end, "foo ", "foo ");
+        test!(does_not_trim_whitespace_at_the_start, " foo", " foo");
+        test!(
+            does_not_trim_whitespace_at_the_start_with_trailing_newline,
+            " foo\n",
+            " foo"
+        );
+        test!(does_not_trim_trailing_carriage_return, "foo\r", "foo\r");
+        test!(unicode_values, "😂", "😂");
     }
 }

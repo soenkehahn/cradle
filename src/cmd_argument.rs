@@ -69,7 +69,7 @@ impl CmdArgument for Vec<String> {
 /// use stir::cmd;
 ///
 /// let output: String = cmd!(["echo", "foo"]);
-/// assert_eq!(output, "foo\n");
+/// assert_eq!(output, "foo");
 /// ```
 #[rustversion::since(1.51)]
 impl<const N: usize> CmdArgument for [&str; N] {

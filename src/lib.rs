@@ -4,7 +4,7 @@
 //! ```
 //! use stir::cmd;
 //!
-//! let stdout: String = cmd!("echo -n foo");
+//! let stdout: String = cmd!("echo foo");
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -18,11 +18,11 @@
 //! use stir::cmd;
 //!
 //! let stdout: String = cmd!("echo", "foo", "bar");
-//! assert_eq!(stdout, "foo bar\n");
+//! assert_eq!(stdout, "foo bar");
 //! ```
 //!
 //! Arguments of type [`&str`] will be split by whitespace into words.
-//! You can also pass in arrays of type [`[&str]`]. All elements will
+//! You can also pass in arrays of type `[&str]`. All elements will
 //! be used as arguments:
 //!
 //! ```
@@ -31,7 +31,7 @@
 //! # #[rustversion::since(1.51)]
 //! # fn test() {
 //! let stdout: String = cmd!("echo", ["foo", "bar"]);
-//! assert_eq!(stdout, "foo bar\n");
+//! assert_eq!(stdout, "foo bar");
 //! # }
 //! # #[rustversion::before(1.51)]
 //! # fn test() {}
@@ -78,11 +78,52 @@
 //! use stir::cmd;
 //!
 //! let output: String = cmd!("echo foo");
-//! assert_eq!(output, "foo\n");
+//! assert_eq!(output, "foo");
 //! ```
 //!
-//! (By default, the child's `stdout` is written to the parent's `stdout`.
-//! Using `String` as the return type suppresses that.)
+//! If instead you want to know what exit code the process
+//! terminated with, you can use [`Exit`]:
+//!
+//! ```
+//! use stir::{cmd, Exit};
+//!
+//! let Exit(status) = cmd!("which foo"); // 'foo' does not exist
+//! assert_eq!(status.code(), Some(1));
+//! ```
+//!
+//! [`CmdOutput`] is also implemented for tuples -- as long as all
+//! components also implement it. So you can combine output types,
+//! to get exactly the information from your child process, that
+//! you want. For example the following code retrieves both the
+//! exit code **and** what's written to `stdout`:
+//!
+//! ```
+//! use stir::{cmd, Exit};
+//!
+//! let (Exit(status), stdout): (_, String) = cmd!("which ls");
+//! assert_eq!(status.code(), Some(0));
+//! assert_eq!(stdout, "/usr/bin/ls");
+//! ```
+//!
+//! See the implementations for [`CmdOutput`] for all the supported types.
+//!
+//! ## `stdout` trimming
+//!
+//! By default, if the `stdout` ends in `\n` or `\r\n`, those
+//! characters are removed -- since that's often convenient.
+//! For example in the following code, the child process writes
+//! `/usr/bin/ls\n` to `stdout`, which is not a valid path.
+//! [`cmd!`] however returns the valid path `/usr/bin/ls`:
+//!
+//! ```
+//! use std::path::PathBuf;
+//! use stir::cmd;
+//!
+//! let output: String = cmd!("which ls");
+//! assert!(PathBuf::from(output).exists());
+//! ```
+//!
+//! If you want to avoid newline trimming, use [`UntrimmedStdout`].
 //!
 //! If you don't want any result from [`cmd!`], you can use `()`
 //! as the return value:
@@ -103,7 +144,19 @@
 //! cmd_unit!("touch foo");
 //! ```
 //!
-//! See the implementations for [`CmdOutput`] for all the supported types.
+//! ## Relaying to the parent's `stdout` and `stderr`
+//!
+//! By default, the child's `stdout` and `stderr` is written to the
+//! parent's `stdout` and `stderr` respectively.
+//! However, capturing the child processes' `stdout` or `stderr`
+//! into variables in memory -- using e.g. [`String`] or [`Stderr`]
+//! as return types -- suppresses this.
+//! More specifically, capturing the child's `stdout` will suppress
+//! relaying it to the parent's `stdout`, without affecting how
+//! `stderr` is handled.
+//! And capturing the child's `stderr` will suppress
+//! relaying it to the parent's `stderr`, without affecting how
+//! `stdout` is handled.
 //!
 //! # Error Handling
 //!
@@ -149,7 +202,7 @@
 //! );
 //!
 //! let result: Result<String> = cmd!("echo foo");
-//! assert_eq!(result, Ok("foo\n".to_string()));
+//! assert_eq!(result, Ok("foo".to_string()));
 //! ```
 
 mod cmd_argument;
@@ -162,7 +215,7 @@ mod error;
 use crate::collected_output::Waiter;
 pub use crate::{
     cmd_argument::{CmdArgument, LogCommand},
-    cmd_output::{CmdOutput, Exit, Stderr},
+    cmd_output::{CmdOutput, Exit, Stderr, UntrimmedStdout},
     error::{Error, Result},
 };
 #[doc(hidden)]
@@ -419,7 +472,7 @@ mod tests {
 
             #[test]
             fn combine_ok_with_other_outputs() {
-                let result: Result<String> = cmd!("echo -n foo");
+                let result: Result<String> = cmd!("echo foo");
                 assert_eq!(result, Ok("foo".to_string()));
             }
 
@@ -485,28 +538,22 @@ mod tests {
     }
 
     #[test]
-    fn allows_to_retrieve_stdout() {
-        let stdout: String = cmd!("echo foo");
-        assert_eq!(stdout, "foo\n");
-    }
-
-    #[test]
     fn command_and_argument_as_separate_ref_str() {
         let stdout: String = cmd!("echo", "foo");
-        assert_eq!(stdout, "foo\n");
+        assert_eq!(stdout, "foo");
     }
 
     #[test]
     fn multiple_arguments_as_ref_str() {
         let stdout: String = cmd!("echo", "foo", "bar");
-        assert_eq!(stdout, "foo bar\n");
+        assert_eq!(stdout, "foo bar");
     }
 
     #[test]
     fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
         let args: Vec<&str> = vec!["foo"];
         let stdout: String = cmd!("echo", args);
-        assert_eq!(stdout, "foo\n");
+        assert_eq!(stdout, "foo");
     }
 
     #[rustversion::since(1.51)]
@@ -514,7 +561,7 @@ mod tests {
     fn arrays_as_arguments() {
         let args: [&str; 2] = ["echo", "foo"];
         let stdout: String = cmd!(args);
-        assert_eq!(stdout, "foo\n");
+        assert_eq!(stdout, "foo");
     }
 
     #[rustversion::since(1.51)]
@@ -532,7 +579,7 @@ mod tests {
     fn array_refs_as_arguments() {
         let args: &[&str; 2] = &["echo", "foo"];
         let stdout: String = cmd!(args);
-        assert_eq!(stdout, "foo\n");
+        assert_eq!(stdout, "foo");
     }
 
     #[rustversion::since(1.51)]
@@ -549,7 +596,7 @@ mod tests {
     fn slices_as_arguments() {
         let args: &[&str] = &["echo", "foo"];
         let stdout: String = cmd!(args);
-        assert_eq!(stdout, "foo\n");
+        assert_eq!(stdout, "foo");
     }
 
     #[test]
@@ -574,7 +621,7 @@ mod tests {
         fn splits_strings_into_words() {
             let command: String = "echo foo".to_string();
             let output: String = cmd!(command);
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "foo");
         }
 
         #[test]
@@ -582,14 +629,14 @@ mod tests {
             let command: String = "echo".to_string();
             let argument: String = "foo".to_string();
             let output: String = cmd!(command, argument);
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "foo");
         }
 
         #[test]
         fn mix_ref_str_and_string() {
             let argument: String = "foo".to_string();
             let output: String = cmd!("echo", argument);
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "foo");
         }
 
         #[test]
@@ -655,6 +702,31 @@ mod tests {
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
             let _: Result<String> = cmd_with_context!(context.clone(), "echo foo");
+            assert_eq!(context.stdout(), "");
+        }
+
+        #[test]
+        fn allows_to_retrieve_stdout() {
+            let stdout: String = cmd!("echo foo");
+            assert_eq!(stdout, "foo");
+        }
+
+        #[test]
+        fn trims_trailing_newline_of_stdout() {
+            let stdout: String = cmd!("echo foo");
+            assert_eq!(stdout, "foo");
+        }
+
+        #[test]
+        fn allows_to_retrieve_untrimmed_stdout() {
+            let UntrimmedStdout(stdout) = cmd!("echo foo");
+            assert_eq!(stdout, "foo\n");
+        }
+
+        #[test]
+        fn does_not_relay_stdout_when_collecting_into_untrimmed_stdout() {
+            let context = Context::test();
+            let _: String = cmd_with_context!(context.clone(), "echo foo");
             assert_eq!(context.stdout(), "");
         }
     }
@@ -818,7 +890,7 @@ mod tests {
                 vec!["output foo and exit with 42"]
             );
             let _: String = output;
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "foo");
             assert_eq!(status.code(), Some(42));
         }
 
@@ -829,7 +901,7 @@ mod tests {
                 vec!["output foo and exit with 42"]
             );
             let _: String = output;
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "foo");
             assert_eq!(status.code(), Some(42));
         }
 
@@ -837,7 +909,7 @@ mod tests {
         fn result_of_tuple() {
             let result: Result<(String, Exit)> = cmd!("echo foo");
             let (output, Exit(status)) = result.unwrap();
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "foo");
             assert!(status.success());
         }
 
@@ -853,7 +925,7 @@ mod tests {
         fn tuple_containing_result() {
             let (result, output): (Result<Exit>, String) = cmd!("echo foo");
             assert!(result.unwrap().0.success());
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "foo");
         }
 
         #[test]
@@ -867,7 +939,7 @@ mod tests {
         fn three_tuples() {
             let (result, output, Exit(status)): (Result<()>, String, Exit) = cmd!("echo foo");
             assert!(result.is_ok());
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "foo");
             assert_eq!(status.code(), Some(0));
         }
     }
