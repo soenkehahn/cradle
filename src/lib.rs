@@ -464,7 +464,11 @@ mod tests {
                 let result: Result<()> = cmd!("foo bar");
                 assert_eq!(
                     result.unwrap_err().to_string(),
-                    "foo bar:\n  No such file or directory (os error 2)"
+                    if cfg!(target_os = "windows") {
+                        "foo bar:\n  The system cannot find the file specified. (os error 2)"
+                    } else {
+                        "foo bar:\n  No such file or directory (os error 2)"
+                    }
                 );
             }
 
@@ -483,12 +487,14 @@ mod tests {
             #[test]
             fn executable_cannot_be_found() {
                 let result: Result<()> = cmd!("does-not-exist");
-                let expected = if cfg!(target_os = "windows") {
-                    "does-not-exist:\n  The system cannot find the file specified. (os error 2)"
-                } else {
-                    "does-not-exist:\n  No such file or directory (os error 2)"
-                };
-                assert_eq!(result.unwrap_err().to_string(), expected);
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    if cfg!(target_os = "windows") {
+                        "does-not-exist:\n  The system cannot find the file specified. (os error 2)"
+                    } else {
+                        "does-not-exist:\n  No such file or directory (os error 2)"
+                    }
+                );
             }
 
             #[test]
