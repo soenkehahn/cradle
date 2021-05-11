@@ -50,8 +50,14 @@ impl CmdOutput for () {
 ///
 /// let output: String = cmd!("echo foo");
 /// assert_eq!(output, "foo"); // trims '\n' character at the end
+/// # #[rustversion::since(1.51)]
+/// # fn test() {
 /// let output: String = cmd!("echo", ["\nfoo "]);
 /// assert_eq!(output, "\nfoo "); // does not trim other whitespace
+/// # }
+/// # #[rustversion::before(1.51)]
+/// # fn test() {}
+/// # test();
 /// ```
 impl CmdOutput for String {
     #[doc(hidden)]
