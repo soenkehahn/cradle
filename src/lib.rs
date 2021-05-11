@@ -22,18 +22,40 @@
 //! ```
 //!
 //! Arguments of type [`&str`] will be split by whitespace into words.
-//! You can also pass in values of type [`Vec<&str>`]. All elements will
+//! You can also pass in arrays of type [`[&str]`]. All elements will
 //! be used as arguments:
 //!
 //! ```
 //! use stir::cmd;
 //!
-//! let stdout: String = cmd!("echo", vec!["foo", "bar"]);
+//! # #[rustversion::since(1.51)]
+//! # fn test() {
+//! let stdout: String = cmd!("echo", ["foo", "bar"]);
 //! assert_eq!(stdout, "foo bar\n");
+//! # }
+//! # #[rustversion::before(1.51)]
+//! # fn test() {}
+//! # test();
 //! ```
 //!
-//! Elements of vectors are **not** being split by whitespace, so you can
+//! Elements of arrays are **not** being split by whitespace, so you can
 //! use that to avoid whitespace splitting:
+//!
+//! ```
+//! use std::path::PathBuf;
+//! use stir::cmd;
+//!
+//! # #[rustversion::since(1.51)]
+//! # fn test() {
+//! let _: String = cmd!("touch", ["filename with spaces"]);
+//! assert!(PathBuf::from("filename with spaces").exists());
+//! # }
+//! # #[rustversion::before(1.51)]
+//! # fn test() {}
+//! # test();
+//! ```
+//!
+//! Before rust version `1.51`, instead of arrays, please use [`Vec<&str>`]:
 //!
 //! ```
 //! use std::path::PathBuf;
