@@ -66,9 +66,9 @@ impl CmdArgument for Vec<String> {
 /// process as arguments, **without** splitting them by whitespace.
 ///
 /// ```
-/// use stir::cmd;
+/// use stir::{cmd, Stdout};
 ///
-/// let output: String = cmd!(["echo", "foo"]);
+/// let Stdout(output) = cmd!(["echo", "foo"]);
 /// assert_eq!(output, "foo\n");
 /// ```
 #[rustversion::since(1.51)]
