@@ -2,7 +2,7 @@
 //! it easy to run commands from rust programs.
 //!
 //! ```
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! let stdout: String = cmd!("echo -n foo");
 //! assert_eq!(stdout, "foo");
@@ -15,7 +15,7 @@
 //! trait:
 //!
 //! ```
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! let stdout: String = cmd!("echo", "foo", "bar");
 //! assert_eq!(stdout, "foo bar\n");
@@ -26,7 +26,7 @@
 //! be used as arguments:
 //!
 //! ```
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! # #[rustversion::since(1.51)]
 //! # fn test() {
@@ -43,7 +43,7 @@
 //!
 //! ```
 //! use std::path::PathBuf;
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! # #[rustversion::since(1.51)]
 //! # fn test() {
@@ -59,7 +59,7 @@
 //!
 //! ```
 //! use std::path::PathBuf;
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! let _: String = cmd!("touch", vec!["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
@@ -75,7 +75,7 @@
 //! child process writes to `stdout`:
 //!
 //! ```
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! let output: String = cmd!("echo foo");
 //! assert_eq!(output, "foo\n");
@@ -88,7 +88,7 @@
 //! as the return value:
 //!
 //! ```
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! let () = cmd!("touch foo");
 //! ```
@@ -98,7 +98,7 @@
 //! type down to `()`:
 //!
 //! ```
-//! use stir::cmd_unit;
+//! use stir::*;
 //!
 //! cmd_unit!("touch foo");
 //! ```
@@ -116,7 +116,7 @@
 //! For example:
 //!
 //! ``` should_panic
-//! use stir::cmd_unit;
+//! use stir::*;
 //!
 //! // panics with "false:\n  exited with exit code: 1"
 //! cmd_unit!("false");
@@ -126,7 +126,7 @@
 //! a return type of [`cmd!`]:
 //!
 //! ```
-//! use stir::{cmd, Exit};
+//! use stir::*;
 //!
 //! let Exit(exit_status) = cmd!("false");
 //! assert_eq!(exit_status.code(), Some(1));
@@ -138,7 +138,7 @@
 //! Here's some examples:
 //!
 //! ```
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! let result: Result<(), stir::Error> = cmd!("false");
 //! let error_message = format!("{}", result.unwrap_err());

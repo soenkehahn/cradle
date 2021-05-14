@@ -12,7 +12,7 @@ use std::process::ExitStatus;
 /// [`ExitStatus`]:
 ///
 /// ```
-/// use stir::{cmd, Exit};
+/// use stir::*;
 ///
 /// let (stdout, Exit(status)) = cmd!("echo foo");
 /// let _: String = stdout;
@@ -109,7 +109,7 @@ pub struct Exit(pub ExitStatus);
 /// retrieve the [`ExitStatus`] of the child process:
 ///
 /// ```
-/// use stir::{cmd, Exit};
+/// use stir::*;
 ///
 /// let Exit(status) = cmd!("echo foo");
 /// assert!(status.success());
@@ -119,7 +119,7 @@ pub struct Exit(pub ExitStatus);
 /// result in neither a panic nor a [`std::result::Result::Err`]:
 ///
 /// ```
-/// use stir::{cmd, Exit};
+/// use stir::*;
 ///
 /// let Exit(status) = cmd!("false");
 /// assert_eq!(status.code(), Some(1));
@@ -150,7 +150,7 @@ pub struct Stderr(pub String);
 /// [`Stderr`] allows to capture the `stderr` of a child process:
 ///
 /// ```
-/// use stir::{cmd, Exit, Stderr};
+/// use stir::*;
 ///
 /// // (`Exit` is used here to suppress panics caused by `ls`
 /// // terminating with a non-zero exit code.)

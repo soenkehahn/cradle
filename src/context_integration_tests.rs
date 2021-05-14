@@ -4,7 +4,7 @@ fn main() {
         use executable_path::executable_path;
         use gag::BufferRedirect;
         use std::io::{self, Read};
-        use stir::cmd;
+        use stir::*;
 
         fn with_gag<F>(mk_buf: fn() -> io::Result<BufferRedirect>, f: F) -> String
         where
