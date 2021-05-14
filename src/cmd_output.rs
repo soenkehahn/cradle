@@ -57,8 +57,8 @@ impl CmdOutput for String {
 }
 
 /// To turn all possible panics of [`cmd!`] into [`std::result::Result::Err`]s
-/// you can use a return type of `Result<T, Error>`. `T` can be any type that
-/// implements [`CmdOutput`] and [`Error`] is stir's custom error type.
+/// you can use a return type of `Result<T, stir::Error>`. `T` can be any type that
+/// implements [`CmdOutput`].
 impl<T> CmdOutput for Result<T, Error>
 where
     T: CmdOutput,

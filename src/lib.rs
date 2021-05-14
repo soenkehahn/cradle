@@ -132,10 +132,9 @@
 //! assert_eq!(exit_status.code(), Some(1));
 //! ```
 //!
-//! Or you can turn the panics into [`std::result::Result::Err`]s
-//! by fixing the return type of [`cmd!`] to `Result<T>`, where
-//! `T` is any type that implements [`CmdOutput`] and
-//! [`Result`] is stir's custom result type, which uses [`Error`].
+//! You can also turn all panics into [`std::result::Result::Err`]s
+//! by fixing the return type of [`cmd!`] to `Result<T, stir::Error>`, where
+//! `T` is any type that implements [`CmdOutput`].
 //! Here's some examples:
 //!
 //! ```
