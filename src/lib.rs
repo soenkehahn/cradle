@@ -843,6 +843,12 @@ mod tests {
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
         }
+
+        #[test]
+        fn result_of_exit() {
+            let result: Result<Exit, Error> = cmd!("false");
+            assert!(!result.unwrap().0.success());
+        }
     }
 
     mod tuple_outputs {
@@ -907,6 +913,23 @@ mod tests {
             assert!(result.is_ok());
             assert_eq!(output, "foo\n");
             assert_eq!(status.code(), Some(0));
+        }
+
+        #[test]
+        fn capturing_stdout_on_errors() {
+            let (result, output): (Result<(), Error>, String) = cmd!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["output foo and exit with 42"]
+            );
+            assert_eq!(result.unwrap_err().to_string(), "huhu".to_string());
+            assert_eq!(output, "something");
+        }
+
+        #[test]
+        fn capturing_stderr_on_errors() {
+            let (result, Stderr(output)): (Result<(), Error>, _) = cmd!("which does-not-exist");
+            assert_eq!(result.unwrap_err().to_string(), "huhu".to_string());
+            assert_eq!(output, "something");
         }
     }
 }
