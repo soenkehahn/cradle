@@ -207,9 +207,9 @@ where
     T: CmdOutput,
 {
     <T as CmdOutput>::prepare_config(&mut config);
-    match T::from_run_result(run_cmd_safe(context, config)) {
+    match T::from_run_result(&config, run_cmd_safe(context, &config)) {
         Ok(result) => result,
-        Err(error) => panic!("{}", error),
+        Err(error) => panic!("cmd!: {}", error),
     }
 }
 
@@ -223,7 +223,7 @@ pub struct RunResult {
 
 fn run_cmd_safe<Stdout, Stderr>(
     mut context: Context<Stdout, Stderr>,
-    config: Config,
+    config: &Config,
 ) -> Result<RunResult>
 where
     Stdout: Write + Clone + Send + 'static,
@@ -232,14 +232,14 @@ where
     let (command, arguments) = parse_input(config.arguments.clone())?;
     if config.log_command {
         writeln!(context.stderr, "+ {}", config.full_command())
-            .map_err(|error| Error::command_io_error(&command, error))?;
+            .map_err(|error| Error::command_io_error(&config, error))?;
     }
     let mut child = Command::new(&command)
         .args(arguments)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|error| Error::command_io_error(&command, error))?;
+        .map_err(|error| Error::command_io_error(&config, error))?;
     let waiter = Waiter::spawn_standard_stream_relaying(
         &context,
         config.clone(),
@@ -254,10 +254,10 @@ where
     );
     let exit_status = child
         .wait()
-        .map_err(|error| Error::command_io_error(&command, error))?;
+        .map_err(|error| Error::command_io_error(&config, error))?;
     let collected_output = waiter
         .join()
-        .map_err(|error| Error::command_io_error(&command, error))?;
+        .map_err(|error| Error::command_io_error(&config, error))?;
     check_exit_status(&config, exit_status)?;
     Ok(RunResult {
         stdout: collected_output.stdout,
@@ -332,19 +332,19 @@ mod tests {
             use super::*;
 
             #[test]
-            #[should_panic(expected = "false:\n  exited with exit code: 1")]
+            #[should_panic(expected = "cmd!: false:\n  exited with exit code: 1")]
             fn non_zero_exit_codes() {
                 cmd_unit!("false");
             }
 
             #[test]
-            #[should_panic(expected = "false:\n  exited with exit code: 1")]
+            #[should_panic(expected = "cmd!: false:\n  exited with exit code: 1")]
             fn combine_panics_with_other_outputs() {
                 let _: String = cmd!("false");
             }
 
             #[test]
-            #[should_panic(expected = "false foo bar:\n  exited with exit code: 1")]
+            #[should_panic(expected = "cmd!: false foo bar:\n  exited with exit code: 1")]
             fn includes_full_command_on_non_zero_exit_codes() {
                 cmd_unit!("false foo bar");
             }
@@ -362,17 +362,34 @@ mod tests {
             #[cfg_attr(
                 target_family = "unix",
                 should_panic(
-                    expected = "cmd!: does-not-exist: No such file or directory (os error 2)"
+                    expected = "cmd!: does-not-exist:\n  No such file or directory (os error 2)"
                 )
             )]
             #[cfg_attr(
                 target_family = "windows",
                 should_panic(
-                    expected = "cmd!: does-not-exist: The system cannot find the file specified. (os error 2)"
+                    expected = "cmd!: does-not-exist:\n  The system cannot find the file specified. (os error 2)"
                 )
             )]
             fn executable_cannot_be_found() {
                 cmd_unit!("does-not-exist");
+            }
+
+            #[test]
+            #[cfg_attr(
+                target_family = "unix",
+                should_panic(
+                    expected = "cmd!: does-not-exist foo bar:\n  No such file or directory (os error 2)"
+                )
+            )]
+            #[cfg_attr(
+                target_family = "windows",
+                should_panic(
+                    expected = "cmd!: does-not-exist foo bar:\n  The system cannot find the file specified. (os error 2)"
+                )
+            )]
+            fn includes_full_command_on_missing_executables() {
+                cmd_unit!("does-not-exist foo bar");
             }
 
             #[test]
@@ -382,7 +399,7 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(expected = "cmd!: invalid utf-8 written to stdout")]
+            #[should_panic(expected = "invalid utf-8 written to stdout")]
             fn invalid_utf8_stdout() {
                 let _: String = cmd!(
                     executable_path("stir_test_helper").to_str().unwrap(),
@@ -401,6 +418,7 @@ mod tests {
 
         mod result_types {
             use super::*;
+            use pretty_assertions::assert_eq;
 
             #[test]
             fn non_zero_exit_codes() {
@@ -442,6 +460,19 @@ mod tests {
             }
 
             #[test]
+            fn includes_full_command_on_missing_executables() {
+                let result: Result<()> = cmd!("does-not-exist foo bar");
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    if cfg!(target_os = "windows") {
+                        "does-not-exist foo bar:\n  The system cannot find the file specified. (os error 2)"
+                    } else {
+                        "does-not-exist foo bar:\n  No such file or directory (os error 2)"
+                    }
+                );
+            }
+
+            #[test]
             fn other_exit_codes() {
                 let result: Result<()> = cmd!(
                     executable_path("stir_test_helper").to_str().unwrap(),
@@ -456,29 +487,33 @@ mod tests {
             #[test]
             fn executable_cannot_be_found() {
                 let result: Result<()> = cmd!("does-not-exist");
-                let expected = if cfg!(target_os = "windows") {
-                    "cmd!: does-not-exist: The system cannot find the file specified. (os error 2)"
-                } else {
-                    "cmd!: does-not-exist: No such file or directory (os error 2)"
-                };
-                assert_eq!(result.unwrap_err().to_string(), expected);
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    if cfg!(target_os = "windows") {
+                        "does-not-exist:\n  The system cannot find the file specified. (os error 2)"
+                    } else {
+                        "does-not-exist:\n  No such file or directory (os error 2)"
+                    }
+                );
             }
 
             #[test]
             fn no_executable() {
                 let result: Result<()> = cmd!("");
-                assert_eq!(result.unwrap_err().to_string(), "cmd!: no arguments given");
+                assert_eq!(result.unwrap_err().to_string(), "no arguments given");
             }
 
             #[test]
             fn invalid_utf8_stdout() {
-                let result: Result<String> = cmd!(
-                    executable_path("stir_test_helper").to_str().unwrap(),
-                    vec!["invalid utf-8 stdout"]
-                );
+                let test_helper = executable_path("stir_test_helper");
+                let test_helper = test_helper.to_str().unwrap();
+                let result: Result<String> = cmd!(test_helper, vec!["invalid utf-8 stdout"]);
                 assert_eq!(
                     result.unwrap_err().to_string(),
-                    "cmd!: invalid utf-8 written to stdout"
+                    format!(
+                        "{} 'invalid utf-8 stdout':\n  invalid utf-8 written to stdout",
+                        test_helper
+                    )
                 );
             }
         }
@@ -661,6 +696,7 @@ mod tests {
 
     mod stderr {
         use super::*;
+        use pretty_assertions::assert_eq;
         use std::{thread, time::Duration};
 
         #[test]
@@ -727,13 +763,15 @@ mod tests {
 
         #[test]
         fn assumes_stderr_is_utf_8() {
-            let result: Result<Stderr> = cmd!(
-                executable_path("stir_test_helper").to_str().unwrap(),
-                vec!["invalid utf-8 stderr"]
-            );
+            let test_helper = executable_path("stir_test_helper");
+            let test_helper = test_helper.to_str().unwrap();
+            let result: Result<Stderr> = cmd!(test_helper, vec!["invalid utf-8 stderr"]);
             assert_eq!(
                 result.unwrap_err().to_string(),
-                "cmd!: invalid utf-8 written to stderr"
+                format!(
+                    "{} 'invalid utf-8 stderr':\n  invalid utf-8 written to stderr",
+                    test_helper
+                )
             );
         }
 
