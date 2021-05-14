@@ -1,4 +1,4 @@
-use crate::{error::Result, Config, Error, RunResult};
+use crate::{Config, Error, RunResult};
 use std::process::ExitStatus;
 
 /// All possible return types of [`cmd!`] have to implement this trait.
@@ -24,7 +24,7 @@ pub trait CmdOutput: Sized {
     fn prepare_config(config: &mut Config);
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self>;
+    fn from_run_result(result: Result<RunResult, Error>) -> Result<Self, Error>;
 }
 
 /// Use this when you don't need any result from the child process.
@@ -33,7 +33,7 @@ impl CmdOutput for () {
     fn prepare_config(_config: &mut Config) {}
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+    fn from_run_result(result: Result<RunResult, Error>) -> Result<Self, Error> {
         result?;
         Ok(())
     }
@@ -50,7 +50,7 @@ impl CmdOutput for String {
     }
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+    fn from_run_result(result: Result<RunResult, Error>) -> Result<Self, Error> {
         let result = result?;
         String::from_utf8(result.stdout).map_err(|_| Error::InvalidUtf8ToStdout)
     }
@@ -59,7 +59,7 @@ impl CmdOutput for String {
 /// To turn all possible panics of [`cmd!`] into [`std::result::Result::Err`]s
 /// you can use a return type of `Result<T, Error>`. `T` can be any type that
 /// implements [`CmdOutput`] and [`Error`] is stir's custom error type.
-impl<T> CmdOutput for Result<T>
+impl<T> CmdOutput for Result<T, Error>
 where
     T: CmdOutput,
 {
@@ -69,7 +69,7 @@ where
     }
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+    fn from_run_result(result: Result<RunResult, Error>) -> Result<Self, Error> {
         Ok(match result {
             Ok(_) => T::from_run_result(result),
             Err(error) => Err(error),
@@ -89,7 +89,7 @@ macro_rules! tuple_impl {
             }
 
             #[doc(hidden)]
-            fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+            fn from_run_result(result: Result<RunResult, Error>) -> Result<Self, Error> {
                 Ok((
                     $($generics::from_run_result(result.clone())?,)+
                 ))
@@ -119,11 +119,11 @@ pub struct Exit(pub ExitStatus);
 /// result in neither a panic nor a [`std::result::Result::Err`]:
 ///
 /// ```
-/// use stir::{cmd, Result, Exit};
+/// use stir::{cmd, Exit};
 ///
 /// let Exit(status) = cmd!("false");
 /// assert_eq!(status.code(), Some(1));
-/// let result: Result<Exit> = cmd!("false");
+/// let result: Result<Exit, stir::Error> = cmd!("false");
 /// assert!(result.is_ok());
 /// assert_eq!(result.unwrap().0.code(), Some(1));
 /// ```
@@ -138,7 +138,7 @@ impl CmdOutput for Exit {
     }
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+    fn from_run_result(result: Result<RunResult, Error>) -> Result<Self, Error> {
         Ok(Exit(result?.exit_status))
     }
 }
@@ -171,7 +171,7 @@ impl CmdOutput for Stderr {
     }
 
     #[doc(hidden)]
-    fn from_run_result(result: Result<RunResult>) -> Result<Self> {
+    fn from_run_result(result: Result<RunResult, Error>) -> Result<Self, Error> {
         Ok(Stderr(
             String::from_utf8(result?.stderr).map_err(|_| Error::InvalidUtf8ToStderr)?,
         ))
