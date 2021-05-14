@@ -148,7 +148,7 @@
 //! );
 //!
 //! let result: Result<String, stir::Error> = cmd!("echo foo");
-//! assert_eq!(result, Ok("foo\n".to_string()));
+//! assert_eq!(result.unwrap(), "foo\n".to_string());
 //! ```
 
 mod cmd_argument;
@@ -431,13 +431,13 @@ mod tests {
             #[test]
             fn no_errors() {
                 let result: Result<(), Error> = cmd!("true");
-                assert_eq!(result, Ok(()));
+                result.unwrap();
             }
 
             #[test]
             fn combine_ok_with_other_outputs() {
                 let result: Result<String, Error> = cmd!("echo -n foo");
-                assert_eq!(result, Ok("foo".to_string()));
+                assert_eq!(result.unwrap(), "foo".to_string());
             }
 
             #[test]
