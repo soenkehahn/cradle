@@ -27,7 +27,7 @@ fn result_succeeding() {
 
     fn test() -> Result<(), Error> {
         // make sure 'ls' is installed
-        let result: Result<(), Error> = cmd!(WHICH, "ls");
+        let result: Result<(), Error> = cmd_result!(WHICH, "ls");
         result?;
         Ok(())
     }
@@ -40,7 +40,7 @@ fn result_failing() {
     use stir::*;
 
     fn test() -> Result<(), Error> {
-        let result: Result<(), Error> = cmd!(WHICH, "does-not-exist");
+        let result: Result<(), Error> = cmd_result!(WHICH, "does-not-exist");
         result?;
         Ok(())
     }
@@ -77,7 +77,7 @@ fn trimmed_stdout_and_results() {
     use stir::*;
 
     fn test() -> Result<(), Error> {
-        let result: Result<String, Error> = cmd!(WHICH, "ls");
+        let result: Result<String, Error> = cmd_result!(WHICH, "ls");
         let ls_path = result?;
         let ls_path = ls_path.trim();
         assert!(
@@ -98,7 +98,7 @@ fn box_dyn_errors_succeeding() {
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
     fn test() -> MyResult<()> {
-        let result: Result<(), Error> = cmd!(WHICH, "ls");
+        let result: Result<(), Error> = cmd_result!(WHICH, "ls");
         result?;
         Ok(())
     }
@@ -113,7 +113,7 @@ fn box_dyn_errors_failing() {
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
     fn test() -> MyResult<()> {
-        let result: Result<(), Error> = cmd!(WHICH, "does-not-exist");
+        let result: Result<(), Error> = cmd_result!(WHICH, "does-not-exist");
         result?;
         Ok(())
     }
@@ -144,7 +144,7 @@ fn user_supplied_errors_succeeding() {
     }
 
     fn test() -> Result<(), Error> {
-        let result: Result<(), stir::Error> = cmd!(WHICH, "ls");
+        let result: Result<(), stir::Error> = cmd_result!(WHICH, "ls");
         result?;
         Ok(())
     }
@@ -176,7 +176,7 @@ fn user_supplied_errors_failing() {
     }
 
     fn test() -> Result<(), Error> {
-        let result: Result<(), stir::Error> = cmd!(WHICH, "does-not-exist");
+        let result: Result<(), stir::Error> = cmd_result!(WHICH, "does-not-exist");
         result?;
         Ok(())
     }

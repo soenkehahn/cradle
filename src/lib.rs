@@ -862,6 +862,12 @@ mod tests {
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
         }
+
+        #[test]
+        fn result_of_exit() {
+            let result: Result<Exit, Error> = cmd_result!("false");
+            assert!(!result.unwrap().0.success());
+        }
     }
 
     mod tuple_outputs {
@@ -910,6 +916,26 @@ mod tests {
             let (Stderr(_), output, Exit(status)): (Stderr, String, Exit) = cmd!("echo foo");
             assert_eq!(output, "foo\n");
             assert_eq!(status.code(), Some(0));
+        }
+
+        #[test]
+        fn capturing_stdout_on_errors() {
+            let (output, Exit(status)): (String, Exit) = cmd!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["output foo and exit with 42"]
+            );
+            assert!(!status.success());
+            assert_eq!(output, "foo\n");
+        }
+
+        #[test]
+        fn capturing_stderr_on_errors() {
+            let (Stderr(output), Exit(status)) = cmd!(
+                executable_path("stir_test_helper").to_str().unwrap(),
+                vec!["write to stderr and exit with 42"]
+            );
+            assert!(!status.success());
+            assert_eq!(output, "foo\n");
         }
     }
 }
