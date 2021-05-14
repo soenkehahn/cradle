@@ -37,7 +37,7 @@ impl CmdArgument for String {
 ///
 /// ```
 /// use std::path::PathBuf;
-/// use stir::cmd_unit;
+/// use stir::*;
 ///
 /// cmd_unit!("touch", vec!["filename with spaces"]);
 /// assert!(PathBuf::from("filename with spaces").exists());
@@ -66,7 +66,7 @@ impl CmdArgument for Vec<String> {
 /// process as arguments, **without** splitting them by whitespace.
 ///
 /// ```
-/// use stir::cmd;
+/// use stir::*;
 ///
 /// let output: String = cmd!(["echo", "foo"]);
 /// assert_eq!(output, "foo\n");
@@ -110,7 +110,7 @@ pub struct LogCommand;
 /// (This is similar `bash`'s `-x` option.)
 ///
 /// ```
-/// use stir::{cmd_unit, LogCommand};
+/// use stir::*;
 ///
 /// cmd_unit!(LogCommand, "echo foo");
 /// // writes '+ echo foo' to stderr

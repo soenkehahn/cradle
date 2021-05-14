@@ -2,7 +2,7 @@
 //! it easy to run commands from rust programs.
 //!
 //! ```
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! let stdout: String = cmd!("echo -n foo");
 //! assert_eq!(stdout, "foo");
@@ -15,7 +15,7 @@
 //! trait:
 //!
 //! ```
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! let stdout: String = cmd!("echo", "foo", "bar");
 //! assert_eq!(stdout, "foo bar\n");
@@ -26,7 +26,7 @@
 //! be used as arguments:
 //!
 //! ```
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! # #[rustversion::since(1.51)]
 //! # fn test() {
@@ -43,7 +43,7 @@
 //!
 //! ```
 //! use std::path::PathBuf;
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! # #[rustversion::since(1.51)]
 //! # fn test() {
@@ -59,7 +59,7 @@
 //!
 //! ```
 //! use std::path::PathBuf;
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! let _: String = cmd!("touch", vec!["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
@@ -75,7 +75,7 @@
 //! child process writes to `stdout`:
 //!
 //! ```
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! let output: String = cmd!("echo foo");
 //! assert_eq!(output, "foo\n");
@@ -88,7 +88,7 @@
 //! as the return value:
 //!
 //! ```
-//! use stir::cmd;
+//! use stir::*;
 //!
 //! let () = cmd!("touch foo");
 //! ```
@@ -98,7 +98,7 @@
 //! type down to `()`:
 //!
 //! ```
-//! use stir::cmd_unit;
+//! use stir::*;
 //!
 //! cmd_unit!("touch foo");
 //! ```
@@ -116,7 +116,7 @@
 //! For example:
 //!
 //! ``` should_panic
-//! use stir::cmd_unit;
+//! use stir::*;
 //!
 //! // panics with "false:\n  exited with exit code: 1"
 //! cmd_unit!("false");
@@ -126,29 +126,28 @@
 //! a return type of [`cmd!`]:
 //!
 //! ```
-//! use stir::{cmd, Exit};
+//! use stir::*;
 //!
 //! let Exit(exit_status) = cmd!("false");
 //! assert_eq!(exit_status.code(), Some(1));
 //! ```
 //!
-//! Or you can turn the panics into [`std::result::Result::Err`]s
-//! by fixing the return type of [`cmd!`] to `Result<T>`, where
-//! `T` is any type that implements [`CmdOutput`] and
-//! [`Result`] is stir's custom result type, which uses [`Error`].
+//! You can also turn all panics into [`std::result::Result::Err`]s
+//! by fixing the return type of [`cmd!`] to `Result<T, stir::Error>`, where
+//! `T` is any type that implements [`CmdOutput`].
 //! Here's some examples:
 //!
 //! ```
-//! use stir::{cmd, Result};
+//! use stir::*;
 //!
-//! let result: Result<()> = cmd!("false");
+//! let result: Result<(), stir::Error> = cmd!("false");
 //! let error_message = format!("{}", result.unwrap_err());
 //! assert_eq!(
 //!     error_message,
 //!     "false:\n  exited with exit code: 1"
 //! );
 //!
-//! let result: Result<String> = cmd!("echo foo");
+//! let result: Result<String, stir::Error> = cmd!("echo foo");
 //! assert_eq!(result, Ok("foo\n".to_string()));
 //! ```
 
@@ -163,7 +162,7 @@ use crate::collected_output::Waiter;
 pub use crate::{
     cmd_argument::{CmdArgument, LogCommand},
     cmd_output::{CmdOutput, Exit, Stderr},
-    error::{Error, Result},
+    error::Error,
 };
 #[doc(hidden)]
 pub use crate::{config::Config, context::Context};
@@ -224,7 +223,7 @@ pub struct RunResult {
 fn run_cmd_safe<Stdout, Stderr>(
     mut context: Context<Stdout, Stderr>,
     config: &Config,
-) -> Result<RunResult>
+) -> Result<RunResult, Error>
 where
     Stdout: Write + Clone + Send + 'static,
     Stderr: Write + Clone + Send + 'static,
@@ -266,7 +265,7 @@ where
     })
 }
 
-fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = String>)> {
+fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = String>), Error> {
     let mut words = input.into_iter();
     {
         match words.next() {
@@ -276,7 +275,7 @@ fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = Strin
     }
 }
 
-fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<()> {
+fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Error> {
     if config.error_on_non_zero_exit_code && !exit_status.success() {
         Err(Error::NonZeroExitCode {
             full_command: config.full_command(),
@@ -422,7 +421,7 @@ mod tests {
 
             #[test]
             fn non_zero_exit_codes() {
-                let result: Result<()> = cmd!("false");
+                let result: Result<(), Error> = cmd!("false");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false:\n  exited with exit code: 1"
@@ -431,19 +430,19 @@ mod tests {
 
             #[test]
             fn no_errors() {
-                let result: Result<()> = cmd!("true");
+                let result: Result<(), Error> = cmd!("true");
                 assert_eq!(result, Ok(()));
             }
 
             #[test]
             fn combine_ok_with_other_outputs() {
-                let result: Result<String> = cmd!("echo -n foo");
+                let result: Result<String, Error> = cmd!("echo -n foo");
                 assert_eq!(result, Ok("foo".to_string()));
             }
 
             #[test]
             fn combine_err_with_other_outputs() {
-                let result: Result<String> = cmd!("false");
+                let result: Result<String, Error> = cmd!("false");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false:\n  exited with exit code: 1"
@@ -452,7 +451,7 @@ mod tests {
 
             #[test]
             fn includes_full_command_on_non_zero_exit_codes() {
-                let result: Result<()> = cmd!("false foo bar");
+                let result: Result<(), Error> = cmd!("false foo bar");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false foo bar:\n  exited with exit code: 1"
@@ -461,7 +460,7 @@ mod tests {
 
             #[test]
             fn includes_full_command_on_missing_executables() {
-                let result: Result<()> = cmd!("does-not-exist foo bar");
+                let result: Result<(), Error> = cmd!("does-not-exist foo bar");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     if cfg!(target_os = "windows") {
@@ -474,7 +473,7 @@ mod tests {
 
             #[test]
             fn other_exit_codes() {
-                let result: Result<()> = cmd!(
+                let result: Result<(), Error> = cmd!(
                     executable_path("stir_test_helper").to_str().unwrap(),
                     vec!["exit code 42"]
                 );
@@ -486,7 +485,7 @@ mod tests {
 
             #[test]
             fn executable_cannot_be_found() {
-                let result: Result<()> = cmd!("does-not-exist");
+                let result: Result<(), Error> = cmd!("does-not-exist");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     if cfg!(target_os = "windows") {
@@ -499,7 +498,7 @@ mod tests {
 
             #[test]
             fn no_executable() {
-                let result: Result<()> = cmd!("");
+                let result: Result<(), Error> = cmd!("");
                 assert_eq!(result.unwrap_err().to_string(), "no arguments given");
             }
 
@@ -507,7 +506,7 @@ mod tests {
             fn invalid_utf8_stdout() {
                 let test_helper = executable_path("stir_test_helper");
                 let test_helper = test_helper.to_str().unwrap();
-                let result: Result<String> = cmd!(test_helper, vec!["invalid utf-8 stdout"]);
+                let result: Result<String, Error> = cmd!(test_helper, vec!["invalid utf-8 stdout"]);
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     format!(
@@ -651,7 +650,7 @@ mod tests {
         #[test]
         fn relays_stdout_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<()> = cmd_with_context!(
+            let _: Result<(), Error> = cmd_with_context!(
                 context.clone(),
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
@@ -689,7 +688,7 @@ mod tests {
         #[test]
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
-            let _: Result<String> = cmd_with_context!(context.clone(), "echo foo");
+            let _: Result<String, Error> = cmd_with_context!(context.clone(), "echo foo");
             assert_eq!(context.stdout(), "");
         }
     }
@@ -713,7 +712,7 @@ mod tests {
         #[test]
         fn relays_stderr_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<()> = cmd_with_context!(
+            let _: Result<(), Error> = cmd_with_context!(
                 context.clone(),
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["write to stderr and exit with 42"]
@@ -765,7 +764,7 @@ mod tests {
         fn assumes_stderr_is_utf_8() {
             let test_helper = executable_path("stir_test_helper");
             let test_helper = test_helper.to_str().unwrap();
-            let result: Result<Stderr> = cmd!(test_helper, vec!["invalid utf-8 stderr"]);
+            let result: Result<Stderr, Error> = cmd!(test_helper, vec!["invalid utf-8 stderr"]);
             assert_eq!(
                 result.unwrap_err().to_string(),
                 format!(
@@ -873,7 +872,7 @@ mod tests {
 
         #[test]
         fn result_of_tuple() {
-            let result: Result<(String, Exit)> = cmd!("echo foo");
+            let result: Result<(String, Exit), Error> = cmd!("echo foo");
             let (output, Exit(status)) = result.unwrap();
             assert_eq!(output, "foo\n");
             assert!(status.success());
@@ -881,7 +880,7 @@ mod tests {
 
         #[test]
         fn result_of_tuple_when_erroring() {
-            let result: Result<(String, Exit)> = cmd!("false");
+            let result: Result<(String, Exit), Error> = cmd!("false");
             let (output, Exit(status)) = result.unwrap();
             assert_eq!(output, "");
             assert_eq!(status.code(), Some(1));
@@ -889,21 +888,22 @@ mod tests {
 
         #[test]
         fn tuple_containing_result() {
-            let (result, output): (Result<Exit>, String) = cmd!("echo foo");
+            let (result, output): (Result<Exit, Error>, String) = cmd!("echo foo");
             assert!(result.unwrap().0.success());
             assert_eq!(output, "foo\n");
         }
 
         #[test]
         fn tuple_containing_result_when_erroring() {
-            let (result, output): (Result<Exit>, String) = cmd!("false");
+            let (result, output): (Result<Exit, Error>, String) = cmd!("false");
             assert!(!result.unwrap().0.success());
             assert_eq!(output, "");
         }
 
         #[test]
         fn three_tuples() {
-            let (result, output, Exit(status)): (Result<()>, String, Exit) = cmd!("echo foo");
+            let (result, output, Exit(status)): (Result<(), Error>, String, Exit) =
+                cmd!("echo foo");
             assert!(result.is_ok());
             assert_eq!(output, "foo\n");
             assert_eq!(status.code(), Some(0));
