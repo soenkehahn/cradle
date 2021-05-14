@@ -379,17 +379,17 @@ mod tests {
             #[cfg_attr(
                 target_family = "unix",
                 should_panic(
-                    expected = "cmd!: foo bar:\n  No such file or directory (os error 2)"
+                    expected = "cmd!: does-not-exist foo bar:\n  No such file or directory (os error 2)"
                 )
             )]
             #[cfg_attr(
                 target_family = "windows",
                 should_panic(
-                    expected = "cmd!: foo bar:\n  The system cannot find the file specified. (os error 2)"
+                    expected = "cmd!: does-not-exist foo bar:\n  The system cannot find the file specified. (os error 2)"
                 )
             )]
             fn includes_full_command_on_missing_executables() {
-                cmd_unit!("foo bar");
+                cmd_unit!("does-not-exist foo bar");
             }
 
             #[test]
@@ -461,13 +461,13 @@ mod tests {
 
             #[test]
             fn includes_full_command_on_missing_executables() {
-                let result: Result<()> = cmd!("foo bar");
+                let result: Result<()> = cmd!("does-not-exist foo bar");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     if cfg!(target_os = "windows") {
-                        "foo bar:\n  The system cannot find the file specified. (os error 2)"
+                        "does-not-exist foo bar:\n  The system cannot find the file specified. (os error 2)"
                     } else {
-                        "foo bar:\n  No such file or directory (os error 2)"
+                        "does-not-exist foo bar:\n  No such file or directory (os error 2)"
                     }
                 );
             }
