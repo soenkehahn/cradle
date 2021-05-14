@@ -51,13 +51,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-          components: clippy, rustfmt
-
       # An issue with BSD Tar causes sporadic failures on macOS.
       # c.f https://github.com/actions/cache/issues/403
       - name: Install GNU Tar
@@ -84,6 +77,11 @@ jobs:
             echo '1.51.0' > rust-toolchain
             cargo install --path .
           fi
+
+      - name: Install clippy and rustfmt
+        run: |
+          echo '${{ matrix.rust }}' > rust-toolchain
+          rustup component add clippy rustfmt
 
       - name: Info
         run: |
