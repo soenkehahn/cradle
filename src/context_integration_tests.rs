@@ -30,7 +30,7 @@ fn main() {
                     executable_path("stir_test_helper").to_str().unwrap(),
                     vec!["write to stderr"]
                 )),
-                "foo\n"
+                "output to stderr\n"
             );
         }
         eprintln!("context integration tests: SUCCESS")

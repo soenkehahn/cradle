@@ -31,6 +31,7 @@ impl Waiter {
                 if (length) == 0 {
                     break;
                 }
+                dbg!(&buffer[..length]);
                 if config_clone.relay_stdout {
                     context_clone.stdout.write_all(&buffer[..length])?;
                 }
@@ -74,7 +75,9 @@ impl Waiter {
     }
 }
 
-pub(crate) struct CollectedOutput {
+// fixme: do we need Clone?
+#[derive(Clone, Debug)]
+pub struct CollectedOutput {
     pub(crate) stdout: Vec<u8>,
     pub(crate) stderr: Vec<u8>,
 }

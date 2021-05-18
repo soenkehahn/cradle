@@ -21,14 +21,14 @@ fn main() {
             }
         }
         "output foo and exit with 42" => {
-            println!("foo");
+            println!("output to stdout");
             std::process::exit(42)
         }
         "write to stderr" => {
-            eprintln!("foo");
+            eprintln!("output to stderr");
         }
         "write to stderr and exit with 42" => {
-            eprintln!("foo");
+            eprintln!("output to stderr");
             std::process::exit(42)
         }
         "stream chunk to stderr then wait for file" => {

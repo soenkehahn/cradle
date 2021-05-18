@@ -52,6 +52,13 @@ impl CmdOutput for String {
     fn from_run_result(config: &Config, result: RunResult) -> Result<Self, Error> {
         match result {
             RunResult::EarlyError(_) => todo!(),
+            RunResult::LaterError {
+                collected_output, ..
+            } => {
+                String::from_utf8(collected_output.stdout).map_err(|_| Error::InvalidUtf8ToStdout {
+                    full_command: config.full_command(),
+                })
+            }
             RunResult::Success { stdout, .. } => {
                 String::from_utf8(stdout).map_err(|_| Error::InvalidUtf8ToStdout {
                     full_command: config.full_command(),
@@ -77,7 +84,7 @@ where
     #[doc(hidden)]
     fn from_run_result(config: &Config, result: RunResult) -> Result<Self, Error> {
         Ok(match result {
-            RunResult::EarlyError(error) => Err(error),
+            RunResult::EarlyError(error) | RunResult::LaterError { error, .. } => Err(error),
             run_result @ RunResult::Success { .. } => T::from_run_result(config, run_result),
         })
     }
@@ -150,12 +157,13 @@ impl CmdOutput for Exit {
             RunResult::EarlyError(Error::CommandIoError { error_kind, .. })
                 if error_kind == io::ErrorKind::NotFound =>
             {
-                dbg!(Ok(Exit(ExitStatusExt::from_raw(127 << 8))))
+                Ok(Exit(ExitStatusExt::from_raw(127 << 8)))
             }
-            RunResult::EarlyError(error) => {
-                dbg!(error);
-                dbg!(Ok(Exit(ExitStatusExt::from_raw(1 << 8))))
-            }
+            RunResult::EarlyError(error) => Ok(Exit(ExitStatusExt::from_raw(1 << 8))),
+            RunResult::LaterError {
+                collected_output,
+                error,
+            } => todo!(),
             RunResult::Success { exit_status, .. } => Ok(Exit(exit_status)),
         }
     }
@@ -191,7 +199,19 @@ impl CmdOutput for Stderr {
     #[doc(hidden)]
     fn from_run_result(config: &Config, result: RunResult) -> Result<Self, Error> {
         match result {
-            RunResult::EarlyError(_) => todo!(),
+            RunResult::EarlyError(error) => {
+                dbg!(error);
+                Ok(Stderr("fixme".to_string()))
+            }
+            // fixme: combine match arms
+            // fixme: remove Oks
+            RunResult::LaterError {
+                collected_output, ..
+            } => Ok(Stderr(String::from_utf8(collected_output.stderr).map_err(
+                |_| Error::InvalidUtf8ToStderr {
+                    full_command: config.full_command(),
+                },
+            )?)),
             RunResult::Success { stderr, .. } => {
                 Ok(Stderr(String::from_utf8(stderr).map_err(|_| {
                     Error::InvalidUtf8ToStderr {

@@ -158,6 +158,8 @@ mod config;
 mod context;
 mod error;
 
+use collected_output::CollectedOutput;
+
 use crate::collected_output::Waiter;
 pub use crate::{
     cmd_argument::{CmdArgument, LogCommand},
@@ -198,6 +200,14 @@ macro_rules! cmd_with_context {
     }}
 }
 
+// fixme: rename to collapse
+fn conflate<T>(result: Result<T, T>) -> T {
+    match result {
+        Ok(result) => result,
+        Err(result) => result,
+    }
+}
+
 #[doc(hidden)]
 pub fn run_cmd<Stdout, Stderr, T>(context: Context<Stdout, Stderr>, mut config: Config) -> T
 where
@@ -206,18 +216,15 @@ where
     T: CmdOutput,
 {
     <T as CmdOutput>::prepare_config(&mut config);
-    let run_result = run_cmd_safe(context, &config);
-    if dbg!(config.should_panic) {
-        match dbg!(&run_result) {
-            Err(error) => panic!("cmd!: {}", error),
-            Ok(RunResult::EarlyError(error)) => panic!("cmd!: {}", error),
-            Ok(RunResult::Success { .. }) => {}
+    let run_result = conflate(run_cmd_safe(context, &config));
+    if config.should_panic {
+        match &run_result {
+            RunResult::EarlyError(error) | RunResult::LaterError { error, .. } => {
+                panic!("cmd!: {}", error)
+            }
+            RunResult::Success { .. } => {}
         }
     }
-    let run_result = match run_result {
-        Err(error) => RunResult::EarlyError(error),
-        Ok(run_result) => run_result,
-    };
     match T::from_run_result(&config, run_result) {
         Ok(result) => result,
         Err(error) => panic!("cmd!: {}", error),
@@ -228,6 +235,10 @@ where
 #[derive(Clone, Debug)]
 pub enum RunResult {
     EarlyError(Error),
+    LaterError {
+        collected_output: CollectedOutput,
+        error: Error,
+    },
     Success {
         stdout: Vec<u8>,
         stderr: Vec<u8>,
@@ -238,31 +249,24 @@ pub enum RunResult {
 fn run_cmd_safe<Stdout, Stderr>(
     mut context: Context<Stdout, Stderr>,
     config: &Config,
-) -> Result<RunResult, Error>
+) -> Result<RunResult, RunResult>
 where
     Stdout: Write + Clone + Send + 'static,
     Stderr: Write + Clone + Send + 'static,
 {
-    let (command, arguments) = match parse_input(config.arguments.clone()) {
-        Err(run_result) => return Ok(run_result),
-        Ok(x) => x,
-    };
+    let (command, arguments) =
+        parse_input(config.arguments.clone()).map_err(RunResult::EarlyError)?;
     if config.log_command {
-        match writeln!(context.stderr, "+ {}", config.full_command()) {
-            Err(io_error) => {
-                return Ok(RunResult::EarlyError(Error::command_io_error(
-                    &config, io_error,
-                )))
-            }
-            Ok(()) => {}
-        }
+        writeln!(context.stderr, "+ {}", config.full_command()).map_err(|io_error| {
+            RunResult::EarlyError(Error::command_io_error(&config, io_error))
+        })?;
     }
     let mut child = Command::new(&command)
         .args(arguments)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|error| Error::command_io_error(&config, error))?;
+        .map_err(|error| RunResult::EarlyError(Error::command_io_error(&config, error)))?;
     let waiter = Waiter::spawn_standard_stream_relaying(
         &context,
         config.clone(),
@@ -277,23 +281,28 @@ where
     );
     let collected_output = waiter
         .join()
-        .map_err(|error| Error::command_io_error(&config, error))?;
-    let exit_status = child
-        .wait()
-        .map_err(|error| Error::command_io_error(&config, error))?;
-    check_exit_status(&config, exit_status)?;
+        .map_err(|error| RunResult::EarlyError(Error::command_io_error(&config, error)))?;
+    let exit_status = child.wait().map_err(|error| RunResult::LaterError {
+        collected_output: collected_output.clone(), // fixme: shouldn't be necessary! :(
+        error: Error::command_io_error(&config, error),
+    })?;
+    check_exit_status(&config, exit_status).map_err(|error| RunResult::LaterError {
+        collected_output: collected_output.clone(), // fixme: don't clone
+        error,
+    })?;
     Ok(RunResult::Success {
+        // fixme: collapse fields
         stdout: collected_output.stdout,
         stderr: collected_output.stderr,
         exit_status,
     })
 }
 
-fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = String>), RunResult> {
+fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = String>), Error> {
     let mut words = input.into_iter();
     {
         match words.next() {
-            None => Err(RunResult::EarlyError(Error::NoArgumentsGiven)),
+            None => Err(Error::NoArgumentsGiven),
             Some(command) => Ok((command, words)),
         }
     }
@@ -539,6 +548,64 @@ mod tests {
                     )
                 );
             }
+
+            #[test]
+            fn result_and_exit_does_not_panic_on_missing_executable() {
+                let (result, Exit(status)): (Result<(), Error>, Exit) = cmd!("does-not-exist");
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    "does-not-exist:\n  No such file or directory (os error 2)".to_string()
+                );
+                assert!(!status.success());
+                assert_eq!(status.code(), Some(127));
+            }
+
+            #[test]
+            fn result_and_exit_does_not_panic_for_missing_arguments() {
+                let (result, Exit(status)): (Result<(), Error>, Exit) = cmd!("");
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    "no arguments given".to_string()
+                );
+                assert!(!status.success());
+                assert_eq!(status.code(), Some(1));
+            }
+
+            #[test]
+            fn capturing_stdout_on_errors() {
+                let (result, output): (Result<(), Error>, String) =
+                    cmd!(test_helper(), vec!["output foo and exit with 42"]);
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    format!(
+                        "{} 'output foo and exit with 42':\n  exited with exit code: 42",
+                        test_helper()
+                    )
+                );
+                assert_eq!(output, "output to stdout\n");
+            }
+
+            // fixme: use everywhere?
+            fn test_helper() -> String {
+                executable_path("stir_test_helper")
+                    .to_str()
+                    .unwrap()
+                    .to_string()
+            }
+
+            #[test]
+            fn capturing_stderr_on_errors() {
+                let (result, Stderr(output)): (Result<(), Error>, Stderr) =
+                    cmd!(test_helper(), vec!["write to stderr and exit with 42"]);
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    format!(
+                        "{} 'write to stderr and exit with 42':\n  exited with exit code: 42",
+                        test_helper()
+                    )
+                );
+                assert_eq!(output, "output to stderr\n");
+            }
         }
     }
 
@@ -679,7 +746,7 @@ mod tests {
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
             );
-            assert_eq!(context.stdout(), "foo\n");
+            assert_eq!(context.stdout(), "output to stdout\n");
         }
 
         #[test]
@@ -730,7 +797,7 @@ mod tests {
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["write to stderr"]
             );
-            assert_eq!(context.stderr(), "foo\n");
+            assert_eq!(context.stderr(), "output to stderr\n");
         }
 
         #[test]
@@ -741,7 +808,7 @@ mod tests {
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["write to stderr and exit with 42"]
             );
-            assert_eq!(context.stderr(), "foo\n");
+            assert_eq!(context.stderr(), "output to stderr\n");
         }
 
         #[test]
@@ -781,7 +848,7 @@ mod tests {
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["write to stderr"]
             );
-            assert_eq!(stderr, "foo\n");
+            assert_eq!(stderr, "output to stderr\n");
         }
 
         #[test]
@@ -885,7 +952,7 @@ mod tests {
                 vec!["output foo and exit with 42"]
             );
             let _: String = output;
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "output to stdout\n");
             assert_eq!(status.code(), Some(42));
         }
 
@@ -896,7 +963,7 @@ mod tests {
                 vec!["output foo and exit with 42"]
             );
             let _: String = output;
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "output to stdout\n");
             assert_eq!(status.code(), Some(42));
         }
 
@@ -937,28 +1004,6 @@ mod tests {
             assert!(result.is_ok());
             assert_eq!(output, "foo\n");
             assert_eq!(status.code(), Some(0));
-        }
-
-        #[test]
-        fn result_and_exit_for_missing_executable() {
-            let (result, Exit(status)): (Result<(), Error>, Exit) = cmd!("does-not-exist");
-            assert_eq!(
-                result.unwrap_err().to_string(),
-                "does-not-exist:\n  No such file or directory (os error 2)".to_string()
-            );
-            assert!(!status.success());
-            assert_eq!(status.code(), Some(127));
-        }
-
-        #[test]
-        fn result_and_exit_for_missing_arguments() {
-            let (result, Exit(status)): (Result<(), Error>, Exit) = cmd!("");
-            assert_eq!(
-                result.unwrap_err().to_string(),
-                "no arguments given".to_string()
-            );
-            assert!(!status.success());
-            assert_eq!(status.code(), Some(1));
         }
     }
 }
