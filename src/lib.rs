@@ -206,18 +206,33 @@ where
     T: CmdOutput,
 {
     <T as CmdOutput>::prepare_config(&mut config);
-    match T::from_run_result(&config, run_cmd_safe(context, &config)) {
+    let run_result = run_cmd_safe(context, &config);
+    if dbg!(config.should_panic) {
+        match dbg!(&run_result) {
+            Err(error) => panic!("cmd!: {}", error),
+            Ok(RunResult::EarlyError(error)) => panic!("cmd!: {}", error),
+            Ok(RunResult::Success { .. }) => {}
+        }
+    }
+    let run_result = match run_result {
+        Err(error) => RunResult::EarlyError(error),
+        Ok(run_result) => run_result,
+    };
+    match T::from_run_result(&config, run_result) {
         Ok(result) => result,
         Err(error) => panic!("cmd!: {}", error),
     }
 }
 
 #[doc(hidden)]
-#[derive(Clone)]
-pub struct RunResult {
-    stdout: Vec<u8>,
-    stderr: Vec<u8>,
-    exit_status: ExitStatus,
+#[derive(Clone, Debug)]
+pub enum RunResult {
+    EarlyError(Error),
+    Success {
+        stdout: Vec<u8>,
+        stderr: Vec<u8>,
+        exit_status: ExitStatus,
+    },
 }
 
 fn run_cmd_safe<Stdout, Stderr>(
@@ -228,10 +243,19 @@ where
     Stdout: Write + Clone + Send + 'static,
     Stderr: Write + Clone + Send + 'static,
 {
-    let (command, arguments) = parse_input(config.arguments.clone())?;
+    let (command, arguments) = match parse_input(config.arguments.clone()) {
+        Err(run_result) => return Ok(run_result),
+        Ok(x) => x,
+    };
     if config.log_command {
-        writeln!(context.stderr, "+ {}", config.full_command())
-            .map_err(|error| Error::command_io_error(&config, error))?;
+        match writeln!(context.stderr, "+ {}", config.full_command()) {
+            Err(io_error) => {
+                return Ok(RunResult::EarlyError(Error::command_io_error(
+                    &config, io_error,
+                )))
+            }
+            Ok(()) => {}
+        }
     }
     let mut child = Command::new(&command)
         .args(arguments)
@@ -251,25 +275,25 @@ where
             .take()
             .expect("child process should have stderr"),
     );
-    let exit_status = child
-        .wait()
-        .map_err(|error| Error::command_io_error(&config, error))?;
     let collected_output = waiter
         .join()
         .map_err(|error| Error::command_io_error(&config, error))?;
+    let exit_status = child
+        .wait()
+        .map_err(|error| Error::command_io_error(&config, error))?;
     check_exit_status(&config, exit_status)?;
-    Ok(RunResult {
+    Ok(RunResult::Success {
         stdout: collected_output.stdout,
         stderr: collected_output.stderr,
         exit_status,
     })
 }
 
-fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = String>), Error> {
+fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = String>), RunResult> {
     let mut words = input.into_iter();
     {
         match words.next() {
-            None => Err(Error::NoArgumentsGiven),
+            None => Err(RunResult::EarlyError(Error::NoArgumentsGiven)),
             Some(command) => Ok((command, words)),
         }
     }
@@ -843,6 +867,12 @@ mod tests {
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
         }
+
+        #[test]
+        fn result_of_exit() {
+            let result: Result<Exit, Error> = cmd!("false");
+            assert!(!result.unwrap().0.success());
+        }
     }
 
     mod tuple_outputs {
@@ -907,6 +937,28 @@ mod tests {
             assert!(result.is_ok());
             assert_eq!(output, "foo\n");
             assert_eq!(status.code(), Some(0));
+        }
+
+        #[test]
+        fn result_and_exit_for_missing_executable() {
+            let (result, Exit(status)): (Result<(), Error>, Exit) = cmd!("does-not-exist");
+            assert_eq!(
+                result.unwrap_err().to_string(),
+                "does-not-exist:\n  No such file or directory (os error 2)".to_string()
+            );
+            assert!(!status.success());
+            assert_eq!(status.code(), Some(127));
+        }
+
+        #[test]
+        fn result_and_exit_for_missing_arguments() {
+            let (result, Exit(status)): (Result<(), Error>, Exit) = cmd!("");
+            assert_eq!(
+                result.unwrap_err().to_string(),
+                "no arguments given".to_string()
+            );
+            assert!(!status.success());
+            assert_eq!(status.code(), Some(1));
         }
     }
 }

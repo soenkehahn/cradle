@@ -6,6 +6,7 @@ pub struct Config {
     pub(crate) relay_stdout: bool,
     pub(crate) relay_stderr: bool,
     pub(crate) error_on_non_zero_exit_code: bool,
+    pub(crate) should_panic: bool,
 }
 
 impl Config {
@@ -36,6 +37,7 @@ impl Default for Config {
             relay_stdout: true,
             relay_stderr: true,
             error_on_non_zero_exit_code: true,
+            should_panic: true,
         }
     }
 }

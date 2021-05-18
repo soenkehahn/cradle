@@ -6,6 +6,7 @@ pub enum Error {
     NoArgumentsGiven,
     CommandIoError {
         message: String,
+        error_kind: io::ErrorKind,
     },
     NonZeroExitCode {
         full_command: String,
@@ -23,6 +24,7 @@ impl Error {
     pub(crate) fn command_io_error(config: &Config, error: io::Error) -> Error {
         Error::CommandIoError {
             message: format!("{}:\n  {}", config.full_command(), error),
+            error_kind: error.kind(),
         }
     }
 }
@@ -31,7 +33,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::NoArgumentsGiven => write!(f, "no arguments given"),
-            Error::CommandIoError { message } => write!(f, "{}", message),
+            Error::CommandIoError { message, .. } => write!(f, "{}", message),
             Error::NonZeroExitCode {
                 full_command,
                 exit_status,

@@ -1,5 +1,5 @@
 use crate::{Config, Error, RunResult};
-use std::process::ExitStatus;
+use std::{io, os::unix::prelude::ExitStatusExt, process::ExitStatus};
 
 /// All possible return types of [`cmd!`] have to implement this trait.
 /// For documentation about what these return types do, see the
@@ -24,7 +24,7 @@ pub trait CmdOutput: Sized {
     fn prepare_config(config: &mut Config);
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error>;
+    fn from_run_result(config: &Config, result: RunResult) -> Result<Self, Error>;
 }
 
 /// Use this when you don't need any result from the child process.
@@ -33,8 +33,7 @@ impl CmdOutput for () {
     fn prepare_config(_config: &mut Config) {}
 
     #[doc(hidden)]
-    fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-        result?;
+    fn from_run_result(_config: &Config, _result: RunResult) -> Result<Self, Error> {
         Ok(())
     }
 }
@@ -50,11 +49,15 @@ impl CmdOutput for String {
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-        let result = result?;
-        String::from_utf8(result.stdout).map_err(|_| Error::InvalidUtf8ToStdout {
-            full_command: config.full_command(),
-        })
+    fn from_run_result(config: &Config, result: RunResult) -> Result<Self, Error> {
+        match result {
+            RunResult::EarlyError(_) => todo!(),
+            RunResult::Success { stdout, .. } => {
+                String::from_utf8(stdout).map_err(|_| Error::InvalidUtf8ToStdout {
+                    full_command: config.full_command(),
+                })
+            }
+        }
     }
 }
 
@@ -67,14 +70,15 @@ where
 {
     #[doc(hidden)]
     fn prepare_config(config: &mut Config) {
+        config.should_panic = false;
         T::prepare_config(config);
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(config: &Config, result: RunResult) -> Result<Self, Error> {
         Ok(match result {
-            Ok(_) => T::from_run_result(config, result),
-            Err(error) => Err(error),
+            RunResult::EarlyError(error) => Err(error),
+            run_result @ RunResult::Success { .. } => T::from_run_result(config, run_result),
         })
     }
 }
@@ -91,7 +95,7 @@ macro_rules! tuple_impl {
             }
 
             #[doc(hidden)]
-            fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+            fn from_run_result(config: &Config, result: RunResult) -> Result<Self, Error> {
                 Ok((
                     $($generics::from_run_result(config, result.clone())?,)+
                 ))
@@ -105,6 +109,7 @@ tuple_impl!(A, B,);
 tuple_impl!(A, B, C,);
 
 /// Please, see the [`CmdOutput`] implementation for [`Exit`] below.
+#[derive(Debug)]
 pub struct Exit(pub ExitStatus);
 
 /// Using [`Exit`] as the return type for [`cmd!`] allows to
@@ -140,8 +145,19 @@ impl CmdOutput for Exit {
     }
 
     #[doc(hidden)]
-    fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-        Ok(Exit(result?.exit_status))
+    fn from_run_result(_config: &Config, result: RunResult) -> Result<Self, Error> {
+        match result {
+            RunResult::EarlyError(Error::CommandIoError { error_kind, .. })
+                if error_kind == io::ErrorKind::NotFound =>
+            {
+                dbg!(Ok(Exit(ExitStatusExt::from_raw(127 << 8))))
+            }
+            RunResult::EarlyError(error) => {
+                dbg!(error);
+                dbg!(Ok(Exit(ExitStatusExt::from_raw(1 << 8))))
+            }
+            RunResult::Success { exit_status, .. } => Ok(Exit(exit_status)),
+        }
     }
 }
 
@@ -173,11 +189,16 @@ impl CmdOutput for Stderr {
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-        Ok(Stderr(String::from_utf8(result?.stderr).map_err(|_| {
-            Error::InvalidUtf8ToStderr {
-                full_command: config.full_command(),
+    fn from_run_result(config: &Config, result: RunResult) -> Result<Self, Error> {
+        match result {
+            RunResult::EarlyError(_) => todo!(),
+            RunResult::Success { stderr, .. } => {
+                Ok(Stderr(String::from_utf8(stderr).map_err(|_| {
+                    Error::InvalidUtf8ToStderr {
+                        full_command: config.full_command(),
+                    }
+                })?))
             }
-        })?))
+        }
     }
 }
