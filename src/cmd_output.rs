@@ -1,5 +1,5 @@
 use crate::{Config, Error, RunResult};
-use std::{io, os::unix::prelude::ExitStatusExt, process::ExitStatus};
+use std::{io, process::ExitStatus};
 
 /// All possible return types of [`cmd!`] have to implement this trait.
 /// For documentation about what these return types do, see the
@@ -157,9 +157,9 @@ impl CmdOutput for Exit {
             RunResult::EarlyError(Error::CommandIoError { error_kind, .. })
                 if error_kind == io::ErrorKind::NotFound =>
             {
-                Ok(Exit(ExitStatusExt::from_raw(127 << 8)))
+                Ok(Exit(exit_status(127)))
             }
-            RunResult::EarlyError(error) => Ok(Exit(ExitStatusExt::from_raw(1 << 8))),
+            RunResult::EarlyError(error) => Ok(Exit(exit_status(1))),
             RunResult::LaterError {
                 collected_output,
                 error,
@@ -167,6 +167,15 @@ impl CmdOutput for Exit {
             RunResult::Success { exit_status, .. } => Ok(Exit(exit_status)),
         }
     }
+}
+
+#[cfg(windows)]
+fn exit_status(exit_code: i32) -> ExitStatus {
+    std::os::windows::process::ExitStatusExt::from_raw(exit_code)
+}
+#[cfg(unix)]
+fn exit_status(exit_code: i32) -> ExitStatus {
+    std::os::unix::prelude::ExitStatusExt::from_raw(exit_code << 8)
 }
 
 /// Please, see the [`CmdOutput`] implementation for [`Stderr`] below.

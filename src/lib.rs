@@ -496,6 +496,7 @@ mod tests {
                 let result: Result<(), Error> = cmd!("does-not-exist foo bar");
                 assert_eq!(
                     result.unwrap_err().to_string(),
+                    // fixme: consolidate cfg usages
                     if cfg!(target_os = "windows") {
                         "does-not-exist foo bar:\n  The system cannot find the file specified. (os error 2)"
                     } else {
@@ -554,7 +555,12 @@ mod tests {
                 let (result, Exit(status)): (Result<(), Error>, Exit) = cmd!("does-not-exist");
                 assert_eq!(
                     result.unwrap_err().to_string(),
-                    "does-not-exist:\n  No such file or directory (os error 2)".to_string()
+                    if cfg!(windows) {
+                        "does-not-exist:\n  The system cannot find the file specified. (os error 2)"
+                    } else {
+                        "does-not-exist:\n  No such file or directory (os error 2)"
+                    }
+                    .to_string()
                 );
                 assert!(!status.success());
                 assert_eq!(status.code(), Some(127));

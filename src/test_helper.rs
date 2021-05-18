@@ -20,6 +20,7 @@ fn main() {
                 sleep(Duration::from_secs_f32(0.1));
             }
         }
+        // fixme: update string
         "output foo and exit with 42" => {
             println!("output to stdout");
             std::process::exit(42)
