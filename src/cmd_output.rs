@@ -58,27 +58,6 @@ impl CmdOutput for String {
     }
 }
 
-/// To turn all possible panics of [`cmd!`] into [`std::result::Result::Err`]s
-/// you can use a return type of `Result<T, stir::Error>`. `T` can be any type that
-/// implements [`CmdOutput`].
-impl<T> CmdOutput for Result<T, Error>
-where
-    T: CmdOutput,
-{
-    #[doc(hidden)]
-    fn prepare_config(config: &mut Config) {
-        T::prepare_config(config);
-    }
-
-    #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-        Ok(match result {
-            Ok(_) => T::from_run_result(config, result),
-            Err(error) => Err(error),
-        })
-    }
-}
-
 macro_rules! tuple_impl {
     ($($generics:ident,)+) => {
         impl<$($generics),+> CmdOutput for ($($generics,)+)
@@ -125,7 +104,7 @@ pub struct Exit(pub ExitStatus);
 ///
 /// let Exit(status) = cmd!("false");
 /// assert_eq!(status.code(), Some(1));
-/// let result: Result<Exit, stir::Error> = cmd!("false");
+/// let result: Result<Exit, stir::Error> = cmd_result!("false");
 /// assert!(result.is_ok());
 /// assert_eq!(result.unwrap().0.code(), Some(1));
 /// ```

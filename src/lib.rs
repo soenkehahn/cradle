@@ -133,21 +133,22 @@
 //! ```
 //!
 //! You can also turn **all** panics into [`std::result::Result::Err`]s
-//! by fixing the return type of [`cmd!`] to `Result<T, stir::Error>`, where
+//! by using [`cmd_result!`]. This will return a value of type
+//! [`Result<T, stir::Error>`], where
 //! `T` is any type that implements [`CmdOutput`].
 //! Here's some examples:
 //!
 //! ```
 //! use stir::*;
 //!
-//! let result: Result<(), stir::Error> = cmd!("false");
+//! let result: Result<(), stir::Error> = cmd_result!("false");
 //! let error_message = format!("{}", result.unwrap_err());
 //! assert_eq!(
 //!     error_message,
 //!     "false:\n  exited with exit code: 1"
 //! );
 //!
-//! let result: Result<String, stir::Error> = cmd!("echo foo");
+//! let result: Result<String, stir::Error> = cmd_result!("echo foo");
 //! assert_eq!(result.unwrap(), "foo\n".to_string());
 //! ```
 
@@ -162,7 +163,7 @@ use crate::collected_output::Waiter;
 pub use crate::{
     cmd_argument::{CmdArgument, LogCommand},
     cmd_output::{CmdOutput, Exit, Stderr},
-    error::Error,
+    error::{panic_on_error, Error},
 };
 #[doc(hidden)]
 pub use crate::{config::Config, context::Context};
@@ -176,7 +177,7 @@ use std::{
 macro_rules! cmd {
     ($($args:expr),+) => {{
         let context = $crate::Context::production();
-        $crate::cmd_with_context!(context, $($args),+)
+        $crate::panic_on_error($crate::cmd_with_context!(context, $($args),+))
     }}
 }
 
@@ -185,6 +186,16 @@ macro_rules! cmd {
 macro_rules! cmd_unit {
     ($($args:expr),+) => {{
         let () = $crate::cmd!($($args),+);
+    }}
+}
+
+/// Like [`cmd!`], but fixes the return type to [`Result<T, Error>`],
+/// where `T` is any type that implements [`CmdOutput`].
+#[macro_export]
+macro_rules! cmd_result {
+    ($($args:expr),+) => {{
+        let context = $crate::Context::production();
+        $crate::cmd_with_context!(context, $($args),+)
     }}
 }
 
@@ -199,17 +210,17 @@ macro_rules! cmd_with_context {
 }
 
 #[doc(hidden)]
-pub fn run_cmd<Stdout, Stderr, T>(context: Context<Stdout, Stderr>, mut config: Config) -> T
+pub fn run_cmd<Stdout, Stderr, T>(
+    context: Context<Stdout, Stderr>,
+    mut config: Config,
+) -> Result<T, Error>
 where
     Stdout: Write + Clone + Send + 'static,
     Stderr: Write + Clone + Send + 'static,
     T: CmdOutput,
 {
     <T as CmdOutput>::prepare_config(&mut config);
-    match T::from_run_result(&config, run_cmd_safe(context, &config)) {
-        Ok(result) => result,
-        Err(error) => panic!("cmd!: {}", error),
-    }
+    T::from_run_result(&config, run_cmd_safe(context, &config))
 }
 
 #[doc(hidden)]
@@ -312,7 +323,9 @@ mod tests {
 
     macro_rules! cmd_with_context_unit {
         ($context:expr, $($args:expr),+) => {{
-            let () = $crate::cmd_with_context!($context, $($args),+);
+            let result: std::result::Result<(), $crate::Error> =
+              $crate::cmd_with_context!($context, $($args),+);
+            result
         }}
     }
 
@@ -421,7 +434,7 @@ mod tests {
 
             #[test]
             fn non_zero_exit_codes() {
-                let result: Result<(), Error> = cmd!("false");
+                let result: Result<(), Error> = cmd_result!("false");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false:\n  exited with exit code: 1"
@@ -430,19 +443,19 @@ mod tests {
 
             #[test]
             fn no_errors() {
-                let result: Result<(), Error> = cmd!("true");
+                let result: Result<(), Error> = cmd_result!("true");
                 result.unwrap();
             }
 
             #[test]
             fn combine_ok_with_other_outputs() {
-                let result: Result<String, Error> = cmd!("echo -n foo");
+                let result: Result<String, Error> = cmd_result!("echo -n foo");
                 assert_eq!(result.unwrap(), "foo".to_string());
             }
 
             #[test]
             fn combine_err_with_other_outputs() {
-                let result: Result<String, Error> = cmd!("false");
+                let result: Result<String, Error> = cmd_result!("false");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false:\n  exited with exit code: 1"
@@ -451,7 +464,7 @@ mod tests {
 
             #[test]
             fn includes_full_command_on_non_zero_exit_codes() {
-                let result: Result<(), Error> = cmd!("false foo bar");
+                let result: Result<(), Error> = cmd_result!("false foo bar");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false foo bar:\n  exited with exit code: 1"
@@ -460,7 +473,7 @@ mod tests {
 
             #[test]
             fn includes_full_command_on_missing_executables() {
-                let result: Result<(), Error> = cmd!("does-not-exist foo bar");
+                let result: Result<(), Error> = cmd_result!("does-not-exist foo bar");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     if cfg!(target_os = "windows") {
@@ -473,7 +486,7 @@ mod tests {
 
             #[test]
             fn other_exit_codes() {
-                let result: Result<(), Error> = cmd!(
+                let result: Result<(), Error> = cmd_result!(
                     executable_path("stir_test_helper").to_str().unwrap(),
                     vec!["exit code 42"]
                 );
@@ -485,7 +498,7 @@ mod tests {
 
             #[test]
             fn executable_cannot_be_found() {
-                let result: Result<(), Error> = cmd!("does-not-exist");
+                let result: Result<(), Error> = cmd_result!("does-not-exist");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     if cfg!(target_os = "windows") {
@@ -498,7 +511,7 @@ mod tests {
 
             #[test]
             fn no_executable() {
-                let result: Result<(), Error> = cmd!("");
+                let result: Result<(), Error> = cmd_result!("");
                 assert_eq!(result.unwrap_err().to_string(), "no arguments given");
             }
 
@@ -506,7 +519,8 @@ mod tests {
             fn invalid_utf8_stdout() {
                 let test_helper = executable_path("stir_test_helper");
                 let test_helper = test_helper.to_str().unwrap();
-                let result: Result<String, Error> = cmd!(test_helper, vec!["invalid utf-8 stdout"]);
+                let result: Result<String, Error> =
+                    cmd_result!(test_helper, vec!["invalid utf-8 stdout"]);
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     format!(
@@ -643,7 +657,7 @@ mod tests {
         #[test]
         fn relays_stdout_by_default() {
             let context = Context::test();
-            cmd_with_context_unit!(context.clone(), "echo foo");
+            cmd_with_context_unit!(context.clone(), "echo foo").unwrap();
             assert_eq!(context.stdout(), "foo\n");
         }
 
@@ -668,7 +682,8 @@ mod tests {
                         context_clone,
                         executable_path("stir_test_helper").to_str().unwrap(),
                         vec!["stream chunk then wait for file"]
-                    );
+                    )
+                    .unwrap();
                 });
                 while (context.stdout()) != "foo\n" {
                     thread::sleep(Duration::from_secs_f32(0.05));
@@ -681,7 +696,7 @@ mod tests {
         #[test]
         fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
-            let _: String = cmd_with_context!(context.clone(), "echo foo");
+            let _: String = cmd_with_context!(context.clone(), "echo foo").unwrap();
             assert_eq!(context.stdout(), "");
         }
 
@@ -705,7 +720,8 @@ mod tests {
                 context.clone(),
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["write to stderr"]
-            );
+            )
+            .unwrap();
             assert_eq!(context.stderr(), "foo\n");
         }
 
@@ -730,7 +746,8 @@ mod tests {
                         context_clone,
                         executable_path("stir_test_helper").to_str().unwrap(),
                         vec!["stream chunk to stderr then wait for file"]
-                    );
+                    )
+                    .unwrap();
                 });
                 loop {
                     let expected = "foo\n";
@@ -764,7 +781,8 @@ mod tests {
         fn assumes_stderr_is_utf_8() {
             let test_helper = executable_path("stir_test_helper");
             let test_helper = test_helper.to_str().unwrap();
-            let result: Result<Stderr, Error> = cmd!(test_helper, vec!["invalid utf-8 stderr"]);
+            let result: Result<Stderr, Error> =
+                cmd_result!(test_helper, vec!["invalid utf-8 stderr"]);
             assert_eq!(
                 result.unwrap_err().to_string(),
                 format!(
@@ -789,7 +807,8 @@ mod tests {
                 context.clone(),
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["write to stderr"]
-            );
+            )
+            .unwrap();
             assert_eq!(context.stderr(), "");
         }
     }
@@ -800,21 +819,21 @@ mod tests {
         #[test]
         fn logs_simple_commands() {
             let context = Context::test();
-            cmd_with_context_unit!(context.clone(), LogCommand, "true");
+            cmd_with_context_unit!(context.clone(), LogCommand, "true").unwrap();
             assert_eq!(context.stderr(), "+ true\n");
         }
 
         #[test]
         fn logs_commands_with_arguments() {
             let context = Context::test();
-            cmd_with_context_unit!(context.clone(), LogCommand, "echo foo");
+            cmd_with_context_unit!(context.clone(), LogCommand, "echo foo").unwrap();
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
 
         #[test]
         fn quotes_arguments_with_spaces() {
             let context = Context::test();
-            cmd_with_context_unit!(context.clone(), LogCommand, "echo", vec!["foo bar"]);
+            cmd_with_context_unit!(context.clone(), LogCommand, "echo", vec!["foo bar"]).unwrap();
             assert_eq!(context.stderr(), "+ echo 'foo bar'\n");
         }
     }
@@ -872,7 +891,7 @@ mod tests {
 
         #[test]
         fn result_of_tuple() {
-            let result: Result<(String, Exit), Error> = cmd!("echo foo");
+            let result: Result<(String, Exit), Error> = cmd_result!("echo foo");
             let (output, Exit(status)) = result.unwrap();
             assert_eq!(output, "foo\n");
             assert!(status.success());
@@ -880,31 +899,15 @@ mod tests {
 
         #[test]
         fn result_of_tuple_when_erroring() {
-            let result: Result<(String, Exit), Error> = cmd!("false");
+            let result: Result<(String, Exit), Error> = cmd_result!("false");
             let (output, Exit(status)) = result.unwrap();
             assert_eq!(output, "");
             assert_eq!(status.code(), Some(1));
         }
 
         #[test]
-        fn tuple_containing_result() {
-            let (result, output): (Result<Exit, Error>, String) = cmd!("echo foo");
-            assert!(result.unwrap().0.success());
-            assert_eq!(output, "foo\n");
-        }
-
-        #[test]
-        fn tuple_containing_result_when_erroring() {
-            let (result, output): (Result<Exit, Error>, String) = cmd!("false");
-            assert!(!result.unwrap().0.success());
-            assert_eq!(output, "");
-        }
-
-        #[test]
         fn three_tuples() {
-            let (result, output, Exit(status)): (Result<(), Error>, String, Exit) =
-                cmd!("echo foo");
-            assert!(result.is_ok());
+            let (Stderr(_), output, Exit(status)): (Stderr, String, Exit) = cmd!("echo foo");
             assert_eq!(output, "foo\n");
             assert_eq!(status.code(), Some(0));
         }
