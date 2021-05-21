@@ -612,6 +612,15 @@ mod tests {
                 );
                 assert_eq!(output, "output to stderr\n");
             }
+
+            #[test]
+            fn exit_code_for_utf8_errors_on_stdout() {
+                let (result, Exit(status), stdout): (Result<(), Error>, Exit, String) =
+                    cmd!(test_helper(), vec!["invalid utf-8 stdout"]);
+            }
+
+            #[test]
+            fn exit_code_for_utf8_errors_on_stderr() {}
         }
     }
 
