@@ -20,12 +20,22 @@ fn panics_on_non_zero_exit_codes() {
 fn result_succeeding() {
     use stir::*;
 
+    #[cfg(unix)]
     fn test() -> Result<(), Error> {
         // make sure 'ls' is installed
         let result: Result<(), Error> = cmd!("which ls");
         result?;
         Ok(())
     }
+
+    #[cfg(windows)]
+    fn test() -> Result<(), Error> {
+        // make sure 'ls' is installed
+        let result: Result<(), Error> = cmd!("where ls");
+        result?;
+        Ok(())
+    }
+
     test().unwrap();
 }
 
@@ -33,11 +43,20 @@ fn result_succeeding() {
 fn result_failing() {
     use stir::*;
 
+    #[cfg(unix)]
     fn test() -> Result<(), Error> {
         let result: Result<(), Error> = cmd!("which does-not-exist");
         result?;
         Ok(())
     }
+
+    #[cfg(windows)]
+    fn test() -> Result<(), Error> {
+        let result: Result<(), Error> = cmd!("where does-not-exist");
+        result?;
+        Ok(())
+    }
+
     assert_eq!(
         test().unwrap_err().to_string(),
         "which does-not-exist:\n  exited with exit code: 1"
@@ -45,33 +64,31 @@ fn result_failing() {
 }
 
 #[test]
-#[cfg(unix)]
 fn trimmed_stdout() {
     use std::path::PathBuf;
     use stir::*;
 
-    let ls_path: String = cmd!("which ls");
-    let ls_path = ls_path.trim();
-    assert!(
-        dbg!(PathBuf::from(&ls_path)).exists(),
-        "{:?} does not exist",
-        &ls_path
-    );
-}
+    #[cfg(unix)]
+    {
+        let ls_path: String = cmd!("which ls");
+        let ls_path = ls_path.trim();
+        assert!(
+            dbg!(PathBuf::from(&ls_path)).exists(),
+            "{:?} does not exist",
+            &ls_path
+        );
+    };
 
-#[test]
-#[cfg(windows)]
-fn trimmed_stdout() {
-    use std::path::PathBuf;
-    use stir::*;
-
-    let ls_path: String = cmd!("where ls");
-    let ls_path = ls_path.trim();
-    assert!(
-        dbg!(PathBuf::from(&ls_path)).exists(),
-        "{:?} does not exist",
-        &ls_path
-    );
+    #[cfg(windows)]
+    {
+        let ls_path: String = cmd!("which ls");
+        let ls_path = ls_path.trim();
+        assert!(
+            dbg!(PathBuf::from(&ls_path)).exists(),
+            "{:?} does not exist",
+            &ls_path
+        );
+    };
 }
 
 #[test]
@@ -79,6 +96,7 @@ fn trimmed_stdout_and_results() {
     use std::path::PathBuf;
     use stir::*;
 
+    #[cfg(unix)]
     fn test() -> Result<(), Error> {
         let result: Result<String, Error> = cmd!("which ls");
         let ls_path = result?;
@@ -90,6 +108,7 @@ fn trimmed_stdout_and_results() {
         );
         Ok(())
     }
+
     test().unwrap();
 }
 
@@ -99,11 +118,13 @@ fn box_dyn_errors_succeeding() {
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
+    #[cfg(unix)]
     fn test() -> MyResult<()> {
         let result: Result<(), Error> = cmd!("which ls");
         result?;
         Ok(())
     }
+
     test().unwrap();
 }
 
@@ -113,11 +134,13 @@ fn box_dyn_errors_failing() {
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
+    #[cfg(unix)]
     fn test() -> MyResult<()> {
         let result: Result<(), Error> = cmd!("which does-not-exist");
         result?;
         Ok(())
     }
+
     assert_eq!(
         test().unwrap_err().to_string(),
         "which does-not-exist:\n  exited with exit code: 1"
@@ -139,11 +162,13 @@ fn user_supplied_errors_succeeding() {
         }
     }
 
+    #[cfg(unix)]
     fn test() -> Result<(), Error> {
         let result: Result<(), stir::Error> = cmd!("which ls");
         result?;
         Ok(())
     }
+
     test().unwrap();
 }
 
@@ -170,11 +195,13 @@ fn user_supplied_errors_failing() {
         }
     }
 
+    #[cfg(unix)]
     fn test() -> Result<(), Error> {
         let result: Result<(), stir::Error> = cmd!("which does-not-exist");
         result?;
         Ok(())
     }
+
     assert_eq!(
         test().unwrap_err().to_string(),
         "cmd-error: which does-not-exist:\n  exited with exit code: 1"
