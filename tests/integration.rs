@@ -17,7 +17,7 @@ fn panics_on_non_zero_exit_codes() {
 }
 
 #[test]
-fn using_result_error_handling_succeeding() {
+fn result_succeeding() {
     use stir::*;
 
     fn test() -> Result<(), Error> {
@@ -30,7 +30,7 @@ fn using_result_error_handling_succeeding() {
 }
 
 #[test]
-fn using_result_error_handling_failing() {
+fn result_failing() {
     use stir::*;
 
     fn test() -> Result<(), Error> {
@@ -78,7 +78,7 @@ fn trimmed_stdout_and_results() {
 }
 
 #[test]
-fn use_box_dyn_errors_succeeding() {
+fn box_dyn_errors_succeeding() {
     use stir::*;
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
@@ -92,7 +92,7 @@ fn use_box_dyn_errors_succeeding() {
 }
 
 #[test]
-fn use_box_dyn_errors_failing() {
+fn box_dyn_errors_failing() {
     use stir::*;
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
@@ -109,7 +109,7 @@ fn use_box_dyn_errors_failing() {
 }
 
 #[test]
-fn combine_with_user_supplied_errors_succeeding() {
+fn user_supplied_errors_succeeding() {
     use stir::*;
 
     #[derive(Debug)]
@@ -132,7 +132,7 @@ fn combine_with_user_supplied_errors_succeeding() {
 }
 
 #[test]
-fn combine_with_user_supplied_errors_failing() {
+fn user_supplied_errors_failing() {
     use stir::*;
 
     #[derive(Debug)]
