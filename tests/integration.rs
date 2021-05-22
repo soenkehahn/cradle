@@ -49,13 +49,14 @@ fn trimmed_stdout() {
     use std::path::PathBuf;
     use stir::*;
 
-    let ls_path: String = cmd!("which ls");
+    let ls_path: String = cmd!("which git");
     let ls_path = ls_path.trim();
     assert!(
-        PathBuf::from(&ls_path).exists(),
+        dbg!(PathBuf::from(&ls_path)).exists(),
         "{:?} does not exist",
         &ls_path
     );
+    todo!();
 }
 
 #[test]
