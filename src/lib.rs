@@ -122,8 +122,8 @@
 //! cmd_unit!("false");
 //! ```
 //!
-//! You can suppress these panics by using the [`Exit`] type as
-//! a return type of [`cmd!`]:
+//! You can suppress panics caused by non-zero exit codes by using the
+//! [`Exit`] type as a return type of [`cmd!`]:
 //!
 //! ```
 //! use stir::*;
@@ -132,7 +132,7 @@
 //! assert_eq!(exit_status.code(), Some(1));
 //! ```
 //!
-//! You can also turn all panics into [`std::result::Result::Err`]s
+//! You can also turn **all** panics into [`std::result::Result::Err`]s
 //! by fixing the return type of [`cmd!`] to `Result<T, stir::Error>`, where
 //! `T` is any type that implements [`CmdOutput`].
 //! Here's some examples:
