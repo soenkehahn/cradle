@@ -78,11 +78,12 @@ fn trimmed_stdout_and_results() {
 }
 
 #[test]
-fn use_anyhow_errors_succeeding() {
-    use anyhow::Result;
+fn use_box_dyn_errors_succeeding() {
     use stir::*;
 
-    fn test() -> Result<()> {
+    type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
+
+    fn test() -> MyResult<()> {
         let result: Result<(), Error> = cmd!("which ls");
         result?;
         Ok(())
@@ -91,11 +92,12 @@ fn use_anyhow_errors_succeeding() {
 }
 
 #[test]
-fn use_anyhow_errors_failing() {
-    use anyhow::Result;
+fn use_box_dyn_errors_failing() {
     use stir::*;
 
-    fn test() -> Result<()> {
+    type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
+
+    fn test() -> MyResult<()> {
         let result: Result<(), Error> = cmd!("which does-not-exist");
         result?;
         Ok(())
