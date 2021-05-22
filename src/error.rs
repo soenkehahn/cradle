@@ -51,7 +51,7 @@ impl Display for Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Error::CommandIoError { source, .. } => Some(source),
+            Error::CommandIoError { source, .. } => Some(&**source),
             Error::NoArgumentsGiven
             | Error::NonZeroExitCode { .. }
             | Error::InvalidUtf8ToStdout { .. }
