@@ -1,4 +1,4 @@
-ci: test build doc clippy fmt context_integration_tests forbidden-words
+ci: test build doc clippy fmt context_integration_tests
 
 build:
   cargo build --all-targets --all-features

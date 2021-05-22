@@ -56,7 +56,6 @@ fn trimmed_stdout() {
         "{:?} does not exist",
         &ls_path
     );
-    todo!();
 }
 
 #[test]
