@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+const WHICH: &str = "which";
+
 #[test]
 fn capturing_stdout() {
     use stir::*;
@@ -20,18 +22,9 @@ fn panics_on_non_zero_exit_codes() {
 fn result_succeeding() {
     use stir::*;
 
-    #[cfg(unix)]
     fn test() -> Result<(), Error> {
         // make sure 'ls' is installed
-        let result: Result<(), Error> = cmd!("which ls");
-        result?;
-        Ok(())
-    }
-
-    #[cfg(windows)]
-    fn test() -> Result<(), Error> {
-        // make sure 'ls' is installed
-        let result: Result<(), Error> = cmd!("where ls");
+        let result: Result<(), Error> = cmd!(WHICH, "ls");
         result?;
         Ok(())
     }
@@ -43,16 +36,8 @@ fn result_succeeding() {
 fn result_failing() {
     use stir::*;
 
-    #[cfg(unix)]
     fn test() -> Result<(), Error> {
-        let result: Result<(), Error> = cmd!("which does-not-exist");
-        result?;
-        Ok(())
-    }
-
-    #[cfg(windows)]
-    fn test() -> Result<(), Error> {
-        let result: Result<(), Error> = cmd!("where does-not-exist");
+        let result: Result<(), Error> = cmd!(WHICH, "does-not-exist");
         result?;
         Ok(())
     }
@@ -68,20 +53,8 @@ fn trimmed_stdout() {
     use std::path::PathBuf;
     use stir::*;
 
-    #[cfg(unix)]
     {
-        let ls_path: String = cmd!("which ls");
-        let ls_path = ls_path.trim();
-        assert!(
-            dbg!(PathBuf::from(&ls_path)).exists(),
-            "{:?} does not exist",
-            &ls_path
-        );
-    };
-
-    #[cfg(windows)]
-    {
-        let ls_path: String = cmd!("which ls");
+        let ls_path: String = cmd!(WHICH, "ls");
         let ls_path = ls_path.trim();
         assert!(
             dbg!(PathBuf::from(&ls_path)).exists(),
@@ -96,22 +69,8 @@ fn trimmed_stdout_and_results() {
     use std::path::PathBuf;
     use stir::*;
 
-    #[cfg(unix)]
     fn test() -> Result<(), Error> {
-        let result: Result<String, Error> = cmd!("which ls");
-        let ls_path = result?;
-        let ls_path = ls_path.trim();
-        assert!(
-            PathBuf::from(&ls_path).exists(),
-            "{:?} does not exist",
-            &ls_path
-        );
-        Ok(())
-    }
-
-    #[cfg(windows)]
-    fn test() -> Result<(), Error> {
-        let result: Result<String, Error> = cmd!("where ls");
+        let result: Result<String, Error> = cmd!(WHICH, "ls");
         let ls_path = result?;
         let ls_path = ls_path.trim();
         assert!(
@@ -131,16 +90,8 @@ fn box_dyn_errors_succeeding() {
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
-    #[cfg(unix)]
     fn test() -> MyResult<()> {
-        let result: Result<(), Error> = cmd!("which ls");
-        result?;
-        Ok(())
-    }
-
-    #[cfg(windows)]
-    fn test() -> MyResult<()> {
-        let result: Result<(), Error> = cmd!("where ls");
+        let result: Result<(), Error> = cmd!(WHICH, "ls");
         result?;
         Ok(())
     }
@@ -154,9 +105,8 @@ fn box_dyn_errors_failing() {
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
-    #[cfg(unix)]
     fn test() -> MyResult<()> {
-        let result: Result<(), Error> = cmd!("which does-not-exist");
+        let result: Result<(), Error> = cmd!(WHICH, "does-not-exist");
         result?;
         Ok(())
     }
@@ -182,9 +132,8 @@ fn user_supplied_errors_succeeding() {
         }
     }
 
-    #[cfg(unix)]
     fn test() -> Result<(), Error> {
-        let result: Result<(), stir::Error> = cmd!("which ls");
+        let result: Result<(), stir::Error> = cmd!(WHICH, "ls");
         result?;
         Ok(())
     }
@@ -215,9 +164,8 @@ fn user_supplied_errors_failing() {
         }
     }
 
-    #[cfg(unix)]
     fn test() -> Result<(), Error> {
-        let result: Result<(), stir::Error> = cmd!("which does-not-exist");
+        let result: Result<(), stir::Error> = cmd!(WHICH, "does-not-exist");
         result?;
         Ok(())
     }
