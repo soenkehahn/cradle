@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
-const WHICH: &str = if cfg!(unix) { "which" } else { "where" };
+#[cfg(unix)]
+const WHICH: &str = "which";
+#[cfg(windows)]
+const WHICH: &str = "where";
 
 #[test]
 fn capturing_stdout() {
