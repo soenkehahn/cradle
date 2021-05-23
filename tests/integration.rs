@@ -109,6 +109,19 @@ fn trimmed_stdout_and_results() {
         Ok(())
     }
 
+    #[cfg(windows)]
+    fn test() -> Result<(), Error> {
+        let result: Result<String, Error> = cmd!("where ls");
+        let ls_path = result?;
+        let ls_path = ls_path.trim();
+        assert!(
+            PathBuf::from(&ls_path).exists(),
+            "{:?} does not exist",
+            &ls_path
+        );
+        Ok(())
+    }
+
     test().unwrap();
 }
 
@@ -121,6 +134,13 @@ fn box_dyn_errors_succeeding() {
     #[cfg(unix)]
     fn test() -> MyResult<()> {
         let result: Result<(), Error> = cmd!("which ls");
+        result?;
+        Ok(())
+    }
+
+    #[cfg(windows)]
+    fn test() -> MyResult<()> {
+        let result: Result<(), Error> = cmd!("where ls");
         result?;
         Ok(())
     }
