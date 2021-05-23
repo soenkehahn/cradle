@@ -47,7 +47,11 @@ fn result_failing() {
 
     assert_eq!(
         test().unwrap_err().to_string(),
-        "which does-not-exist:\n  exited with exit code: 1"
+        if cfg!(unix) {
+            "which does-not-exist:\n  exited with exit code: 1"
+        } else {
+            "where does-not-exist:\n  exited with exit code: 1"
+        }
     );
 }
 
@@ -116,7 +120,11 @@ fn box_dyn_errors_failing() {
 
     assert_eq!(
         test().unwrap_err().to_string(),
-        "which does-not-exist:\n  exited with exit code: 1"
+        if cfg!(unix) {
+            "which does-not-exist:\n  exited with exit code: 1"
+        } else {
+            "where does-not-exist:\n  exited with exit code: 1"
+        }
     );
 }
 
@@ -175,6 +183,10 @@ fn user_supplied_errors_failing() {
 
     assert_eq!(
         test().unwrap_err().to_string(),
-        "cmd-error: which does-not-exist:\n  exited with exit code: 1"
+        if cfg!(unix) {
+            "cmd-error: which does-not-exist:\n  exited with exit code: 1"
+        } else {
+            "cmd-error: where does-not-exist:\n  exited with exit code: 1"
+        }
     );
 }
