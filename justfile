@@ -1,4 +1,4 @@
-ci: test build doc clippy fmt integration forbidden-words
+ci: test build doc clippy fmt context-integration-tests forbidden-words
 
 build:
   cargo build --all-targets --all-features
@@ -10,7 +10,7 @@ test pattern="": build
 test-lib-fast pattern="":
   cargo test --lib -- --test-threads=1 {{ pattern }}
 
-integration: build
+context-integration-tests: build
   cargo run --features "test_executables" --bin context_integration_tests
 
 doc:

@@ -1,11 +1,12 @@
 use crate::Config;
-use std::{fmt::Display, io, process::ExitStatus};
+use std::{fmt::Display, io, process::ExitStatus, sync::Arc};
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub enum Error {
     NoArgumentsGiven,
     CommandIoError {
         message: String,
+        source: Arc<io::Error>,
     },
     NonZeroExitCode {
         full_command: String,
@@ -23,6 +24,7 @@ impl Error {
     pub(crate) fn command_io_error(config: &Config, error: io::Error) -> Error {
         Error::CommandIoError {
             message: format!("{}:\n  {}", config.full_command(), error),
+            source: Arc::new(error),
         }
     }
 }
@@ -31,7 +33,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::NoArgumentsGiven => write!(f, "no arguments given"),
-            Error::CommandIoError { message } => write!(f, "{}", message),
+            Error::CommandIoError { message, .. } => write!(f, "{}", message),
             Error::NonZeroExitCode {
                 full_command,
                 exit_status,
@@ -42,6 +44,18 @@ impl Display for Error {
             Error::InvalidUtf8ToStderr { full_command } => {
                 write!(f, "{}:\n  invalid utf-8 written to stderr", full_command)
             }
+        }
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Error::CommandIoError { source, .. } => Some(&**source),
+            Error::NoArgumentsGiven
+            | Error::NonZeroExitCode { .. }
+            | Error::InvalidUtf8ToStdout { .. }
+            | Error::InvalidUtf8ToStderr { .. } => None,
         }
     }
 }
