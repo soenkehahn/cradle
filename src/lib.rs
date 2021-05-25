@@ -917,7 +917,7 @@ mod tests {
 
     mod cwd {
         use super::*;
-        use std::fs;
+        use std::{fs, path::Path};
 
         #[test]
         fn sets_the_working_directory() {
@@ -927,6 +927,19 @@ mod tests {
                 fs::write("file", "wrong file").unwrap();
                 let output: String = cmd!("cat file", Cwd("dir"));
                 assert_eq!(output, "foo");
+            });
+        }
+
+        #[test]
+        fn works_for_other_types() {
+            in_temporary_directory(|| {
+                fs::create_dir("dir").unwrap();
+                let dir: String = "dir".to_string();
+                cmd_unit!("true", Cwd(dir));
+                let dir: PathBuf = PathBuf::from("dir");
+                cmd_unit!("true", Cwd(dir));
+                let dir: &Path = Path::new("dir");
+                cmd_unit!("true", Cwd(dir));
             });
         }
     }

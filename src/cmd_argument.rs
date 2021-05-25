@@ -1,5 +1,5 @@
 use crate::config::Config;
-use std::path::PathBuf;
+use std::path::Path;
 
 /// All types that are possible arguments to [`cmd!`] have to implement this trait.
 pub trait CmdArgument {
@@ -124,7 +124,7 @@ impl CmdArgument for LogCommand {
 }
 
 /// Please, see the [`CmdArgument`] implementation for [`Cwd`] below.
-pub struct Cwd<'a>(pub &'a str);
+pub struct Cwd<T: AsRef<Path>>(pub T);
 
 /// By default child processes inherit the current directory from their
 /// parent. You can overwrite this with [`Cwd`]:
@@ -137,8 +137,11 @@ pub struct Cwd<'a>(pub &'a str);
 /// ```
 ///
 /// Paths that are relative to the parent's current directory are allowed.
-impl<'a> CmdArgument for Cwd<'a> {
+impl<T> CmdArgument for Cwd<T>
+where
+    T: AsRef<Path>,
+{
     fn prepare_config(self, config: &mut Config) {
-        config.working_directory = Some(PathBuf::from(self.0));
+        config.working_directory = Some(self.0.as_ref().to_owned());
     }
 }
