@@ -27,8 +27,7 @@ fn result_succeeding() {
 
     fn test() -> Result<(), Error> {
         // make sure 'ls' is installed
-        let result: Result<(), Error> = cmd_result!(WHICH, "ls");
-        result?;
+        cmd_result!(WHICH, "ls")?;
         Ok(())
     }
 
@@ -40,8 +39,7 @@ fn result_failing() {
     use stir::*;
 
     fn test() -> Result<(), Error> {
-        let result: Result<(), Error> = cmd_result!(WHICH, "does-not-exist");
-        result?;
+        cmd_result!(WHICH, "does-not-exist")?;
         Ok(())
     }
 
@@ -77,8 +75,7 @@ fn trimmed_stdout_and_results() {
     use stir::*;
 
     fn test() -> Result<(), Error> {
-        let result: Result<String, Error> = cmd_result!(WHICH, "ls");
-        let ls_path = result?;
+        let ls_path: String = cmd_result!(WHICH, "ls")?;
         let ls_path = ls_path.trim();
         assert!(
             PathBuf::from(&ls_path).exists(),
@@ -98,8 +95,7 @@ fn box_dyn_errors_succeeding() {
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
     fn test() -> MyResult<()> {
-        let result: Result<(), Error> = cmd_result!(WHICH, "ls");
-        result?;
+        cmd_result!(WHICH, "ls")?;
         Ok(())
     }
 
@@ -113,8 +109,7 @@ fn box_dyn_errors_failing() {
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
     fn test() -> MyResult<()> {
-        let result: Result<(), Error> = cmd_result!(WHICH, "does-not-exist");
-        result?;
+        cmd_result!(WHICH, "does-not-exist")?;
         Ok(())
     }
 
@@ -144,8 +139,7 @@ fn user_supplied_errors_succeeding() {
     }
 
     fn test() -> Result<(), Error> {
-        let result: Result<(), stir::Error> = cmd_result!(WHICH, "ls");
-        result?;
+        cmd_result!(WHICH, "ls")?;
         Ok(())
     }
 
@@ -176,8 +170,7 @@ fn user_supplied_errors_failing() {
     }
 
     fn test() -> Result<(), Error> {
-        let result: Result<(), stir::Error> = cmd_result!(WHICH, "does-not-exist");
-        result?;
+        cmd_result!(WHICH, "does-not-exist")?;
         Ok(())
     }
 
