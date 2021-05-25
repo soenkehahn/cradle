@@ -1,8 +1,11 @@
+use std::path::PathBuf;
+
 #[doc(hidden)]
 #[derive(Clone)]
 pub struct Config {
     pub(crate) arguments: Vec<String>,
     pub(crate) log_command: bool,
+    pub(crate) working_directory: Option<PathBuf>,
     pub(crate) relay_stdout: bool,
     pub(crate) relay_stderr: bool,
     pub(crate) error_on_non_zero_exit_code: bool,
@@ -33,6 +36,7 @@ impl Default for Config {
         Config {
             arguments: Vec::new(),
             log_command: false,
+            working_directory: None,
             relay_stdout: true,
             relay_stderr: true,
             error_on_non_zero_exit_code: true,

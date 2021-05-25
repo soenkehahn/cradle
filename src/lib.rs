@@ -160,7 +160,7 @@ mod error;
 
 use crate::collected_output::Waiter;
 pub use crate::{
-    cmd_argument::{CmdArgument, LogCommand},
+    cmd_argument::{CmdArgument, Cwd, LogCommand},
     cmd_output::{CmdOutput, Exit, Stderr},
     error::Error,
 };
@@ -228,15 +228,20 @@ where
     Stdout: Write + Clone + Send + 'static,
     Stderr: Write + Clone + Send + 'static,
 {
-    let (command, arguments) = parse_input(config.arguments.clone())?;
+    let (executable, arguments) = parse_input(config.arguments.clone())?;
     if config.log_command {
         writeln!(context.stderr, "+ {}", config.full_command())
             .map_err(|error| Error::command_io_error(&config, error))?;
     }
-    let mut child = Command::new(&command)
+    let mut command = Command::new(&executable);
+    command
         .args(arguments)
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stderr(Stdio::piped());
+    if let Some(working_directory) = &config.working_directory {
+        command.current_dir(working_directory);
+    }
+    let mut child = command
         .spawn()
         .map_err(|error| Error::command_io_error(&config, error))?;
     let waiter = Waiter::spawn_standard_stream_relaying(
@@ -907,6 +912,22 @@ mod tests {
             assert!(result.is_ok());
             assert_eq!(output, "foo\n");
             assert_eq!(status.code(), Some(0));
+        }
+    }
+
+    mod cwd {
+        use super::*;
+        use std::fs;
+
+        #[test]
+        fn sets_the_working_directory() {
+            in_temporary_directory(|| {
+                fs::create_dir("dir").unwrap();
+                fs::write("dir/file", "foo").unwrap();
+                fs::write("file", "wrong file").unwrap();
+                let output: String = cmd!("cat file", Cwd("dir"));
+                assert_eq!(output, "foo");
+            });
         }
     }
 }
