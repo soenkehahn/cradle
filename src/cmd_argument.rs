@@ -132,8 +132,8 @@ pub struct Cwd<T: AsRef<Path>>(pub T);
 /// ```
 /// use stir::*;
 ///
-/// let output: String = cmd!("pwd", Cwd("/tmp"));
-/// assert_eq!(output, "/tmp\n");
+/// let output: String = cmd!("pwd", Cwd("/"));
+/// assert_eq!(output, "/\n");
 /// ```
 ///
 /// Paths that are relative to the parent's current directory are allowed.
