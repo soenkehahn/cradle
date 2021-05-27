@@ -192,7 +192,7 @@ use std::{
 macro_rules! cmd {
     ($($args:expr),+) => {{
         let context = $crate::Context::production();
-        $crate::panic_on_error($crate::cmd_with_context!(context, $($args),+))
+        $crate::panic_on_error($crate::cmd_result_with_context!(context, $($args),+))
     }}
 }
 
@@ -210,13 +210,13 @@ macro_rules! cmd_unit {
 macro_rules! cmd_result {
     ($($args:expr),+) => {{
         let context = $crate::Context::production();
-        $crate::cmd_with_context!(context, $($args),+)
+        $crate::cmd_result_with_context!(context, $($args),+)
     }}
 }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! cmd_with_context {
+macro_rules! cmd_result_with_context {
     ($context:expr, $($args:expr),+) => {{
         let mut config = $crate::Config::default();
         $($crate::CmdArgument::prepare_config($args, &mut config);)+
@@ -336,10 +336,10 @@ mod tests {
         result.unwrap();
     }
 
-    macro_rules! cmd_with_context_unit {
+    macro_rules! cmd_result_with_context_unit {
         ($context:expr, $($args:expr),+) => {{
             let result: std::result::Result<(), $crate::Error> =
-              $crate::cmd_with_context!($context, $($args),+);
+              $crate::cmd_result_with_context!($context, $($args),+);
             result
         }}
     }
@@ -672,14 +672,14 @@ mod tests {
         #[test]
         fn relays_stdout_by_default() {
             let context = Context::test();
-            cmd_with_context_unit!(context.clone(), "echo foo").unwrap();
+            cmd_result_with_context_unit!(context.clone(), "echo foo").unwrap();
             assert_eq!(context.stdout(), "foo\n");
         }
 
         #[test]
         fn relays_stdout_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<(), Error> = cmd_with_context!(
+            let _: Result<(), Error> = cmd_result_with_context!(
                 context.clone(),
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
@@ -693,7 +693,7 @@ mod tests {
                 let context = Context::test();
                 let context_clone = context.clone();
                 let thread = thread::spawn(|| {
-                    cmd_with_context_unit!(
+                    cmd_result_with_context_unit!(
                         context_clone,
                         executable_path("stir_test_helper").to_str().unwrap(),
                         vec!["stream chunk then wait for file"]
@@ -711,14 +711,14 @@ mod tests {
         #[test]
         fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
-            let _: String = cmd_with_context!(context.clone(), "echo foo").unwrap();
+            let _: String = cmd_result_with_context!(context.clone(), "echo foo").unwrap();
             assert_eq!(context.stdout(), "");
         }
 
         #[test]
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
-            let _: Result<String, Error> = cmd_with_context!(context.clone(), "echo foo");
+            let _: Result<String, Error> = cmd_result_with_context!(context.clone(), "echo foo");
             assert_eq!(context.stdout(), "");
         }
     }
@@ -731,7 +731,7 @@ mod tests {
         #[test]
         fn relays_stderr_by_default() {
             let context = Context::test();
-            cmd_with_context_unit!(
+            cmd_result_with_context_unit!(
                 context.clone(),
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["write to stderr"]
@@ -743,7 +743,7 @@ mod tests {
         #[test]
         fn relays_stderr_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<(), Error> = cmd_with_context!(
+            let _: Result<(), Error> = cmd_result_with_context!(
                 context.clone(),
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["write to stderr and exit with 42"]
@@ -757,7 +757,7 @@ mod tests {
                 let context = Context::test();
                 let context_clone = context.clone();
                 let thread = thread::spawn(|| {
-                    cmd_with_context_unit!(
+                    cmd_result_with_context_unit!(
                         context_clone,
                         executable_path("stir_test_helper").to_str().unwrap(),
                         vec!["stream chunk to stderr then wait for file"]
@@ -818,7 +818,7 @@ mod tests {
         #[test]
         fn does_not_relay_stderr_when_catpuring() {
             let context = Context::test();
-            let Stderr(_) = cmd_with_context!(
+            let Stderr(_) = cmd_result_with_context!(
                 context.clone(),
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["write to stderr"]
@@ -834,21 +834,22 @@ mod tests {
         #[test]
         fn logs_simple_commands() {
             let context = Context::test();
-            cmd_with_context_unit!(context.clone(), LogCommand, "true").unwrap();
+            cmd_result_with_context_unit!(context.clone(), LogCommand, "true").unwrap();
             assert_eq!(context.stderr(), "+ true\n");
         }
 
         #[test]
         fn logs_commands_with_arguments() {
             let context = Context::test();
-            cmd_with_context_unit!(context.clone(), LogCommand, "echo foo").unwrap();
+            cmd_result_with_context_unit!(context.clone(), LogCommand, "echo foo").unwrap();
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
 
         #[test]
         fn quotes_arguments_with_spaces() {
             let context = Context::test();
-            cmd_with_context_unit!(context.clone(), LogCommand, "echo", vec!["foo bar"]).unwrap();
+            cmd_result_with_context_unit!(context.clone(), LogCommand, "echo", vec!["foo bar"])
+                .unwrap();
             assert_eq!(context.stderr(), "+ echo 'foo bar'\n");
         }
     }
