@@ -464,12 +464,12 @@ mod tests {
 
             #[test]
             fn no_errors() {
-                let result: Result<(), Error> = cmd_result!("true");
-                result.unwrap();
+                let () = cmd_result!("true").unwrap();
             }
 
             #[test]
             fn combine_ok_with_other_outputs() {
+                // todo: use method
                 let result: Result<Stdout, Error> = cmd_result!("echo -n foo");
                 assert_eq!(result.unwrap().0, "foo".to_string());
             }
@@ -887,8 +887,8 @@ mod tests {
 
         #[test]
         fn failing_commands_return_oks_when_exit_status_is_captured() {
-            let result: Result<Exit, Error> = cmd_result!("false");
-            assert!(!result.unwrap().0.success());
+            let Exit(status) = cmd_result!("false").unwrap();
+            assert!(!status.success());
         }
     }
 
@@ -917,18 +917,14 @@ mod tests {
 
         #[test]
         fn result_of_tuple() {
-            // todo: simplify
-            let result: Result<(Stdout, Exit), Error> = cmd_result!("echo foo");
-            let (Stdout(output), Exit(status)) = result.unwrap();
+            let (Stdout(output), Exit(status)) = cmd_result!("echo foo").unwrap();
             assert_eq!(output, "foo\n");
             assert!(status.success());
         }
 
         #[test]
         fn result_of_tuple_when_erroring() {
-            // todo: simplify
-            let result: Result<(Stdout, Exit), Error> = cmd_result!("false");
-            let (Stdout(output), Exit(status)) = result.unwrap();
+            let (Stdout(output), Exit(status)) = cmd_result!("false").unwrap();
             assert_eq!(output, "");
             assert_eq!(status.code(), Some(1));
         }
