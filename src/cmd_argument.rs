@@ -130,16 +130,11 @@ pub struct CurrentDir<T: AsRef<Path>>(pub T);
 /// parent. You can override this with [`CurrentDir`]:
 ///
 /// ```
-/// # #[cfg(target_os = "linux")]
-/// # fn test() {
 /// use stir::*;
 ///
 /// let output: String = cmd!("pwd", CurrentDir("/tmp"));
+/// # #[cfg(target_os = "linux")]
 /// assert_eq!(output, "/tmp\n");
-/// # }
-/// # #[cfg(not(target_os = "linux"))]
-/// # fn test() {}
-/// # test();
 /// ```
 ///
 /// Paths that are relative to the parent's current directory are allowed.
