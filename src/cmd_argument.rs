@@ -123,21 +123,21 @@ impl CmdArgument for LogCommand {
     }
 }
 
-/// Please, see the [`CmdArgument`] implementation for [`Cwd`] below.
-pub struct Cwd<T: AsRef<Path>>(pub T);
+/// Please, see the [`CmdArgument`] implementation for [`CurrentDir`] below.
+pub struct CurrentDir<T: AsRef<Path>>(pub T);
 
 /// By default child processes inherit the current directory from their
-/// parent. You can overwrite this with [`Cwd`]:
+/// parent. You can overwrite this with [`CurrentDir`]:
 ///
 /// ```
 /// use stir::*;
 ///
-/// let output: String = cmd!("pwd", Cwd("/"));
+/// let output: String = cmd!("pwd", CurrentDir("/"));
 /// assert_eq!(output, "/\n");
 /// ```
 ///
 /// Paths that are relative to the parent's current directory are allowed.
-impl<T> CmdArgument for Cwd<T>
+impl<T> CmdArgument for CurrentDir<T>
 where
     T: AsRef<Path>,
 {

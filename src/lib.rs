@@ -160,7 +160,7 @@ mod error;
 
 use crate::collected_output::Waiter;
 pub use crate::{
-    cmd_argument::{CmdArgument, Cwd, LogCommand},
+    cmd_argument::{CmdArgument, CurrentDir, LogCommand},
     cmd_output::{CmdOutput, Exit, Stderr},
     error::Error,
 };
@@ -915,7 +915,7 @@ mod tests {
         }
     }
 
-    mod cwd {
+    mod current_dir {
         use super::*;
         use std::{fs, path::Path};
 
@@ -925,7 +925,7 @@ mod tests {
                 fs::create_dir("dir").unwrap();
                 fs::write("dir/file", "foo").unwrap();
                 fs::write("file", "wrong file").unwrap();
-                let output: String = cmd!("cat file", Cwd("dir"));
+                let output: String = cmd!("cat file", CurrentDir("dir"));
                 assert_eq!(output, "foo");
             });
         }
@@ -935,11 +935,11 @@ mod tests {
             in_temporary_directory(|| {
                 fs::create_dir("dir").unwrap();
                 let dir: String = "dir".to_string();
-                cmd_unit!("true", Cwd(dir));
+                cmd_unit!("true", CurrentDir(dir));
                 let dir: PathBuf = PathBuf::from("dir");
-                cmd_unit!("true", Cwd(dir));
+                cmd_unit!("true", CurrentDir(dir));
                 let dir: &Path = Path::new("dir");
-                cmd_unit!("true", Cwd(dir));
+                cmd_unit!("true", CurrentDir(dir));
             });
         }
     }
