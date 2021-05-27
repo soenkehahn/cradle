@@ -14,7 +14,7 @@ use std::process::ExitStatus;
 /// ```
 /// use stir::*;
 ///
-/// let (Stdout(stdout), Exit(status)) = cmd!("echo foo");
+/// let (StdoutUntrimmed(stdout), Exit(status)) = cmd!("echo foo");
 /// assert_eq!(stdout, "foo\n");
 /// assert!(status.success());
 /// ```
@@ -38,13 +38,13 @@ impl CmdOutput for () {
     }
 }
 
-/// See the [`CmdOutput`] implementation for [`Stdout`] below.
+/// See the [`CmdOutput`] implementation for [`StdoutUntrimmed`] below.
 #[derive(Debug, PartialEq, Clone)]
-pub struct Stdout(pub String);
+pub struct StdoutUntrimmed(pub String);
 
 /// Returns what the child process writes to `stdout`, interpreted as utf-8,
 /// collected into a string. This also suppresses output of the child's `stdout`
-/// to the parent's `stdout`. (Which would be the default when not using [`Stdout`]
+/// to the parent's `stdout`. (Which would be the default when not using [`StdoutUntrimmed`]
 /// as the return value.)
 ///
 /// It's recommended to pattern-match to get to the inner [`String`].
@@ -54,10 +54,10 @@ pub struct Stdout(pub String);
 /// ```
 /// use stir::*;
 ///
-/// let Stdout(output) = cmd!("echo foo");
+/// let StdoutUntrimmed(output) = cmd!("echo foo");
 /// assert_eq!(output, "foo\n");
 /// ```
-impl CmdOutput for Stdout {
+impl CmdOutput for StdoutUntrimmed {
     #[doc(hidden)]
     fn prepare_config(config: &mut Config) {
         config.relay_stdout = false;
@@ -66,11 +66,11 @@ impl CmdOutput for Stdout {
     #[doc(hidden)]
     fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
         let result = result?;
-        Ok(Stdout(String::from_utf8(result.stdout).map_err(|_| {
-            Error::InvalidUtf8ToStdout {
+        Ok(StdoutUntrimmed(String::from_utf8(result.stdout).map_err(
+            |_| Error::InvalidUtf8ToStdout {
                 full_command: config.full_command(),
-            }
-        })?))
+            },
+        )?))
     }
 }
 

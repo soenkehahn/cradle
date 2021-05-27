@@ -4,7 +4,7 @@
 //! ```
 //! use stir::*;
 //!
-//! let Stdout(stdout) = cmd!("echo -n foo");
+//! let StdoutUntrimmed(stdout) = cmd!("echo -n foo");
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -17,7 +17,7 @@
 //! ```
 //! use stir::*;
 //!
-//! let Stdout(stdout) = cmd!("echo", "foo", "bar");
+//! let StdoutUntrimmed(stdout) = cmd!("echo", "foo", "bar");
 //! assert_eq!(stdout, "foo bar\n");
 //! ```
 //!
@@ -30,7 +30,7 @@
 //!
 //! # #[rustversion::since(1.51)]
 //! # fn test() {
-//! let Stdout(stdout) = cmd!("echo", ["foo", "bar"]);
+//! let StdoutUntrimmed(stdout) = cmd!("echo", ["foo", "bar"]);
 //! assert_eq!(stdout, "foo bar\n");
 //! # }
 //! # #[rustversion::before(1.51)]
@@ -47,7 +47,7 @@
 //!
 //! # #[rustversion::since(1.51)]
 //! # fn test() {
-//! let Stdout(_) = cmd!("touch", ["filename with spaces"]);
+//! let StdoutUntrimmed(_) = cmd!("touch", ["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
 //! # }
 //! # #[rustversion::before(1.51)]
@@ -61,7 +61,7 @@
 //! use std::path::PathBuf;
 //! use stir::*;
 //!
-//! let Stdout(_) = cmd!("touch", vec!["filename with spaces"]);
+//! let StdoutUntrimmed(_) = cmd!("touch", vec!["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
 //! ```
 //!
@@ -71,18 +71,18 @@
 //!
 //! You can choose which return type you want [`cmd!`] to return,
 //! as long as the chosen return type implements [`CmdOutput`].
-//! For example you can use e.g. [`Stdout`] to collect what the
+//! For example you can use e.g. [`StdoutUntrimmed`] to collect what the
 //! child process writes to `stdout`:
 //!
 //! ```
 //! use stir::*;
 //!
-//! let Stdout(output) = cmd!("echo foo");
+//! let StdoutUntrimmed(output) = cmd!("echo foo");
 //! assert_eq!(output, "foo\n");
 //! ```
 //!
 //! (By default, the child's `stdout` is written to the parent's `stdout`.
-//! Using `Stdout` as the return type suppresses that.)
+//! Using `StdoutUntrimmed` as the return type suppresses that.)
 //!
 //! If you don't want any result from [`cmd!`], you can use `()`
 //! as the return value:
@@ -149,7 +149,7 @@
 //! );
 //!
 //! let result = cmd_result!("echo foo");
-//! let Stdout(output) = result.unwrap();
+//! let StdoutUntrimmed(output) = result.unwrap();
 //! assert_eq!(output, "foo\n".to_string());
 //! ```
 //!
@@ -178,7 +178,7 @@ mod error;
 use crate::collected_output::Waiter;
 pub use crate::{
     cmd_argument::{CmdArgument, CurrentDir, LogCommand},
-    cmd_output::{CmdOutput, Exit, Stderr, Stdout},
+    cmd_output::{CmdOutput, Exit, Stderr, StdoutUntrimmed},
     error::{panic_on_error, Error},
 };
 #[doc(hidden)]
@@ -373,7 +373,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "cmd!: false:\n  exited with exit code: 1")]
             fn combine_panics_with_other_outputs() {
-                let Stdout(_) = cmd!("false");
+                let StdoutUntrimmed(_) = cmd!("false");
             }
 
             #[test]
@@ -434,7 +434,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "invalid utf-8 written to stdout")]
             fn invalid_utf8_stdout() {
-                let Stdout(_) = cmd!(
+                let StdoutUntrimmed(_) = cmd!(
                     executable_path("stir_test_helper").to_str().unwrap(),
                     vec!["invalid utf-8 stdout"]
                 );
@@ -470,13 +470,13 @@ mod tests {
             #[test]
             fn combine_ok_with_other_outputs() {
                 let result = cmd_result!("echo -n foo");
-                let Stdout(output) = result.unwrap();
+                let StdoutUntrimmed(output) = result.unwrap();
                 assert_eq!(output, "foo".to_string());
             }
 
             #[test]
             fn combine_err_with_other_outputs() {
-                let result: Result<Stdout, Error> = cmd_result!("false");
+                let result: Result<StdoutUntrimmed, Error> = cmd_result!("false");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false:\n  exited with exit code: 1"
@@ -540,7 +540,7 @@ mod tests {
             fn invalid_utf8_stdout() {
                 let test_helper = executable_path("stir_test_helper");
                 let test_helper = test_helper.to_str().unwrap();
-                let result: Result<Stdout, Error> =
+                let result: Result<StdoutUntrimmed, Error> =
                     cmd_result!(test_helper, vec!["invalid utf-8 stdout"]);
                 assert_eq!(
                     result.unwrap_err().to_string(),
@@ -555,26 +555,26 @@ mod tests {
 
     #[test]
     fn allows_to_retrieve_stdout() {
-        let Stdout(stdout) = cmd!("echo foo");
+        let StdoutUntrimmed(stdout) = cmd!("echo foo");
         assert_eq!(stdout, "foo\n");
     }
 
     #[test]
     fn command_and_argument_as_separate_ref_str() {
-        let Stdout(stdout) = cmd!("echo", "foo");
+        let StdoutUntrimmed(stdout) = cmd!("echo", "foo");
         assert_eq!(stdout, "foo\n");
     }
 
     #[test]
     fn multiple_arguments_as_ref_str() {
-        let Stdout(stdout) = cmd!("echo", "foo", "bar");
+        let StdoutUntrimmed(stdout) = cmd!("echo", "foo", "bar");
         assert_eq!(stdout, "foo bar\n");
     }
 
     #[test]
     fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
         let args: Vec<&str> = vec!["foo"];
-        let Stdout(stdout) = cmd!("echo", args);
+        let StdoutUntrimmed(stdout) = cmd!("echo", args);
         assert_eq!(stdout, "foo\n");
     }
 
@@ -582,7 +582,7 @@ mod tests {
     #[test]
     fn arrays_as_arguments() {
         let args: [&str; 2] = ["echo", "foo"];
-        let Stdout(stdout) = cmd!(args);
+        let StdoutUntrimmed(stdout) = cmd!(args);
         assert_eq!(stdout, "foo\n");
     }
 
@@ -600,7 +600,7 @@ mod tests {
     #[test]
     fn array_refs_as_arguments() {
         let args: &[&str; 2] = &["echo", "foo"];
-        let Stdout(stdout) = cmd!(args);
+        let StdoutUntrimmed(stdout) = cmd!(args);
         assert_eq!(stdout, "foo\n");
     }
 
@@ -617,7 +617,7 @@ mod tests {
     #[test]
     fn slices_as_arguments() {
         let args: &[&str] = &["echo", "foo"];
-        let Stdout(stdout) = cmd!(args);
+        let StdoutUntrimmed(stdout) = cmd!(args);
         assert_eq!(stdout, "foo\n");
     }
 
@@ -642,7 +642,7 @@ mod tests {
         #[test]
         fn splits_strings_into_words() {
             let command: String = "echo foo".to_string();
-            let Stdout(output) = cmd!(command);
+            let StdoutUntrimmed(output) = cmd!(command);
             assert_eq!(output, "foo\n");
         }
 
@@ -650,14 +650,14 @@ mod tests {
         fn multiple_strings() {
             let command: String = "echo".to_string();
             let argument: String = "foo".to_string();
-            let Stdout(output) = cmd!(command, argument);
+            let StdoutUntrimmed(output) = cmd!(command, argument);
             assert_eq!(output, "foo\n");
         }
 
         #[test]
         fn mix_ref_str_and_string() {
             let argument: String = "foo".to_string();
-            let Stdout(output) = cmd!("echo", argument);
+            let StdoutUntrimmed(output) = cmd!("echo", argument);
             assert_eq!(output, "foo\n");
         }
 
@@ -717,14 +717,15 @@ mod tests {
         #[test]
         fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
-            let Stdout(_) = cmd_result_with_context!(context.clone(), "echo foo").unwrap();
+            let StdoutUntrimmed(_) = cmd_result_with_context!(context.clone(), "echo foo").unwrap();
             assert_eq!(context.stdout(), "");
         }
 
         #[test]
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
-            let _: Result<Stdout, Error> = cmd_result_with_context!(context.clone(), "echo foo");
+            let _: Result<StdoutUntrimmed, Error> =
+                cmd_result_with_context!(context.clone(), "echo foo");
             assert_eq!(context.stdout(), "");
         }
     }
@@ -897,7 +898,7 @@ mod tests {
 
         #[test]
         fn two_tuple_1() {
-            let (Stdout(output), Exit(status)) = cmd!(
+            let (StdoutUntrimmed(output), Exit(status)) = cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
             );
@@ -907,7 +908,7 @@ mod tests {
 
         #[test]
         fn two_tuple_2() {
-            let (Exit(status), Stdout(output)) = cmd!(
+            let (Exit(status), StdoutUntrimmed(output)) = cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
             );
@@ -917,21 +918,21 @@ mod tests {
 
         #[test]
         fn result_of_tuple() {
-            let (Stdout(output), Exit(status)) = cmd_result!("echo foo").unwrap();
+            let (StdoutUntrimmed(output), Exit(status)) = cmd_result!("echo foo").unwrap();
             assert_eq!(output, "foo\n");
             assert!(status.success());
         }
 
         #[test]
         fn result_of_tuple_when_erroring() {
-            let (Stdout(output), Exit(status)) = cmd_result!("false").unwrap();
+            let (StdoutUntrimmed(output), Exit(status)) = cmd_result!("false").unwrap();
             assert_eq!(output, "");
             assert_eq!(status.code(), Some(1));
         }
 
         #[test]
         fn three_tuples() {
-            let (Stderr(stderr), Stdout(stdout), Exit(status)) = cmd!("echo foo");
+            let (Stderr(stderr), StdoutUntrimmed(stdout), Exit(status)) = cmd!("echo foo");
             assert_eq!(stderr, "");
             assert_eq!(stdout, "foo\n");
             assert_eq!(status.code(), Some(0));
@@ -939,7 +940,7 @@ mod tests {
 
         #[test]
         fn capturing_stdout_on_errors() {
-            let (Stdout(output), Exit(status)) = cmd!(
+            let (StdoutUntrimmed(output), Exit(status)) = cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
             );
@@ -968,7 +969,7 @@ mod tests {
                 fs::create_dir("dir").unwrap();
                 fs::write("dir/file", "foo").unwrap();
                 fs::write("file", "wrong file").unwrap();
-                let Stdout(output) = cmd!("cat file", CurrentDir("dir"));
+                let StdoutUntrimmed(output) = cmd!("cat file", CurrentDir("dir"));
                 assert_eq!(output, "foo");
             });
         }

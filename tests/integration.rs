@@ -9,7 +9,7 @@ const WHICH: &str = "where";
 fn capturing_stdout() {
     use stir::*;
 
-    let Stdout(output) = cmd!("echo foo");
+    let StdoutUntrimmed(output) = cmd!("echo foo");
     assert_eq!(output, "foo\n");
 }
 
@@ -59,7 +59,7 @@ fn trimmed_stdout() {
     use stir::*;
 
     {
-        let Stdout(ls_path) = cmd!(WHICH, "ls");
+        let StdoutUntrimmed(ls_path) = cmd!(WHICH, "ls");
         let ls_path = ls_path.trim();
         assert!(
             PathBuf::from(&ls_path).exists(),
@@ -75,7 +75,7 @@ fn trimmed_stdout_and_results() {
     use stir::*;
 
     fn test() -> Result<(), Error> {
-        let Stdout(ls_path) = cmd_result!(WHICH, "ls")?;
+        let StdoutUntrimmed(ls_path) = cmd_result!(WHICH, "ls")?;
         let ls_path = ls_path.trim();
         assert!(
             PathBuf::from(&ls_path).exists(),
