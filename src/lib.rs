@@ -880,7 +880,7 @@ mod tests {
         }
 
         #[test]
-        fn result_of_exit() {
+        fn failing_commands_return_oks_when_exit_status_is_captured() {
             let result: Result<Exit, Error> = cmd_result!("false");
             assert!(!result.unwrap().0.success());
         }
@@ -929,8 +929,9 @@ mod tests {
 
         #[test]
         fn three_tuples() {
-            let (Stderr(_), output, Exit(status)): (Stderr, String, Exit) = cmd!("echo foo");
-            assert_eq!(output, "foo\n");
+            let (Stderr(stderr), stdout, Exit(status)): (Stderr, String, Exit) = cmd!("echo foo");
+            assert_eq!(stderr, "");
+            assert_eq!(stdout, "foo\n");
             assert_eq!(status.code(), Some(0));
         }
 
