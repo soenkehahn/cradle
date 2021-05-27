@@ -103,7 +103,7 @@ impl CmdArgument for &[&str] {
     }
 }
 
-/// Please, see the [`CmdArgument`] implementation for [`LogCommand`] below.
+/// See the [`CmdArgument`] implementation for [`LogCommand`] below.
 pub struct LogCommand;
 
 /// Passing in [`LogCommand`] as an argument to [`cmd!`] will cause it
@@ -123,7 +123,7 @@ impl CmdArgument for LogCommand {
     }
 }
 
-/// Please, see the [`CmdArgument`] implementation for [`CurrentDir`] below.
+/// See the [`CmdArgument`] implementation for [`CurrentDir`] below.
 pub struct CurrentDir<T: AsRef<Path>>(pub T);
 
 /// By default child processes inherit the current directory from their

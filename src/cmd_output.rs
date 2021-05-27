@@ -83,7 +83,7 @@ tuple_impl!(A,);
 tuple_impl!(A, B,);
 tuple_impl!(A, B, C,);
 
-/// Please, see the [`CmdOutput`] implementation for [`Exit`] below.
+/// See the [`CmdOutput`] implementation for [`Exit`] below.
 pub struct Exit(pub ExitStatus);
 
 /// Using [`Exit`] as the return type for [`cmd!`] allows to
@@ -124,7 +124,7 @@ impl CmdOutput for Exit {
     }
 }
 
-/// Please, see the [`CmdOutput`] implementation for [`Stderr`] below.
+/// See the [`CmdOutput`] implementation for [`Stderr`] below.
 #[derive(Debug)]
 pub struct Stderr(pub String);
 

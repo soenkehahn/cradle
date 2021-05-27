@@ -55,7 +55,7 @@
 //! # test();
 //! ```
 //!
-//! Before rust version `1.51`, instead of arrays, please use [`Vec<&str>`]:
+//! Before rust version `1.51`, instead of arrays, use [`Vec<&str>`]:
 //!
 //! ```
 //! use std::path::PathBuf;
@@ -187,7 +187,7 @@ use std::{
     process::{Command, ExitStatus, Stdio},
 };
 
-/// Execute child processes. Please, see the module documentation on how to use it.
+/// Execute child processes. See the module documentation on how to use it.
 #[macro_export]
 macro_rules! cmd {
     ($($args:expr),+) => {{
