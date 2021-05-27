@@ -55,7 +55,7 @@
 //! # test();
 //! ```
 //!
-//! Before rust version `1.51`, instead of arrays, please use [`Vec<&str>`]:
+//! Before rust version `1.51`, instead of arrays, use [`Vec<&str>`]:
 //!
 //! ```
 //! use std::path::PathBuf;
@@ -176,7 +176,7 @@ mod error;
 
 use crate::collected_output::Waiter;
 pub use crate::{
-    cmd_argument::{CmdArgument, LogCommand},
+    cmd_argument::{CmdArgument, CurrentDir, LogCommand},
     cmd_output::{CmdOutput, Exit, Stderr},
     error::{panic_on_error, Error},
 };
@@ -187,7 +187,7 @@ use std::{
     process::{Command, ExitStatus, Stdio},
 };
 
-/// Execute child processes. Please, see the module documentation on how to use it.
+/// Execute child processes. See the module documentation on how to use it.
 #[macro_export]
 macro_rules! cmd {
     ($($args:expr),+) => {{
@@ -254,15 +254,20 @@ where
     Stdout: Write + Clone + Send + 'static,
     Stderr: Write + Clone + Send + 'static,
 {
-    let (command, arguments) = parse_input(config.arguments.clone())?;
+    let (executable, arguments) = parse_input(config.arguments.clone())?;
     if config.log_command {
         writeln!(context.stderr, "+ {}", config.full_command())
             .map_err(|error| Error::command_io_error(&config, error))?;
     }
-    let mut child = Command::new(&command)
+    let mut command = Command::new(&executable);
+    command
         .args(arguments)
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stderr(Stdio::piped());
+    if let Some(working_directory) = &config.working_directory {
+        command.current_dir(working_directory);
+    }
+    let mut child = command
         .spawn()
         .map_err(|error| Error::command_io_error(&config, error))?;
     let waiter = Waiter::spawn_standard_stream_relaying(
@@ -953,6 +958,35 @@ mod tests {
             );
             assert!(!status.success());
             assert_eq!(output, "foo\n");
+        }
+    }
+
+    mod current_dir {
+        use super::*;
+        use std::{fs, path::Path};
+
+        #[test]
+        fn sets_the_working_directory() {
+            in_temporary_directory(|| {
+                fs::create_dir("dir").unwrap();
+                fs::write("dir/file", "foo").unwrap();
+                fs::write("file", "wrong file").unwrap();
+                let output: String = cmd!("cat file", CurrentDir("dir"));
+                assert_eq!(output, "foo");
+            });
+        }
+
+        #[test]
+        fn works_for_other_types() {
+            in_temporary_directory(|| {
+                fs::create_dir("dir").unwrap();
+                let dir: String = "dir".to_string();
+                cmd_unit!("true", CurrentDir(dir));
+                let dir: PathBuf = PathBuf::from("dir");
+                cmd_unit!("true", CurrentDir(dir));
+                let dir: &Path = Path::new("dir");
+                cmd_unit!("true", CurrentDir(dir));
+            });
         }
     }
 }
