@@ -14,8 +14,7 @@ use std::process::ExitStatus;
 /// ```
 /// use stir::*;
 ///
-/// let (stdout, Exit(status)) = cmd!("echo foo");
-/// let _: String = stdout;
+/// let (Stdout(stdout), Exit(status)) = cmd!("echo foo");
 /// assert_eq!(stdout, "foo\n");
 /// assert!(status.success());
 /// ```
@@ -39,11 +38,15 @@ impl CmdOutput for () {
     }
 }
 
+/// Please, see the [`CmdOutput`] implementation for [`Stdout`] below.
+#[derive(Debug, PartialEq, Clone)]
+pub struct Stdout(pub String);
+
 /// Returns what the child process writes to `stdout`, interpreted as utf-8,
 /// collected into a string. This also suppresses output of the child's `stdout`
 /// to the parent's `stdout`. (Which would be the default when not using [`String`]
 /// as the return value.)
-impl CmdOutput for String {
+impl CmdOutput for Stdout {
     #[doc(hidden)]
     fn prepare_config(config: &mut Config) {
         config.relay_stdout = false;
@@ -52,9 +55,11 @@ impl CmdOutput for String {
     #[doc(hidden)]
     fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
         let result = result?;
-        String::from_utf8(result.stdout).map_err(|_| Error::InvalidUtf8ToStdout {
-            full_command: config.full_command(),
-        })
+        Ok(Stdout(String::from_utf8(result.stdout).map_err(|_| {
+            Error::InvalidUtf8ToStdout {
+                full_command: config.full_command(),
+            }
+        })?))
     }
 }
 

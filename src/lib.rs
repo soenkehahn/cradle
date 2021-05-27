@@ -4,7 +4,7 @@
 //! ```
 //! use stir::*;
 //!
-//! let stdout: String = cmd!("echo -n foo");
+//! let Stdout(stdout) = cmd!("echo -n foo");
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -17,7 +17,7 @@
 //! ```
 //! use stir::*;
 //!
-//! let stdout: String = cmd!("echo", "foo", "bar");
+//! let Stdout(stdout) = cmd!("echo", "foo", "bar");
 //! assert_eq!(stdout, "foo bar\n");
 //! ```
 //!
@@ -30,7 +30,7 @@
 //!
 //! # #[rustversion::since(1.51)]
 //! # fn test() {
-//! let stdout: String = cmd!("echo", ["foo", "bar"]);
+//! let Stdout(stdout) = cmd!("echo", ["foo", "bar"]);
 //! assert_eq!(stdout, "foo bar\n");
 //! # }
 //! # #[rustversion::before(1.51)]
@@ -47,7 +47,7 @@
 //!
 //! # #[rustversion::since(1.51)]
 //! # fn test() {
-//! let _: String = cmd!("touch", ["filename with spaces"]);
+//! let Stdout(_) = cmd!("touch", ["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
 //! # }
 //! # #[rustversion::before(1.51)]
@@ -61,7 +61,7 @@
 //! use std::path::PathBuf;
 //! use stir::*;
 //!
-//! let _: String = cmd!("touch", vec!["filename with spaces"]);
+//! let Stdout(_) = cmd!("touch", vec!["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
 //! ```
 //!
@@ -77,7 +77,7 @@
 //! ```
 //! use stir::*;
 //!
-//! let output: String = cmd!("echo foo");
+//! let Stdout(output) = cmd!("echo foo");
 //! assert_eq!(output, "foo\n");
 //! ```
 //!
@@ -148,8 +148,9 @@
 //!     "false:\n  exited with exit code: 1"
 //! );
 //!
-//! let result: Result<String, stir::Error> = cmd_result!("echo foo");
-//! assert_eq!(result.unwrap(), "foo\n".to_string());
+//! let result: Result<Stdout, stir::Error> = cmd_result!("echo foo");
+//! // todo: use method
+//! assert_eq!(result.unwrap().0, "foo\n".to_string());
 //! ```
 //!
 //! [`cmd_result`] can also be combined with `?` to handle errors in an
@@ -177,7 +178,7 @@ mod error;
 use crate::collected_output::Waiter;
 pub use crate::{
     cmd_argument::{CmdArgument, CurrentDir, LogCommand},
-    cmd_output::{CmdOutput, Exit, Stderr},
+    cmd_output::{CmdOutput, Exit, Stderr, Stdout},
     error::{panic_on_error, Error},
 };
 #[doc(hidden)]
@@ -372,7 +373,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "cmd!: false:\n  exited with exit code: 1")]
             fn combine_panics_with_other_outputs() {
-                let _: String = cmd!("false");
+                let Stdout(_) = cmd!("false");
             }
 
             #[test]
@@ -433,7 +434,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "invalid utf-8 written to stdout")]
             fn invalid_utf8_stdout() {
-                let _: String = cmd!(
+                let Stdout(_) = cmd!(
                     executable_path("stir_test_helper").to_str().unwrap(),
                     vec!["invalid utf-8 stdout"]
                 );
@@ -469,13 +470,13 @@ mod tests {
 
             #[test]
             fn combine_ok_with_other_outputs() {
-                let result: Result<String, Error> = cmd_result!("echo -n foo");
-                assert_eq!(result.unwrap(), "foo".to_string());
+                let result: Result<Stdout, Error> = cmd_result!("echo -n foo");
+                assert_eq!(result.unwrap().0, "foo".to_string());
             }
 
             #[test]
             fn combine_err_with_other_outputs() {
-                let result: Result<String, Error> = cmd_result!("false");
+                let result: Result<Stdout, Error> = cmd_result!("false");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false:\n  exited with exit code: 1"
@@ -539,7 +540,7 @@ mod tests {
             fn invalid_utf8_stdout() {
                 let test_helper = executable_path("stir_test_helper");
                 let test_helper = test_helper.to_str().unwrap();
-                let result: Result<String, Error> =
+                let result: Result<Stdout, Error> =
                     cmd_result!(test_helper, vec!["invalid utf-8 stdout"]);
                 assert_eq!(
                     result.unwrap_err().to_string(),
@@ -554,26 +555,26 @@ mod tests {
 
     #[test]
     fn allows_to_retrieve_stdout() {
-        let stdout: String = cmd!("echo foo");
+        let Stdout(stdout) = cmd!("echo foo");
         assert_eq!(stdout, "foo\n");
     }
 
     #[test]
     fn command_and_argument_as_separate_ref_str() {
-        let stdout: String = cmd!("echo", "foo");
+        let Stdout(stdout) = cmd!("echo", "foo");
         assert_eq!(stdout, "foo\n");
     }
 
     #[test]
     fn multiple_arguments_as_ref_str() {
-        let stdout: String = cmd!("echo", "foo", "bar");
+        let Stdout(stdout) = cmd!("echo", "foo", "bar");
         assert_eq!(stdout, "foo bar\n");
     }
 
     #[test]
     fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
         let args: Vec<&str> = vec!["foo"];
-        let stdout: String = cmd!("echo", args);
+        let Stdout(stdout) = cmd!("echo", args);
         assert_eq!(stdout, "foo\n");
     }
 
@@ -581,7 +582,7 @@ mod tests {
     #[test]
     fn arrays_as_arguments() {
         let args: [&str; 2] = ["echo", "foo"];
-        let stdout: String = cmd!(args);
+        let Stdout(stdout) = cmd!(args);
         assert_eq!(stdout, "foo\n");
     }
 
@@ -599,7 +600,7 @@ mod tests {
     #[test]
     fn array_refs_as_arguments() {
         let args: &[&str; 2] = &["echo", "foo"];
-        let stdout: String = cmd!(args);
+        let Stdout(stdout) = cmd!(args);
         assert_eq!(stdout, "foo\n");
     }
 
@@ -616,7 +617,7 @@ mod tests {
     #[test]
     fn slices_as_arguments() {
         let args: &[&str] = &["echo", "foo"];
-        let stdout: String = cmd!(args);
+        let Stdout(stdout) = cmd!(args);
         assert_eq!(stdout, "foo\n");
     }
 
@@ -641,7 +642,7 @@ mod tests {
         #[test]
         fn splits_strings_into_words() {
             let command: String = "echo foo".to_string();
-            let output: String = cmd!(command);
+            let Stdout(output) = cmd!(command);
             assert_eq!(output, "foo\n");
         }
 
@@ -649,14 +650,14 @@ mod tests {
         fn multiple_strings() {
             let command: String = "echo".to_string();
             let argument: String = "foo".to_string();
-            let output: String = cmd!(command, argument);
+            let Stdout(output) = cmd!(command, argument);
             assert_eq!(output, "foo\n");
         }
 
         #[test]
         fn mix_ref_str_and_string() {
             let argument: String = "foo".to_string();
-            let output: String = cmd!("echo", argument);
+            let Stdout(output) = cmd!("echo", argument);
             assert_eq!(output, "foo\n");
         }
 
@@ -716,14 +717,14 @@ mod tests {
         #[test]
         fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
-            let _: String = cmd_result_with_context!(context.clone(), "echo foo").unwrap();
+            let Stdout(_) = cmd_result_with_context!(context.clone(), "echo foo").unwrap();
             assert_eq!(context.stdout(), "");
         }
 
         #[test]
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
-            let _: Result<String, Error> = cmd_result_with_context!(context.clone(), "echo foo");
+            let _: Result<Stdout, Error> = cmd_result_with_context!(context.clone(), "echo foo");
             assert_eq!(context.stdout(), "");
         }
     }
@@ -896,45 +897,45 @@ mod tests {
 
         #[test]
         fn two_tuple_1() {
-            let (output, Exit(status)) = cmd!(
+            let (Stdout(output), Exit(status)) = cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
             );
-            let _: String = output;
             assert_eq!(output, "foo\n");
             assert_eq!(status.code(), Some(42));
         }
 
         #[test]
         fn two_tuple_2() {
-            let (Exit(status), output) = cmd!(
+            let (Exit(status), Stdout(output)) = cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
             );
-            let _: String = output;
             assert_eq!(output, "foo\n");
             assert_eq!(status.code(), Some(42));
         }
 
         #[test]
         fn result_of_tuple() {
-            let result: Result<(String, Exit), Error> = cmd_result!("echo foo");
-            let (output, Exit(status)) = result.unwrap();
+            // todo: simplify
+            let result: Result<(Stdout, Exit), Error> = cmd_result!("echo foo");
+            let (Stdout(output), Exit(status)) = result.unwrap();
             assert_eq!(output, "foo\n");
             assert!(status.success());
         }
 
         #[test]
         fn result_of_tuple_when_erroring() {
-            let result: Result<(String, Exit), Error> = cmd_result!("false");
-            let (output, Exit(status)) = result.unwrap();
+            // todo: simplify
+            let result: Result<(Stdout, Exit), Error> = cmd_result!("false");
+            let (Stdout(output), Exit(status)) = result.unwrap();
             assert_eq!(output, "");
             assert_eq!(status.code(), Some(1));
         }
 
         #[test]
         fn three_tuples() {
-            let (Stderr(stderr), stdout, Exit(status)): (Stderr, String, Exit) = cmd!("echo foo");
+            let (Stderr(stderr), Stdout(stdout), Exit(status)) = cmd!("echo foo");
             assert_eq!(stderr, "");
             assert_eq!(stdout, "foo\n");
             assert_eq!(status.code(), Some(0));
@@ -942,7 +943,7 @@ mod tests {
 
         #[test]
         fn capturing_stdout_on_errors() {
-            let (output, Exit(status)): (String, Exit) = cmd!(
+            let (Stdout(output), Exit(status)) = cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
             );
@@ -971,7 +972,7 @@ mod tests {
                 fs::create_dir("dir").unwrap();
                 fs::write("dir/file", "foo").unwrap();
                 fs::write("file", "wrong file").unwrap();
-                let output: String = cmd!("cat file", CurrentDir("dir"));
+                let Stdout(output) = cmd!("cat file", CurrentDir("dir"));
                 assert_eq!(output, "foo");
             });
         }

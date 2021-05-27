@@ -9,7 +9,7 @@ const WHICH: &str = "where";
 fn capturing_stdout() {
     use stir::*;
 
-    let output: String = cmd!("echo foo");
+    let Stdout(output) = cmd!("echo foo");
     assert_eq!(output, "foo\n");
 }
 
@@ -59,7 +59,7 @@ fn trimmed_stdout() {
     use stir::*;
 
     {
-        let ls_path: String = cmd!(WHICH, "ls");
+        let Stdout(ls_path) = cmd!(WHICH, "ls");
         let ls_path = ls_path.trim();
         assert!(
             dbg!(PathBuf::from(&ls_path)).exists(),
@@ -75,7 +75,7 @@ fn trimmed_stdout_and_results() {
     use stir::*;
 
     fn test() -> Result<(), Error> {
-        let ls_path: String = cmd_result!(WHICH, "ls")?;
+        let Stdout(ls_path) = cmd_result!(WHICH, "ls")?;
         let ls_path = ls_path.trim();
         assert!(
             PathBuf::from(&ls_path).exists(),
@@ -182,4 +182,9 @@ fn user_supplied_errors_failing() {
             "cmd-error: where does-not-exist:\n  exited with exit code: 1"
         }
     );
+}
+
+#[test]
+fn pin_down_stdout_result_type_by_method() {
+    // todo
 }
