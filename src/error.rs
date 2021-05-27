@@ -29,6 +29,14 @@ impl Error {
     }
 }
 
+#[doc(hidden)]
+pub fn panic_on_error<T>(result: Result<T, Error>) -> T {
+    match result {
+        Ok(t) => t,
+        Err(error) => panic!("cmd!: {}", error),
+    }
+}
+
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
