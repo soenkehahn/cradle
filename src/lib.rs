@@ -469,9 +469,9 @@ mod tests {
 
             #[test]
             fn combine_ok_with_other_outputs() {
-                // todo: use method
-                let result: Result<Stdout, Error> = cmd_result!("echo -n foo");
-                assert_eq!(result.unwrap().0, "foo".to_string());
+                let result = cmd_result!("echo -n foo");
+                let Stdout(output) = result.unwrap();
+                assert_eq!(output, "foo".to_string());
             }
 
             #[test]
