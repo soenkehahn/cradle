@@ -38,14 +38,25 @@ impl CmdOutput for () {
     }
 }
 
-/// Please, see the [`CmdOutput`] implementation for [`Stdout`] below.
+/// See the [`CmdOutput`] implementation for [`Stdout`] below.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Stdout(pub String);
 
 /// Returns what the child process writes to `stdout`, interpreted as utf-8,
 /// collected into a string. This also suppresses output of the child's `stdout`
-/// to the parent's `stdout`. (Which would be the default when not using [`String`]
+/// to the parent's `stdout`. (Which would be the default when not using [`Stdout`]
 /// as the return value.)
+///
+/// It's recommended to pattern-match to get to the inner [`String`].
+/// This will make sure that the return type can be inferred.
+/// Here's an example:
+///
+/// ```
+/// use stir::*;
+///
+/// let Stdout(output) = cmd!("echo foo");
+/// assert_eq!(output, "foo\n");
+/// ```
 impl CmdOutput for Stdout {
     #[doc(hidden)]
     fn prepare_config(config: &mut Config) {

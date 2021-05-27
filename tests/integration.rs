@@ -62,7 +62,7 @@ fn trimmed_stdout() {
         let Stdout(ls_path) = cmd!(WHICH, "ls");
         let ls_path = ls_path.trim();
         assert!(
-            dbg!(PathBuf::from(&ls_path)).exists(),
+            PathBuf::from(&ls_path).exists(),
             "{:?} does not exist",
             &ls_path
         );
@@ -182,9 +182,4 @@ fn user_supplied_errors_failing() {
             "cmd-error: where does-not-exist:\n  exited with exit code: 1"
         }
     );
-}
-
-#[test]
-fn pin_down_stdout_result_type_by_method() {
-    // todo
 }

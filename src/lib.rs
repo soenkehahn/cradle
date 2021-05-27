@@ -71,7 +71,7 @@
 //!
 //! You can choose which return type you want [`cmd!`] to return,
 //! as long as the chosen return type implements [`CmdOutput`].
-//! For example you can use e.g. [`String`] to collect what the
+//! For example you can use e.g. [`Stdout`] to collect what the
 //! child process writes to `stdout`:
 //!
 //! ```
@@ -82,7 +82,7 @@
 //! ```
 //!
 //! (By default, the child's `stdout` is written to the parent's `stdout`.
-//! Using `String` as the return type suppresses that.)
+//! Using `Stdout` as the return type suppresses that.)
 //!
 //! If you don't want any result from [`cmd!`], you can use `()`
 //! as the return value:
@@ -148,9 +148,9 @@
 //!     "false:\n  exited with exit code: 1"
 //! );
 //!
-//! let result: Result<Stdout, stir::Error> = cmd_result!("echo foo");
-//! // todo: use method
-//! assert_eq!(result.unwrap().0, "foo\n".to_string());
+//! let result = cmd_result!("echo foo");
+//! let Stdout(output) = result.unwrap();
+//! assert_eq!(output, "foo\n".to_string());
 //! ```
 //!
 //! [`cmd_result`] can also be combined with `?` to handle errors in an
