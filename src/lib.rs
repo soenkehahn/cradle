@@ -151,6 +151,22 @@
 //! let result: Result<String, stir::Error> = cmd_result!("echo foo");
 //! assert_eq!(result.unwrap(), "foo\n".to_string());
 //! ```
+//!
+//! [`cmd_result`] can also be combined with `?` to handle errors in an
+//! idiomatic way, for example:
+//!
+//! ```
+//! use std::path::Path;
+//! use stir::*;
+//!
+//! fn build() -> Result<(), Error> {
+//!     cmd_result!("which make")?;
+//!     cmd_result!("which gcc")?;
+//!     cmd_result!("which ld")?;
+//!     cmd_result!("make build")?;
+//!     Ok(())
+//! }
+//! ```
 
 mod cmd_argument;
 mod cmd_output;
