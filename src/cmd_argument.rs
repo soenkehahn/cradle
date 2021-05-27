@@ -132,9 +132,11 @@ pub struct CurrentDir<T: AsRef<Path>>(pub T);
 /// ```
 /// use stir::*;
 ///
-/// let output: String = cmd!("pwd", CurrentDir("/tmp"));
 /// # #[cfg(target_os = "linux")]
+/// # {
+/// let output: String = cmd!("pwd", CurrentDir("/tmp"));
 /// assert_eq!(output, "/tmp\n");
+/// # }
 /// ```
 ///
 /// Paths that are relative to the parent's current directory are allowed.
