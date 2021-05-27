@@ -127,7 +127,7 @@ impl CmdArgument for LogCommand {
 pub struct CurrentDir<T: AsRef<Path>>(pub T);
 
 /// By default child processes inherit the current directory from their
-/// parent. You can overwrite this with [`CurrentDir`]:
+/// parent. You can override this with [`CurrentDir`]:
 ///
 /// ```
 /// # #[cfg(target_os = "linux")]
