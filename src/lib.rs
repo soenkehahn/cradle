@@ -156,7 +156,6 @@
 //! idiomatic way, for example:
 //!
 //! ```
-//! use std::path::Path;
 //! use stir::*;
 //!
 //! fn build() -> Result<(), Error> {
