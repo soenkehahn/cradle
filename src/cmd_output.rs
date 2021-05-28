@@ -38,18 +38,43 @@ impl CmdOutput for () {
     }
 }
 
-/// See the [`CmdOutput`] implementation for [`StdoutUntrimmed`] below.
+/// See the [`CmdOutput`] implementation for [`StdoutTrimmed`] below.
 #[derive(Debug, PartialEq, Clone)]
-pub struct StdoutUntrimmed(pub String);
+pub struct StdoutTrimmed(pub String);
 
 /// Returns what the child process writes to `stdout`, interpreted as utf-8,
-/// collected into a string. This also suppresses output of the child's `stdout`
+/// collected into a string, trimmed of leading and trailing whitespace.
+/// This also suppresses output of the child's `stdout`
 /// to the parent's `stdout`. (Which would be the default when not using [`StdoutUntrimmed`]
 /// as the return value.)
 ///
 /// It's recommended to pattern-match to get to the inner [`String`].
 /// This will make sure that the return type can be inferred.
 /// Here's an example:
+///
+/// ```
+/// use std::path::Path;
+/// use stir::*;
+///
+/// let StdoutTrimmed(output) = cmd!("which ls");
+/// assert!(Path::new(&output).exists());
+/// ```
+impl CmdOutput for StdoutTrimmed {
+    fn prepare_config(config: &mut Config) {
+        <StdoutUntrimmed as CmdOutput>::prepare_config(config);
+    }
+
+    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+        let StdoutUntrimmed(stdout) = CmdOutput::from_run_result(config, result)?;
+        Ok(StdoutTrimmed(stdout.trim().to_owned()))
+    }
+}
+
+/// See the [`CmdOutput`] implementation for [`StdoutUntrimmed`] below.
+#[derive(Debug, PartialEq, Clone)]
+pub struct StdoutUntrimmed(pub String);
+
+/// Same as [`StdoutTrimmed`], but does not trim whitespace from the output:
 ///
 /// ```
 /// use stir::*;
@@ -71,31 +96,6 @@ impl CmdOutput for StdoutUntrimmed {
                 full_command: config.full_command(),
             },
         )?))
-    }
-}
-
-/// See the [`CmdOutput`] implementation for [`StdoutTrimmed`] below.
-#[derive(Debug, PartialEq, Clone)]
-pub struct StdoutTrimmed(pub String);
-
-/// Same as [`StdoutUntrimmed`], but trims both leading and trailing whitespace
-/// from the output. This can be useful to e.g. retrieve file paths:
-///
-/// ```
-/// use std::path::Path;
-/// use stir::*;
-///
-/// let StdoutTrimmed(output) = cmd!("which ls");
-/// assert!(Path::new(&output).exists());
-/// ```
-impl CmdOutput for StdoutTrimmed {
-    fn prepare_config(config: &mut Config) {
-        <StdoutUntrimmed as CmdOutput>::prepare_config(config);
-    }
-
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-        let StdoutUntrimmed(stdout) = CmdOutput::from_run_result(config, result)?;
-        Ok(StdoutTrimmed(stdout.trim().to_owned()))
     }
 }
 
