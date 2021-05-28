@@ -45,7 +45,7 @@ pub struct StdoutTrimmed(pub String);
 /// Returns what the child process writes to `stdout`, interpreted as utf-8,
 /// collected into a string, trimmed of leading and trailing whitespace.
 /// This also suppresses output of the child's `stdout`
-/// to the parent's `stdout`. (Which would be the default when not using [`StdoutUntrimmed`]
+/// to the parent's `stdout`. (Which would be the default when not using [`StdoutTrimmed`]
 /// as the return value.)
 ///
 /// It's recommended to pattern-match to get to the inner [`String`].
