@@ -999,13 +999,13 @@ mod tests {
 
         #[test]
         fn trims_leading_whitespace() {
-            let StdoutTrimmed(output) = cmd!("echo -n", [" foo"]);
+            let StdoutTrimmed(output) = cmd!("echo -n", vec![" foo"]);
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn does_not_remove_whitespace_within_output() {
-            let StdoutTrimmed(output) = cmd!("echo -n", ["foo bar"]);
+            let StdoutTrimmed(output) = cmd!("echo -n", vec!["foo bar"]);
             assert_eq!(output, "foo bar");
         }
 
