@@ -64,11 +64,11 @@ pub struct StdoutTrimmed(pub String);
 /// ```
 impl CmdOutput for StdoutTrimmed {
     fn prepare_config(config: &mut Config) {
-        <StdoutUntrimmed as CmdOutput>::prepare_config(config);
+        StdoutUntrimmed::prepare_config(config);
     }
 
     fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-        let StdoutUntrimmed(stdout) = CmdOutput::from_run_result(config, result)?;
+        let StdoutUntrimmed(stdout) = StdoutUntrimmed::from_run_result(config, result)?;
         Ok(StdoutTrimmed(stdout.trim().to_owned()))
     }
 }
