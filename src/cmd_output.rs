@@ -74,6 +74,31 @@ impl CmdOutput for StdoutUntrimmed {
     }
 }
 
+/// See the [`CmdOutput`] implementation for [`StdoutTrimmed`] below.
+#[derive(Debug, PartialEq, Clone)]
+pub struct StdoutTrimmed(pub String);
+
+/// Same as [`StdoutUntrimmed`], but trims both leading and trailing whitespace
+/// from the output. This can be useful to e.g. retrieve file paths:
+///
+/// ```
+/// use std::path::Path;
+/// use stir::*;
+///
+/// let StdoutTrimmed(output) = cmd!("which ls");
+/// assert!(Path::new(&output).exists());
+/// ```
+impl CmdOutput for StdoutTrimmed {
+    fn prepare_config(config: &mut Config) {
+        <StdoutUntrimmed as CmdOutput>::prepare_config(config);
+    }
+
+    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+        let StdoutUntrimmed(stdout) = CmdOutput::from_run_result(config, result)?;
+        Ok(StdoutTrimmed(stdout.trim().to_owned()))
+    }
+}
+
 macro_rules! tuple_impl {
     ($($generics:ident,)+) => {
         impl<$($generics),+> CmdOutput for ($($generics,)+)

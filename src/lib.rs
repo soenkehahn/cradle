@@ -178,7 +178,7 @@ mod error;
 use crate::collected_output::Waiter;
 pub use crate::{
     cmd_argument::{CmdArgument, CurrentDir, LogCommand},
-    cmd_output::{CmdOutput, Exit, Stderr, StdoutUntrimmed},
+    cmd_output::{CmdOutput, Exit, Stderr, StdoutTrimmed, StdoutUntrimmed},
     error::{panic_on_error, Error},
 };
 #[doc(hidden)]
@@ -985,6 +985,41 @@ mod tests {
                 let dir: &Path = Path::new("dir");
                 cmd_unit!("true", CurrentDir(dir));
             });
+        }
+    }
+
+    mod stdout_trimmed {
+        use super::*;
+
+        #[test]
+        fn trims_trailing_whitespace() {
+            let StdoutTrimmed(output) = cmd!("echo foo");
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn trims_leading_whitespace() {
+            let StdoutTrimmed(output) = cmd!("echo -n", [" foo"]);
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn does_not_remove_whitespace_within_output() {
+            let StdoutTrimmed(output) = cmd!("echo -n", ["foo bar"]);
+            assert_eq!(output, "foo bar");
+        }
+
+        #[test]
+        fn does_not_modify_output_without_whitespace() {
+            let StdoutTrimmed(output) = cmd!("echo -n foo");
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn does_not_relay_stdout_when_collecting_into_trimmed_string() {
+            let context = Context::test();
+            let StdoutTrimmed(_) = cmd_result_with_context!(context.clone(), "echo foo").unwrap();
+            assert_eq!(context.stdout(), "");
         }
     }
 }
