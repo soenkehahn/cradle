@@ -56,8 +56,11 @@ pub struct StdoutTrimmed(pub String);
 /// use std::path::Path;
 /// use stir::*;
 ///
+/// # #[cfg(unix)]
+/// # {
 /// let StdoutTrimmed(output) = cmd!("which ls");
 /// assert!(Path::new(&output).exists());
+/// # }
 /// ```
 impl CmdOutput for StdoutTrimmed {
     fn prepare_config(config: &mut Config) {
