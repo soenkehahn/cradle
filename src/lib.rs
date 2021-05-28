@@ -465,7 +465,8 @@ mod tests {
 
             #[test]
             fn no_errors() {
-                let () = cmd_result!("true").unwrap();
+                let result: Result<(), Error> = cmd_result!("true");
+                result.unwrap();
             }
 
             #[test]
