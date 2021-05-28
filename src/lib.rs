@@ -150,8 +150,8 @@
 //! );
 //!
 //! let result = cmd_result!("echo foo");
-//! let StdoutUntrimmed(output) = result.unwrap();
-//! assert_eq!(output, "foo\n".to_string());
+//! let StdoutTrimmed(output) = result.unwrap();
+//! assert_eq!(output, "foo".to_string());
 //! ```
 //!
 //! [`cmd_result`] can also be combined with `?` to handle errors in an
