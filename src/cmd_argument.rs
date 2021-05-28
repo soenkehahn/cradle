@@ -69,8 +69,8 @@ impl CmdArgument for Vec<String> {
 /// ```
 /// use stir::*;
 ///
-/// let StdoutUntrimmed(output) = cmd!(["echo", "foo"]);
-/// assert_eq!(output, "foo\n");
+/// let StdoutTrimmed(output) = cmd!(["echo", "foo"]);
+/// assert_eq!(output, "foo");
 /// ```
 #[rustversion::since(1.51)]
 impl<const N: usize> CmdArgument for [&str; N] {
@@ -134,8 +134,8 @@ pub struct CurrentDir<T: AsRef<Path>>(pub T);
 ///
 /// # #[cfg(target_os = "linux")]
 /// # {
-/// let StdoutUntrimmed(output) = cmd!("pwd", CurrentDir("/tmp"));
-/// assert_eq!(output, "/tmp\n");
+/// let StdoutTrimmed(output) = cmd!("pwd", CurrentDir("/tmp"));
+/// assert_eq!(output, "/tmp");
 /// # }
 /// ```
 ///
