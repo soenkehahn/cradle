@@ -25,5 +25,5 @@ fmt:
 forbidden-words:
   ! grep -rni \
     'dbg!\|fixme\|todo\|ignore' \
-    src
+    src tests
   @echo No forbidden words found
