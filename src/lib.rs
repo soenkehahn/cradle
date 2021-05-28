@@ -602,7 +602,7 @@ mod tests {
     fn array_refs_as_arguments() {
         let args: &[&str; 2] = &["echo", "foo"];
         let StdoutTrimmed(stdout) = cmd!(args);
-        assert_eq!(stdout, "foo\n");
+        assert_eq!(stdout, "foo");
     }
 
     #[rustversion::since(1.51)]
