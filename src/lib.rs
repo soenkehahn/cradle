@@ -1,10 +1,10 @@
 //! `stir` provides the [`cmd!`] macro, that makes
-//! it easy to run commands from rust programs.
+//! it easy to run child processes from rust programs.
 //!
 //! ```
 //! use stir::*;
 //!
-//! let StdoutUntrimmed(stdout) = cmd!("echo -n foo");
+//! let StdoutTrimmed(stdout) = cmd!("echo foo");
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -17,8 +17,8 @@
 //! ```
 //! use stir::*;
 //!
-//! let StdoutUntrimmed(stdout) = cmd!("echo", "foo", "bar");
-//! assert_eq!(stdout, "foo bar\n");
+//! let StdoutTrimmed(stdout) = cmd!("echo", "foo", "bar");
+//! assert_eq!(stdout, "foo bar");
 //! ```
 //!
 //! Arguments of type [`&str`] will be split by whitespace into words.
@@ -30,8 +30,8 @@
 //!
 //! # #[rustversion::since(1.51)]
 //! # fn test() {
-//! let StdoutUntrimmed(stdout) = cmd!("echo", ["foo", "bar"]);
-//! assert_eq!(stdout, "foo bar\n");
+//! let StdoutTrimmed(stdout) = cmd!("echo", ["foo", "bar"]);
+//! assert_eq!(stdout, "foo bar");
 //! # }
 //! # #[rustversion::before(1.51)]
 //! # fn test() {}
@@ -47,7 +47,7 @@
 //!
 //! # #[rustversion::since(1.51)]
 //! # fn test() {
-//! let StdoutUntrimmed(_) = cmd!("touch", ["filename with spaces"]);
+//! let StdoutTrimmed(_) = cmd!("touch", ["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
 //! # }
 //! # #[rustversion::before(1.51)]
@@ -61,7 +61,7 @@
 //! use std::path::PathBuf;
 //! use stir::*;
 //!
-//! let StdoutUntrimmed(_) = cmd!("touch", vec!["filename with spaces"]);
+//! let StdoutTrimmed(_) = cmd!("touch", vec!["filename with spaces"]);
 //! assert!(PathBuf::from("filename with spaces").exists());
 //! ```
 //!
@@ -71,18 +71,19 @@
 //!
 //! You can choose which return type you want [`cmd!`] to return,
 //! as long as the chosen return type implements [`CmdOutput`].
-//! For example you can use e.g. [`StdoutUntrimmed`] to collect what the
-//! child process writes to `stdout`:
+//! For example you can use e.g. [`StdoutTrimmed`] to collect what the
+//! child process writes to `stdout`,
+//! trimmed of leading and trailing whitespace:
 //!
 //! ```
 //! use stir::*;
 //!
-//! let StdoutUntrimmed(output) = cmd!("echo foo");
-//! assert_eq!(output, "foo\n");
+//! let StdoutTrimmed(output) = cmd!("echo foo");
+//! assert_eq!(output, "foo");
 //! ```
 //!
 //! (By default, the child's `stdout` is written to the parent's `stdout`.
-//! Using `StdoutUntrimmed` as the return type suppresses that.)
+//! Using `StdoutTrimmed` as the return type suppresses that.)
 //!
 //! If you don't want any result from [`cmd!`], you can use `()`
 //! as the return value:
@@ -469,8 +470,7 @@ mod tests {
 
             #[test]
             fn combine_ok_with_other_outputs() {
-                let result = cmd_result!("echo -n foo");
-                let StdoutUntrimmed(output) = result.unwrap();
+                let StdoutTrimmed(output) = cmd_result!("echo foo").unwrap();
                 assert_eq!(output, "foo".to_string());
             }
 
