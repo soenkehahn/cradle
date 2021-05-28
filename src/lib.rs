@@ -374,7 +374,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "cmd!: false:\n  exited with exit code: 1")]
             fn combine_panics_with_other_outputs() {
-                let StdoutUntrimmed(_) = cmd!("false");
+                let StdoutTrimmed(_) = cmd!("false");
             }
 
             #[test]
@@ -435,7 +435,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "invalid utf-8 written to stdout")]
             fn invalid_utf8_stdout() {
-                let StdoutUntrimmed(_) = cmd!(
+                let StdoutTrimmed(_) = cmd!(
                     executable_path("stir_test_helper").to_str().unwrap(),
                     vec!["invalid utf-8 stdout"]
                 );
@@ -477,7 +477,7 @@ mod tests {
 
             #[test]
             fn combine_err_with_other_outputs() {
-                let result: Result<StdoutUntrimmed, Error> = cmd_result!("false");
+                let result: Result<StdoutTrimmed, Error> = cmd_result!("false");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false:\n  exited with exit code: 1"
@@ -541,7 +541,7 @@ mod tests {
             fn invalid_utf8_stdout() {
                 let test_helper = executable_path("stir_test_helper");
                 let test_helper = test_helper.to_str().unwrap();
-                let result: Result<StdoutUntrimmed, Error> =
+                let result: Result<StdoutTrimmed, Error> =
                     cmd_result!(test_helper, vec!["invalid utf-8 stdout"]);
                 assert_eq!(
                     result.unwrap_err().to_string(),
@@ -556,35 +556,35 @@ mod tests {
 
     #[test]
     fn allows_to_retrieve_stdout() {
-        let StdoutUntrimmed(stdout) = cmd!("echo foo");
-        assert_eq!(stdout, "foo\n");
+        let StdoutTrimmed(stdout) = cmd!("echo foo");
+        assert_eq!(stdout, "foo");
     }
 
     #[test]
     fn command_and_argument_as_separate_ref_str() {
-        let StdoutUntrimmed(stdout) = cmd!("echo", "foo");
-        assert_eq!(stdout, "foo\n");
+        let StdoutTrimmed(stdout) = cmd!("echo", "foo");
+        assert_eq!(stdout, "foo");
     }
 
     #[test]
     fn multiple_arguments_as_ref_str() {
-        let StdoutUntrimmed(stdout) = cmd!("echo", "foo", "bar");
-        assert_eq!(stdout, "foo bar\n");
+        let StdoutTrimmed(stdout) = cmd!("echo", "foo", "bar");
+        assert_eq!(stdout, "foo bar");
     }
 
     #[test]
     fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
         let args: Vec<&str> = vec!["foo"];
-        let StdoutUntrimmed(stdout) = cmd!("echo", args);
-        assert_eq!(stdout, "foo\n");
+        let StdoutTrimmed(stdout) = cmd!("echo", args);
+        assert_eq!(stdout, "foo");
     }
 
     #[rustversion::since(1.51)]
     #[test]
     fn arrays_as_arguments() {
         let args: [&str; 2] = ["echo", "foo"];
-        let StdoutUntrimmed(stdout) = cmd!(args);
-        assert_eq!(stdout, "foo\n");
+        let StdoutTrimmed(stdout) = cmd!(args);
+        assert_eq!(stdout, "foo");
     }
 
     #[rustversion::since(1.51)]
@@ -601,7 +601,7 @@ mod tests {
     #[test]
     fn array_refs_as_arguments() {
         let args: &[&str; 2] = &["echo", "foo"];
-        let StdoutUntrimmed(stdout) = cmd!(args);
+        let StdoutTrimmed(stdout) = cmd!(args);
         assert_eq!(stdout, "foo\n");
     }
 
@@ -618,8 +618,8 @@ mod tests {
     #[test]
     fn slices_as_arguments() {
         let args: &[&str] = &["echo", "foo"];
-        let StdoutUntrimmed(stdout) = cmd!(args);
-        assert_eq!(stdout, "foo\n");
+        let StdoutTrimmed(stdout) = cmd!(args);
+        assert_eq!(stdout, "foo");
     }
 
     #[test]
@@ -643,23 +643,23 @@ mod tests {
         #[test]
         fn splits_strings_into_words() {
             let command: String = "echo foo".to_string();
-            let StdoutUntrimmed(output) = cmd!(command);
-            assert_eq!(output, "foo\n");
+            let StdoutTrimmed(output) = cmd!(command);
+            assert_eq!(output, "foo");
         }
 
         #[test]
         fn multiple_strings() {
             let command: String = "echo".to_string();
             let argument: String = "foo".to_string();
-            let StdoutUntrimmed(output) = cmd!(command, argument);
-            assert_eq!(output, "foo\n");
+            let StdoutTrimmed(output) = cmd!(command, argument);
+            assert_eq!(output, "foo");
         }
 
         #[test]
         fn mix_ref_str_and_string() {
             let argument: String = "foo".to_string();
-            let StdoutUntrimmed(output) = cmd!("echo", argument);
-            assert_eq!(output, "foo\n");
+            let StdoutTrimmed(output) = cmd!("echo", argument);
+            assert_eq!(output, "foo");
         }
 
         #[test]
@@ -718,14 +718,14 @@ mod tests {
         #[test]
         fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
-            let StdoutUntrimmed(_) = cmd_result_with_context!(context.clone(), "echo foo").unwrap();
+            let StdoutTrimmed(_) = cmd_result_with_context!(context.clone(), "echo foo").unwrap();
             assert_eq!(context.stdout(), "");
         }
 
         #[test]
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
-            let _: Result<StdoutUntrimmed, Error> =
+            let _: Result<StdoutTrimmed, Error> =
                 cmd_result_with_context!(context.clone(), "echo foo");
             assert_eq!(context.stdout(), "");
         }
@@ -899,54 +899,54 @@ mod tests {
 
         #[test]
         fn two_tuple_1() {
-            let (StdoutUntrimmed(output), Exit(status)) = cmd!(
+            let (StdoutTrimmed(output), Exit(status)) = cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
             );
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "foo");
             assert_eq!(status.code(), Some(42));
         }
 
         #[test]
         fn two_tuple_2() {
-            let (Exit(status), StdoutUntrimmed(output)) = cmd!(
+            let (Exit(status), StdoutTrimmed(output)) = cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
             );
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "foo");
             assert_eq!(status.code(), Some(42));
         }
 
         #[test]
         fn result_of_tuple() {
-            let (StdoutUntrimmed(output), Exit(status)) = cmd_result!("echo foo").unwrap();
-            assert_eq!(output, "foo\n");
+            let (StdoutTrimmed(output), Exit(status)) = cmd_result!("echo foo").unwrap();
+            assert_eq!(output, "foo");
             assert!(status.success());
         }
 
         #[test]
         fn result_of_tuple_when_erroring() {
-            let (StdoutUntrimmed(output), Exit(status)) = cmd_result!("false").unwrap();
+            let (StdoutTrimmed(output), Exit(status)) = cmd_result!("false").unwrap();
             assert_eq!(output, "");
             assert_eq!(status.code(), Some(1));
         }
 
         #[test]
         fn three_tuples() {
-            let (Stderr(stderr), StdoutUntrimmed(stdout), Exit(status)) = cmd!("echo foo");
+            let (Stderr(stderr), StdoutTrimmed(stdout), Exit(status)) = cmd!("echo foo");
             assert_eq!(stderr, "");
-            assert_eq!(stdout, "foo\n");
+            assert_eq!(stdout, "foo");
             assert_eq!(status.code(), Some(0));
         }
 
         #[test]
         fn capturing_stdout_on_errors() {
-            let (StdoutUntrimmed(output), Exit(status)) = cmd!(
+            let (StdoutTrimmed(output), Exit(status)) = cmd!(
                 executable_path("stir_test_helper").to_str().unwrap(),
                 vec!["output foo and exit with 42"]
             );
             assert!(!status.success());
-            assert_eq!(output, "foo\n");
+            assert_eq!(output, "foo");
         }
 
         #[test]
@@ -989,38 +989,67 @@ mod tests {
         }
     }
 
-    mod stdout_trimmed {
+    mod capturing_stdout {
         use super::*;
 
-        #[test]
-        fn trims_trailing_whitespace() {
-            let StdoutTrimmed(output) = cmd!("echo foo");
-            assert_eq!(output, "foo");
+        mod trimmed {
+            use super::*;
+
+            #[test]
+            fn trims_trailing_whitespace() {
+                let StdoutTrimmed(output) = cmd!("echo foo");
+                assert_eq!(output, "foo");
+            }
+
+            #[test]
+            fn trims_leading_whitespace() {
+                let StdoutTrimmed(output) = cmd!("echo -n", vec![" foo"]);
+                assert_eq!(output, "foo");
+            }
+
+            #[test]
+            fn does_not_remove_whitespace_within_output() {
+                let StdoutTrimmed(output) = cmd!("echo -n", vec!["foo bar"]);
+                assert_eq!(output, "foo bar");
+            }
+
+            #[test]
+            fn does_not_modify_output_without_whitespace() {
+                let StdoutTrimmed(output) = cmd!("echo -n foo");
+                assert_eq!(output, "foo");
+            }
+
+            #[test]
+            fn does_not_relay_stdout() {
+                let context = Context::test();
+                let StdoutTrimmed(_) =
+                    cmd_result_with_context!(context.clone(), "echo foo").unwrap();
+                assert_eq!(context.stdout(), "");
+            }
         }
 
-        #[test]
-        fn trims_leading_whitespace() {
-            let StdoutTrimmed(output) = cmd!("echo -n", vec![" foo"]);
-            assert_eq!(output, "foo");
-        }
+        mod untrimmed {
+            use super::*;
 
-        #[test]
-        fn does_not_remove_whitespace_within_output() {
-            let StdoutTrimmed(output) = cmd!("echo -n", vec!["foo bar"]);
-            assert_eq!(output, "foo bar");
-        }
+            #[test]
+            fn does_not_trim_trailing_newline() {
+                let StdoutUntrimmed(output) = cmd!("echo foo");
+                assert_eq!(output, "foo\n");
+            }
 
-        #[test]
-        fn does_not_modify_output_without_whitespace() {
-            let StdoutTrimmed(output) = cmd!("echo -n foo");
-            assert_eq!(output, "foo");
-        }
+            #[test]
+            fn does_not_trim_leading_whitespace() {
+                let StdoutUntrimmed(output) = cmd!("echo -n", vec![" foo"]);
+                assert_eq!(output, " foo");
+            }
 
-        #[test]
-        fn does_not_relay_stdout_when_collecting_into_trimmed_string() {
-            let context = Context::test();
-            let StdoutTrimmed(_) = cmd_result_with_context!(context.clone(), "echo foo").unwrap();
-            assert_eq!(context.stdout(), "");
+            #[test]
+            fn does_not_relay_stdout() {
+                let context = Context::test();
+                let StdoutUntrimmed(_) =
+                    cmd_result_with_context!(context.clone(), "echo foo").unwrap();
+                assert_eq!(context.stdout(), "");
+            }
         }
     }
 }
