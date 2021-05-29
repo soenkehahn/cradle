@@ -30,6 +30,20 @@ impl CmdArgument for String {
     }
 }
 
+/// See the [`CmdArgument`] implementation for [`Split`] below.
+pub struct Split<'a>(pub &'a str);
+
+/// Splits the contained string by whitespace and passes the words into
+/// the child process as arguments.
+impl<'a> CmdArgument for Split<'a> {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        for argument in self.0.split_whitespace() {
+            config.arguments.push(argument.to_string());
+        }
+    }
+}
+
 /// All elements of the given [`Vec`] are being passed into the child
 /// process as arguments, **without** splitting them by whitespace.
 ///

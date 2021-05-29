@@ -8,7 +8,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(stdout) = cmd!("echo foo");
+//! let StdoutTrimmed(stdout) = cmd!(Split("echo foo"));
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -182,7 +182,7 @@ mod error;
 
 use crate::collected_output::Waiter;
 pub use crate::{
-    cmd_argument::{CmdArgument, CurrentDir, LogCommand},
+    cmd_argument::{CmdArgument, CurrentDir, LogCommand, Split},
     cmd_output::{CmdOutput, Exit, Stderr, StdoutTrimmed, StdoutUntrimmed},
     error::{panic_on_error, Error},
 };
@@ -1054,6 +1054,34 @@ mod tests {
                     cmd_result_with_context!(context.clone(), "echo foo").unwrap();
                 assert_eq!(context.stdout(), "");
             }
+        }
+    }
+
+    mod split {
+        use super::*;
+
+        #[test]
+        fn splits_words_by_whitespace() {
+            let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn skips_multiple_whitespace_characters() {
+            let StdoutUntrimmed(output) = cmd!("echo", Split("foo  bar"));
+            assert_eq!(output, "foo bar\n");
+        }
+
+        #[test]
+        fn trims_trailing_whitespace() {
+            let StdoutTrimmed(output) = cmd!(Split(" echo foo"));
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn trims_leading_whitespace() {
+            let StdoutUntrimmed(output) = cmd!("echo", Split("foo "));
+            assert_eq!(output, "foo\n");
         }
     }
 }
