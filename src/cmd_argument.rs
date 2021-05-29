@@ -7,26 +7,21 @@ pub trait CmdArgument {
     fn prepare_config(self, config: &mut Config);
 }
 
-/// Arguments of type [`&str`] are being split up into words by whitespace
-/// and then passed into the child process as arguments.
+/// Arguments of type [`&str`] are passed into the child process
+/// as arguments.
 impl CmdArgument for &str {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        for argument in self.split_whitespace() {
-            config.arguments.push(argument.to_string());
-        }
+        config.arguments.push(self.to_string());
     }
 }
 
-/// Same as for [`&str`], arguments of type [`String`] are being split
-/// up into words by whitespace and then passed into the child process
+/// Arguments of type [`String`] are passed into the child process
 /// as arguments.
 impl CmdArgument for String {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        for argument in self.split_whitespace() {
-            config.arguments.push(argument.to_string());
-        }
+        config.arguments.push(self);
     }
 }
 
@@ -127,7 +122,7 @@ pub struct LogCommand;
 /// ```
 /// use cradle::*;
 ///
-/// cmd_unit!(LogCommand, "echo foo");
+/// cmd_unit!(LogCommand, Split("echo foo"));
 /// // writes '+ echo foo' to stderr
 /// ```
 impl CmdArgument for LogCommand {
