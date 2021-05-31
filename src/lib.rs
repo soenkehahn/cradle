@@ -1,3 +1,7 @@
+//! (`stir` is currently in an experimental stage.
+//! There's no promises on API stability yet, so APIs may change drastically!
+//! Use at your own risk!)
+//!
 //! `stir` provides the [`cmd!`] macro, that makes
 //! it easy to run child processes from rust programs.
 //!
