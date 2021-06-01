@@ -1,8 +1,13 @@
 [package]
 name = "stir"
 version = "0.0.0"
+description = "Execute child processes with ease"
+
 authors = ["Sönke Hahn <soenkehahn@gmail.com>"]
+license = "CC0-1.0"
 edition = "2018"
+repository = "https://github.com/soenkehahn/stir"
+homepage = "https://github.com/soenkehahn/stir"
 
 [dependencies]
 rustversion = "1.0.4"
