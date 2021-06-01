@@ -7,7 +7,7 @@ const WHICH: &str = "where";
 
 #[test]
 fn capturing_stdout() {
-    use stir::*;
+    use cradle::*;
 
     let StdoutTrimmed(output) = cmd!("echo foo");
     assert_eq!(output, "foo");
@@ -16,14 +16,14 @@ fn capturing_stdout() {
 #[test]
 #[should_panic(expected = "false:\n  exited with exit code: 1")]
 fn panics_on_non_zero_exit_codes() {
-    use stir::*;
+    use cradle::*;
 
     cmd_unit!("false");
 }
 
 #[test]
 fn result_succeeding() {
-    use stir::*;
+    use cradle::*;
 
     fn test() -> Result<(), Error> {
         // make sure 'ls' is installed
@@ -36,7 +36,7 @@ fn result_succeeding() {
 
 #[test]
 fn result_failing() {
-    use stir::*;
+    use cradle::*;
 
     fn test() -> Result<(), Error> {
         cmd_result!(WHICH, "does-not-exist")?;
@@ -55,8 +55,8 @@ fn result_failing() {
 
 #[test]
 fn trimmed_stdout() {
+    use cradle::*;
     use std::path::PathBuf;
-    use stir::*;
 
     {
         let StdoutTrimmed(ls_path) = cmd!(WHICH, "ls");
@@ -70,8 +70,8 @@ fn trimmed_stdout() {
 
 #[test]
 fn trimmed_stdout_and_results() {
+    use cradle::*;
     use std::path::PathBuf;
-    use stir::*;
 
     fn test() -> Result<(), Error> {
         let StdoutTrimmed(ls_path) = cmd_result!(WHICH, "ls")?;
@@ -88,7 +88,7 @@ fn trimmed_stdout_and_results() {
 
 #[test]
 fn box_dyn_errors_succeeding() {
-    use stir::*;
+    use cradle::*;
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -102,7 +102,7 @@ fn box_dyn_errors_succeeding() {
 
 #[test]
 fn box_dyn_errors_failing() {
-    use stir::*;
+    use cradle::*;
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -123,15 +123,15 @@ fn box_dyn_errors_failing() {
 
 #[test]
 fn user_supplied_errors_succeeding() {
-    use stir::*;
+    use cradle::*;
 
     #[derive(Debug)]
     enum Error {
-        CmdError(stir::Error),
+        CmdError(cradle::Error),
     }
 
-    impl From<stir::Error> for Error {
-        fn from(error: stir::Error) -> Self {
+    impl From<cradle::Error> for Error {
+        fn from(error: cradle::Error) -> Self {
             Error::CmdError(error)
         }
     }
@@ -146,15 +146,15 @@ fn user_supplied_errors_succeeding() {
 
 #[test]
 fn user_supplied_errors_failing() {
-    use stir::*;
+    use cradle::*;
 
     #[derive(Debug)]
     enum Error {
-        CmdError(stir::Error),
+        CmdError(cradle::Error),
     }
 
-    impl From<stir::Error> for Error {
-        fn from(error: stir::Error) -> Self {
+    impl From<cradle::Error> for Error {
+        fn from(error: cradle::Error) -> Self {
             Error::CmdError(error)
         }
     }

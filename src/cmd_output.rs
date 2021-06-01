@@ -12,7 +12,7 @@ use std::process::ExitStatus;
 /// [`ExitStatus`]:
 ///
 /// ```
-/// use stir::*;
+/// use cradle::*;
 ///
 /// let (StdoutUntrimmed(stdout), Exit(status)) = cmd!("echo foo");
 /// assert_eq!(stdout, "foo\n");
@@ -54,7 +54,7 @@ pub struct StdoutTrimmed(pub String);
 ///
 /// ```
 /// use std::path::Path;
-/// use stir::*;
+/// use cradle::*;
 ///
 /// # #[cfg(unix)]
 /// # {
@@ -80,7 +80,7 @@ pub struct StdoutUntrimmed(pub String);
 /// Same as [`StdoutTrimmed`], but does not trim whitespace from the output:
 ///
 /// ```
-/// use stir::*;
+/// use cradle::*;
 ///
 /// let StdoutUntrimmed(output) = cmd!("echo foo");
 /// assert_eq!(output, "foo\n");
@@ -134,7 +134,7 @@ pub struct Exit(pub ExitStatus);
 /// retrieve the [`ExitStatus`] of the child process:
 ///
 /// ```
-/// use stir::*;
+/// use cradle::*;
 ///
 /// let Exit(status) = cmd!("echo foo");
 /// assert!(status.success());
@@ -144,11 +144,11 @@ pub struct Exit(pub ExitStatus);
 /// result in neither a panic nor a [`std::result::Result::Err`]:
 ///
 /// ```
-/// use stir::*;
+/// use cradle::*;
 ///
 /// let Exit(status) = cmd!("false");
 /// assert_eq!(status.code(), Some(1));
-/// let result: Result<Exit, stir::Error> = cmd_result!("false");
+/// let result: Result<Exit, cradle::Error> = cmd_result!("false");
 /// assert!(result.is_ok());
 /// assert_eq!(result.unwrap().0.code(), Some(1));
 /// ```
@@ -175,7 +175,7 @@ pub struct Stderr(pub String);
 /// [`Stderr`] allows to capture the `stderr` of a child process:
 ///
 /// ```
-/// use stir::*;
+/// use cradle::*;
 ///
 /// // (`Exit` is used here to suppress panics caused by `ls`
 /// // terminating with a non-zero exit code.)

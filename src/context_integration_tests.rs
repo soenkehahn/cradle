@@ -1,10 +1,10 @@
 fn main() {
     #[cfg(not(target_os = "windows"))]
     {
+        use cradle::*;
         use executable_path::executable_path;
         use gag::BufferRedirect;
         use std::io::{self, Read};
-        use stir::*;
 
         fn with_gag<F>(mk_buf: fn() -> io::Result<BufferRedirect>, f: F) -> String
         where
@@ -27,7 +27,7 @@ fn main() {
         {
             assert_eq!(
                 with_gag(BufferRedirect::stderr, || cmd!(
-                    executable_path("stir_test_helper").to_str().unwrap(),
+                    executable_path("cradle_test_helper").to_str().unwrap(),
                     vec!["write to stderr"]
                 )),
                 "foo\n"

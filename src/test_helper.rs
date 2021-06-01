@@ -39,6 +39,6 @@ fn main() {
                 sleep(Duration::from_secs_f32(0.1));
             }
         }
-        arg => panic!("stir_test_helper: invalid arg: {}", arg),
+        arg => panic!("cradle_test_helper: invalid arg: {}", arg),
     }
 }

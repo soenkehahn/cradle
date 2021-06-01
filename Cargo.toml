@@ -1,8 +1,13 @@
 [package]
-name = "stir"
+name = "cradle"
 version = "0.0.0"
+description = "Execute child processes with ease"
+
 authors = ["Sönke Hahn <soenkehahn@gmail.com>"]
+license = "CC0-1.0"
 edition = "2018"
+repository = "https://github.com/soenkehahn/cradle"
+homepage = "https://github.com/soenkehahn/cradle"
 
 [dependencies]
 rustversion = "1.0.4"
@@ -13,7 +18,7 @@ pretty_assertions = "0.7.2"
 tempfile = "3.2.0"
 
 [[bin]]
-name = "stir_test_helper"
+name = "cradle_test_helper"
 path = "src/test_helper.rs"
 required-features = ["test_executables"]
 
