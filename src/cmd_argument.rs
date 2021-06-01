@@ -38,7 +38,7 @@ impl CmdArgument for String {
 ///
 /// ```
 /// use std::path::PathBuf;
-/// use stir::*;
+/// use cradle::*;
 ///
 /// cmd_unit!("touch", vec!["filename with spaces"]);
 /// assert!(PathBuf::from("filename with spaces").exists());
@@ -67,7 +67,7 @@ impl CmdArgument for Vec<String> {
 /// process as arguments, **without** splitting them by whitespace.
 ///
 /// ```
-/// use stir::*;
+/// use cradle::*;
 ///
 /// let StdoutTrimmed(output) = cmd!(["echo", "foo"]);
 /// assert_eq!(output, "foo");
@@ -111,7 +111,7 @@ pub struct LogCommand;
 /// (This is similar `bash`'s `-x` option.)
 ///
 /// ```
-/// use stir::*;
+/// use cradle::*;
 ///
 /// cmd_unit!(LogCommand, "echo foo");
 /// // writes '+ echo foo' to stderr
@@ -130,7 +130,7 @@ pub struct CurrentDir<T: AsRef<Path>>(pub T);
 /// parent. You can override this with [`CurrentDir`]:
 ///
 /// ```
-/// use stir::*;
+/// use cradle::*;
 ///
 /// # #[cfg(target_os = "linux")]
 /// # {
