@@ -1,5 +1,5 @@
 use crate::Config;
-use std::{fmt::Display, io, process::ExitStatus, sync::Arc};
+use std::{fmt::Display, io, process::ExitStatus, string::FromUtf8Error, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub enum Error {
@@ -14,9 +14,11 @@ pub enum Error {
     },
     InvalidUtf8ToStdout {
         full_command: String,
+        source: Arc<FromUtf8Error>,
     },
     InvalidUtf8ToStderr {
         full_command: String,
+        source: Arc<FromUtf8Error>,
     },
 }
 
@@ -46,10 +48,10 @@ impl Display for Error {
                 full_command,
                 exit_status,
             } => write!(f, "{}:\n  exited with {}", full_command, exit_status),
-            Error::InvalidUtf8ToStdout { full_command } => {
+            Error::InvalidUtf8ToStdout { full_command, .. } => {
                 write!(f, "{}:\n  invalid utf-8 written to stdout", full_command)
             }
-            Error::InvalidUtf8ToStderr { full_command } => {
+            Error::InvalidUtf8ToStderr { full_command, .. } => {
                 write!(f, "{}:\n  invalid utf-8 written to stderr", full_command)
             }
         }
@@ -60,10 +62,34 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Error::CommandIoError { source, .. } => Some(&**source),
-            Error::NoArgumentsGiven
-            | Error::NonZeroExitCode { .. }
-            | Error::InvalidUtf8ToStdout { .. }
-            | Error::InvalidUtf8ToStderr { .. } => None,
+            Error::InvalidUtf8ToStdout { source, .. }
+            | Error::InvalidUtf8ToStderr { source, .. } => Some(&**source),
+            Error::NoArgumentsGiven | Error::NonZeroExitCode { .. } => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{cmd_result, Stderr, StdoutUntrimmed};
+    use executable_path::executable_path;
+    use std::error::Error;
+
+    #[test]
+    fn invalid_utf8_to_stdout_has_source() {
+        let result: Result<StdoutUntrimmed, crate::Error> = cmd_result!(
+            executable_path("cradle_test_helper").to_str().unwrap(),
+            vec!["invalid utf-8 stdout"]
+        );
+        assert!(result.unwrap_err().source().is_some());
+    }
+
+    #[test]
+    fn invalid_utf8_to_stderr_has_source() {
+        let result: Result<Stderr, crate::Error> = cmd_result!(
+            executable_path("cradle_test_helper").to_str().unwrap(),
+            vec!["invalid utf-8 stderr"]
+        );
+        assert!(result.unwrap_err().source().is_some());
     }
 }
