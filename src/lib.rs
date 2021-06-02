@@ -587,63 +587,67 @@ mod tests {
         assert_eq!(stdout, "foo");
     }
 
-    #[test]
-    fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
-        let args: Vec<&str> = vec!["foo"];
-        let StdoutTrimmed(stdout) = cmd!("echo", args);
-        assert_eq!(stdout, "foo");
-    }
+    mod sequences {
+        use super::*;
 
-    #[rustversion::since(1.51)]
-    #[test]
-    fn arrays_as_arguments() {
-        let args: [&str; 2] = ["echo", "foo"];
-        let StdoutTrimmed(stdout) = cmd!(args);
-        assert_eq!(stdout, "foo");
-    }
+        #[test]
+        fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
+            let args: Vec<&str> = vec!["foo"];
+            let StdoutTrimmed(stdout) = cmd!("echo", args);
+            assert_eq!(stdout, "foo");
+        }
 
-    #[rustversion::since(1.51)]
-    #[test]
-    fn elements_in_arrays_are_not_split_by_whitespace() {
-        in_temporary_directory(|| {
-            let args: [&str; 1] = ["foo bar"];
-            cmd_unit!("touch", args);
-            assert!(PathBuf::from("foo bar").exists());
-        });
-    }
+        #[rustversion::since(1.51)]
+        #[test]
+        fn arrays_as_arguments() {
+            let args: [&str; 2] = ["echo", "foo"];
+            let StdoutTrimmed(stdout) = cmd!(args);
+            assert_eq!(stdout, "foo");
+        }
 
-    #[rustversion::since(1.51)]
-    #[test]
-    fn array_refs_as_arguments() {
-        let args: &[&str; 2] = &["echo", "foo"];
-        let StdoutTrimmed(stdout) = cmd!(args);
-        assert_eq!(stdout, "foo");
-    }
+        #[rustversion::since(1.51)]
+        #[test]
+        fn elements_in_arrays_are_not_split_by_whitespace() {
+            in_temporary_directory(|| {
+                let args: [&str; 1] = ["foo bar"];
+                cmd_unit!("touch", args);
+                assert!(PathBuf::from("foo bar").exists());
+            });
+        }
 
-    #[rustversion::since(1.51)]
-    #[test]
-    fn elements_in_array_refs_are_not_split_by_whitespace() {
-        in_temporary_directory(|| {
-            let args: &[&str; 1] = &["foo bar"];
-            cmd_unit!("touch", args);
-            assert!(PathBuf::from("foo bar").exists());
-        });
-    }
+        #[rustversion::since(1.51)]
+        #[test]
+        fn array_refs_as_arguments() {
+            let args: &[&str; 2] = &["echo", "foo"];
+            let StdoutTrimmed(stdout) = cmd!(args);
+            assert_eq!(stdout, "foo");
+        }
 
-    #[test]
-    fn slices_as_arguments() {
-        let args: &[&str] = &["echo", "foo"];
-        let StdoutTrimmed(stdout) = cmd!(args);
-        assert_eq!(stdout, "foo");
-    }
+        #[rustversion::since(1.51)]
+        #[test]
+        fn elements_in_array_refs_are_not_split_by_whitespace() {
+            in_temporary_directory(|| {
+                let args: &[&str; 1] = &["foo bar"];
+                cmd_unit!("touch", args);
+                assert!(PathBuf::from("foo bar").exists());
+            });
+        }
 
-    #[test]
-    fn elements_in_slices_are_not_split_by_whitespace() {
-        in_temporary_directory(|| {
-            let args: &[&str] = &["foo bar"];
-            cmd_unit!("touch", args);
-            assert!(PathBuf::from("foo bar").exists());
-        });
+        #[test]
+        fn slices_as_arguments() {
+            let args: &[&str] = &["echo", "foo"];
+            let StdoutTrimmed(stdout) = cmd!(args);
+            assert_eq!(stdout, "foo");
+        }
+
+        #[test]
+        fn elements_in_slices_are_not_split_by_whitespace() {
+            in_temporary_directory(|| {
+                let args: &[&str] = &["foo bar"];
+                cmd_unit!("touch", args);
+                assert!(PathBuf::from("foo bar").exists());
+            });
+        }
     }
 
     mod strings {
