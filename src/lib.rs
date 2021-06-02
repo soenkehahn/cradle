@@ -571,6 +571,7 @@ mod tests {
             assert_eq!(stdout, "foo");
         }
 
+        #[rustversion::since(1.51)]
         #[test]
         fn arrays_of_non_strings() {
             let context = Context::test();
