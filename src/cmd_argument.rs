@@ -13,6 +13,7 @@ where
 {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
+        // fixme: simplify
         <T as CmdArgument>::prepare_config(self.clone(), config);
     }
 }
@@ -65,14 +66,14 @@ where
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         for t in self.into_iter() {
+            // fixme: simplify
             <T as CmdArgument>::prepare_config(t, config);
         }
     }
 }
 
-/// Similar to the implementation for [`Vec<&str>`].
-/// All elements of the array will be passed into the child
-/// process as arguments, **without** splitting them by whitespace.
+/// Similar to the implementation for [`Vec<T>`].
+/// All elements of the array will be used as arguments.
 ///
 /// ```
 /// use cradle::*;
@@ -88,19 +89,23 @@ where
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         for t in self.iter() {
+            // fixme: simplify
             <&T as CmdArgument>::prepare_config(t, config);
         }
     }
 }
 
-/// Similar to the implementation for [`Vec<&str>`].
-/// All elements of the slice will be passed into the child
-/// process as arguments, **without** splitting them by whitespace.
-impl CmdArgument for &[&str] {
+/// Similar to the implementation for [`Vec<T>`].
+/// All elements of the slice will be used as arguments.
+impl<T> CmdArgument for &[T]
+where
+    T: CmdArgument + Clone,
+{
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        for argument in self.iter() {
-            config.arguments.push((*argument).to_string());
+        for t in self.iter() {
+            // fixme: simplify
+            <&T as CmdArgument>::prepare_config(t, config);
         }
     }
 }

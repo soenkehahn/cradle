@@ -661,6 +661,16 @@ mod tests {
         }
 
         #[test]
+        fn slices_of_non_strings() {
+            let context = Context::test();
+            let config: &[LogCommand] = &[LogCommand];
+            let StdoutTrimmed(stdout) =
+                cmd_result_with_context!(context.clone(), config, Split("echo foo")).unwrap();
+            assert_eq!(stdout, "foo");
+            assert_eq!(context.stderr(), "+ echo foo\n");
+        }
+
+        #[test]
         fn elements_in_slices_are_not_split_by_whitespace() {
             in_temporary_directory(|| {
                 let args: &[&str] = &["foo bar"];
