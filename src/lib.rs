@@ -587,6 +587,13 @@ mod tests {
         assert_eq!(stdout, "foo");
     }
 
+    #[test]
+    fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
+        let args: Vec<&str> = vec!["foo"];
+        let StdoutTrimmed(stdout) = cmd!("echo", args);
+        assert_eq!(stdout, "foo");
+    }
+
     #[rustversion::since(1.51)]
     #[test]
     fn arrays_as_arguments() {
