@@ -7,6 +7,7 @@ pub trait CmdArgument {
     fn prepare_config(self, config: &mut Config);
 }
 
+/// Blanket implementation for `&_`.
 impl<T> CmdArgument for &T
 where
     T: CmdArgument + Clone,

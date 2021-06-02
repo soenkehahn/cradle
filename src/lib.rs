@@ -25,50 +25,6 @@
 //! assert_eq!(stdout, "foo bar");
 //! ```
 //!
-//! Arguments of type [`&str`] will be split by whitespace into words.
-//! You can also pass in arrays of type [`[&str]`]. All elements will
-//! be used as arguments:
-//!
-//! ```
-//! use cradle::*;
-//!
-//! # #[rustversion::since(1.51)]
-//! # fn test() {
-//! let StdoutTrimmed(stdout) = cmd!("echo", ["foo", "bar"]);
-//! assert_eq!(stdout, "foo bar");
-//! # }
-//! # #[rustversion::before(1.51)]
-//! # fn test() {}
-//! # test();
-//! ```
-//!
-//! Elements of arrays are **not** being split by whitespace, so you can
-//! use that to avoid whitespace splitting:
-//!
-//! ```
-//! use std::path::PathBuf;
-//! use cradle::*;
-//!
-//! # #[rustversion::since(1.51)]
-//! # fn test() {
-//! let StdoutTrimmed(_) = cmd!("touch", ["filename with spaces"]);
-//! assert!(PathBuf::from("filename with spaces").exists());
-//! # }
-//! # #[rustversion::before(1.51)]
-//! # fn test() {}
-//! # test();
-//! ```
-//!
-//! Before rust version `1.51`, instead of arrays, use [`Vec<&str>`]:
-//!
-//! ```
-//! use std::path::PathBuf;
-//! use cradle::*;
-//!
-//! let StdoutTrimmed(_) = cmd!("touch", vec!["filename with spaces"]);
-//! assert!(PathBuf::from("filename with spaces").exists());
-//! ```
-//!
 //! For all possible inputs to [`cmd!`], see [`CmdArgument`].
 //!
 //! # Output
@@ -82,7 +38,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+//! let StdoutTrimmed(output) = cmd!("echo foo".split(' '));
 //! assert_eq!(output, "foo");
 //! ```
 //!
@@ -95,7 +51,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let () = cmd!(Split("touch foo"));
+//! let () = cmd!("touch foo".split(' '));
 //! ```
 //!
 //! Since that's a very common case, `cradle` provides the [`cmd_unit!`]
@@ -105,7 +61,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! cmd_unit!(Split("touch foo"));
+//! cmd_unit!("touch foo".split(' '));
 //! ```
 //!
 //! See the implementations for [`CmdOutput`] for all the supported types.
@@ -153,7 +109,7 @@
 //!     "false:\n  exited with exit code: 1"
 //! );
 //!
-//! let result = cmd_result!(Split("echo foo"));
+//! let result = cmd_result!("echo foo".split(' '));
 //! let StdoutTrimmed(output) = result.unwrap();
 //! assert_eq!(output, "foo".to_string());
 //! ```
@@ -165,10 +121,10 @@
 //! use cradle::*;
 //!
 //! fn build() -> Result<(), Error> {
-//!     cmd_result!("which make")?;
-//!     cmd_result!("which gcc")?;
-//!     cmd_result!("which ld")?;
-//!     cmd_result!("make build")?;
+//!     cmd_result!("which make".split(' '))?;
+//!     cmd_result!("which gcc".split(' '))?;
+//!     cmd_result!("which ld".split(' '))?;
+//!     cmd_result!("make build".split(' '))?;
 //!     Ok(())
 //! }
 //! ```
