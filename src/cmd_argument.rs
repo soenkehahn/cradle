@@ -13,8 +13,7 @@ where
 {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        // fixme: simplify
-        <T as CmdArgument>::prepare_config(self.clone(), config);
+        self.clone().prepare_config(config);
     }
 }
 
@@ -66,8 +65,7 @@ where
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         for t in self.into_iter() {
-            // fixme: simplify
-            <T as CmdArgument>::prepare_config(t, config);
+            t.prepare_config(config);
         }
     }
 }
@@ -89,8 +87,7 @@ where
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         for t in self.iter() {
-            // fixme: simplify
-            <&T as CmdArgument>::prepare_config(t, config);
+            t.prepare_config(config);
         }
     }
 }
@@ -104,8 +101,7 @@ where
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         for t in self.iter() {
-            // fixme: simplify
-            <&T as CmdArgument>::prepare_config(t, config);
+            t.prepare_config(config);
         }
     }
 }
