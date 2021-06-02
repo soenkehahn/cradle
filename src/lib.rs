@@ -579,9 +579,11 @@ mod tests {
     }
 
     #[test]
-    fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
-        let args: Vec<&str> = vec!["foo"];
-        let StdoutTrimmed(stdout) = cmd!("echo", args);
+    fn arguments_can_be_given_as_references() {
+        let reference: &LogCommand = &LogCommand;
+        let executable: &String = &"echo".to_string();
+        let argument: &String = &"foo".to_string();
+        let StdoutTrimmed(stdout) = cmd!(reference, executable, argument);
         assert_eq!(stdout, "foo");
     }
 
