@@ -7,6 +7,16 @@ pub trait CmdArgument {
     fn prepare_config(self, config: &mut Config);
 }
 
+impl<T> CmdArgument for &T
+where
+    T: CmdArgument + Clone,
+{
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        <T as CmdArgument>::prepare_config(self.clone(), config);
+    }
+}
+
 /// Arguments of type [`&str`] are being split up into words by whitespace
 /// and then passed into the child process as arguments.
 impl CmdArgument for &str {
@@ -81,17 +91,6 @@ impl<const N: usize> CmdArgument for [&str; N] {
 }
 
 /// Similar to the implementation for [`Vec<&str>`].
-/// All elements of the array will be passed into the child
-/// process as arguments, **without** splitting them by whitespace.
-#[rustversion::since(1.51)]
-impl<const N: usize> CmdArgument for &[&str; N] {
-    #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        self[..].prepare_config(config);
-    }
-}
-
-/// Similar to the implementation for [`Vec<&str>`].
 /// All elements of the slice will be passed into the child
 /// process as arguments, **without** splitting them by whitespace.
 impl CmdArgument for &[&str] {
@@ -104,6 +103,7 @@ impl CmdArgument for &[&str] {
 }
 
 /// See the [`CmdArgument`] implementation for [`LogCommand`] below.
+#[derive(Clone, Debug)]
 pub struct LogCommand;
 
 /// Passing in [`LogCommand`] as an argument to [`cmd!`] will cause it
