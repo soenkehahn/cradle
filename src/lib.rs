@@ -597,6 +597,16 @@ mod tests {
             assert_eq!(stdout, "foo");
         }
 
+        #[test]
+        fn vector_of_non_strings() {
+            let context = Context::test();
+            let config: Vec<LogCommand> = vec![LogCommand];
+            let StdoutTrimmed(stdout) =
+                cmd_result_with_context!(context.clone(), config, Split("echo foo")).unwrap();
+            assert_eq!(stdout, "foo");
+            assert_eq!(context.stderr(), "+ echo foo\n");
+        }
+
         #[rustversion::since(1.51)]
         #[test]
         fn arrays_as_arguments() {
@@ -647,6 +657,12 @@ mod tests {
                 cmd_unit!("touch", args);
                 assert!(PathBuf::from("foo bar").exists());
             });
+        }
+
+        #[test]
+        fn vector_of_vectors() {
+            let StdoutTrimmed(output) = cmd!(vec![vec!["echo"], vec!["foo", "bar"]]);
+            assert_eq!(output, "foo bar");
         }
     }
 

@@ -11,6 +11,7 @@ impl<T> CmdArgument for &T
 where
     T: CmdArgument + Clone,
 {
+    #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         <T as CmdArgument>::prepare_config(self.clone(), config);
     }
@@ -48,35 +49,24 @@ impl<'a> CmdArgument for Split<'a> {
     }
 }
 
-/// All elements of the given [`Vec`] are being passed into the child
-/// process as arguments, **without** splitting them by whitespace.
-///
-/// This can come in handy to avoid whitespace splitting, even if you only want
-/// to encode a single argument:
+/// All elements of the given [`Vec`] are used as arguments to [`cmd!`].
+/// Same as passing in the elements separately.
 ///
 /// ```
-/// use std::path::PathBuf;
 /// use cradle::*;
 ///
-/// cmd_unit!("touch", vec!["filename with spaces"]);
-/// assert!(PathBuf::from("filename with spaces").exists());
+/// let StdoutTrimmed(output) = cmd!(vec!["echo", "foo"]);
+/// assert_eq!(output, "foo");
 /// ```
-impl CmdArgument for Vec<&str> {
+impl<T> CmdArgument for Vec<T>
+where
+    T: CmdArgument,
+{
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        for argument in self {
-            config.arguments.push(argument.to_string());
+        for t in self.into_iter() {
+            <T as CmdArgument>::prepare_config(t, config);
         }
-    }
-}
-
-/// Similar to the implementation for [`Vec<&str>`].
-/// All elements of the given [`Vec`] are being passed into the child
-/// process as arguments, **without** splitting them by whitespace.
-impl CmdArgument for Vec<String> {
-    #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        config.arguments.extend(self);
     }
 }
 
