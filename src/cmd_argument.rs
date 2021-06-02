@@ -1,5 +1,5 @@
 use crate::config::Config;
-use std::{array::IntoIter, path::Path};
+use std::path::Path;
 
 /// All types that are possible arguments to [`cmd!`] have to implement this trait.
 pub trait CmdArgument {
@@ -145,7 +145,7 @@ where
 {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        for t in IntoIter::new(self) {
+        for t in std::array::IntoIter::new(self) {
             t.prepare_config(config);
         }
     }
