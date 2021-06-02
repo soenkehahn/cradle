@@ -615,6 +615,16 @@ mod tests {
             assert_eq!(stdout, "foo");
         }
 
+        #[test]
+        fn arrays_of_non_strings() {
+            let context = Context::test();
+            let config: [LogCommand; 1] = [LogCommand];
+            let StdoutTrimmed(stdout) =
+                cmd_result_with_context!(context.clone(), config, Split("echo foo")).unwrap();
+            assert_eq!(stdout, "foo");
+            assert_eq!(context.stderr(), "+ echo foo\n");
+        }
+
         #[rustversion::since(1.51)]
         #[test]
         fn elements_in_arrays_are_not_split_by_whitespace() {

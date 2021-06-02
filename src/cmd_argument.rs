@@ -81,10 +81,15 @@ where
 /// assert_eq!(output, "foo");
 /// ```
 #[rustversion::since(1.51)]
-impl<const N: usize> CmdArgument for [&str; N] {
+impl<T, const N: usize> CmdArgument for [T; N]
+where
+    T: CmdArgument + Clone,
+{
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        self[..].prepare_config(config);
+        for t in self.iter() {
+            <&T as CmdArgument>::prepare_config(t, config);
+        }
     }
 }
 
