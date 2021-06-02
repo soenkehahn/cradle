@@ -14,11 +14,11 @@ pub enum Error {
     },
     InvalidUtf8ToStdout {
         full_command: String,
-        source: FromUtf8Error,
+        source: Arc<FromUtf8Error>,
     },
     InvalidUtf8ToStderr {
         full_command: String,
-        source: FromUtf8Error,
+        source: Arc<FromUtf8Error>,
     },
 }
 
@@ -63,7 +63,7 @@ impl std::error::Error for Error {
         match self {
             Error::CommandIoError { source, .. } => Some(&**source),
             Error::InvalidUtf8ToStdout { source, .. }
-            | Error::InvalidUtf8ToStderr { source, .. } => Some(source),
+            | Error::InvalidUtf8ToStderr { source, .. } => Some(&**source),
             Error::NoArgumentsGiven | Error::NonZeroExitCode { .. } => None,
         }
     }

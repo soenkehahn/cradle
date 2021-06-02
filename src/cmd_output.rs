@@ -1,5 +1,5 @@
 use crate::{Config, Error, RunResult};
-use std::process::ExitStatus;
+use std::{process::ExitStatus, sync::Arc};
 
 /// All possible return types of [`cmd!`] have to implement this trait.
 /// For documentation about what these return types do, see the
@@ -97,7 +97,7 @@ impl CmdOutput for StdoutUntrimmed {
         Ok(StdoutUntrimmed(String::from_utf8(result.stdout).map_err(
             |source| Error::InvalidUtf8ToStdout {
                 full_command: config.full_command(),
-                source,
+                source: Arc::new(source),
             },
         )?))
     }
@@ -201,7 +201,7 @@ impl CmdOutput for Stderr {
         Ok(Stderr(String::from_utf8(result?.stderr).map_err(
             |source| Error::InvalidUtf8ToStderr {
                 full_command: config.full_command(),
-                source,
+                source: Arc::new(source),
             },
         )?))
     }
