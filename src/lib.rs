@@ -8,7 +8,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(stdout) = cmd!(Split("echo foo"));
+//! let StdoutTrimmed(stdout) = cmd!("echo foo".split(' '));
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -1127,6 +1127,28 @@ mod tests {
         fn trims_leading_whitespace() {
             let StdoutUntrimmed(output) = cmd!("echo", Split("foo "));
             assert_eq!(output, "foo\n");
+        }
+    }
+
+    mod splitting_with_library_functions {
+        use super::*;
+
+        #[test]
+        fn allow_to_use_split() {
+            let StdoutTrimmed(output) = cmd!("echo foo".split(' '));
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn split_whitespace() {
+            let StdoutTrimmed(output) = cmd!("echo foo".split_whitespace());
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn split_ascii_whitespace() {
+            let StdoutTrimmed(output) = cmd!("echo foo".split_ascii_whitespace());
+            assert_eq!(output, "foo");
         }
     }
 }

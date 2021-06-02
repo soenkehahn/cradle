@@ -49,6 +49,65 @@ impl<'a> CmdArgument for Split<'a> {
     }
 }
 
+/// Allows to use [`split`] to split your argument into words:
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutTrimmed(output) = cmd!("echo foo".split(' '));
+/// assert_eq!(output, "foo");
+/// ```
+///
+/// Arguments to [`split`] must be of type [`char`].
+///
+/// [`split`]: str::split
+impl<'a> CmdArgument for std::str::Split<'a, char> {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        for word in self {
+            word.prepare_config(config);
+        }
+    }
+}
+
+/// Allows to use [`split_whitespace`] to split your argument into words:
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutTrimmed(output) = cmd!("echo foo".split_whitespace());
+/// assert_eq!(output, "foo");
+/// ```
+///
+/// [`split_whitespace`]: str::split_whitespace
+impl<'a> CmdArgument for std::str::SplitWhitespace<'a> {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        for word in self {
+            word.prepare_config(config);
+        }
+    }
+}
+
+/// Allows to use [`split_ascii_whitespace`] to split your argument into words:
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutTrimmed(output) = cmd!("echo foo".split_ascii_whitespace());
+/// assert_eq!(output, "foo");
+/// ```
+///
+/// [`split_ascii_whitespace`]: str::split_ascii_whitespace
+impl<'a> CmdArgument for std::str::SplitAsciiWhitespace<'a> {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        for word in self {
+            word.prepare_config(config);
+        }
+    }
+}
+
 /// All elements of the given [`Vec`] are used as arguments to [`cmd!`].
 /// Same as passing in the elements separately.
 ///
