@@ -1171,16 +1171,21 @@ mod tests {
             }
 
             #[test]
-            fn non_literals() {}
+            fn non_literals() {
+                let command = "echo foo";
+                let StdoutUntrimmed(output) = cmd!(~command);
+                assert_eq!(output, "foo\n");
+            }
 
             #[test]
-            fn in_arrays() {}
+            fn in_cmd_unit() {
+                cmd_unit!(~"echo foo");
+            }
 
             #[test]
-            fn in_cmd_unit() {}
-
-            #[test]
-            fn in_cmd_result() {}
+            fn in_cmd_result() {
+                let () = cmd_result!(~"echo foo").unwrap();
+            }
         }
     }
 
