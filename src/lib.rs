@@ -25,9 +25,43 @@
 //! assert_eq!(stdout, "foo bar");
 //! ```
 //!
-//! todo: splitting docs
+//! For all possible inputs to [`cmd!`], see the documentation of [`CmdArgument`].
 //!
-//! For all possible inputs to [`cmd!`], see [`CmdArgument`].
+//! ## Whitespace Splitting
+//!
+//! `cradle` does *not* split given string arguments on whitespace by default.
+//! So for example this code fails:
+//!
+//! ``` should_panic
+//! use cradle::*;
+//!
+//! let StdoutTrimmed(_) = cmd!("echo foo");
+//! ```
+//!
+//! In this code `cradle` tries to run a process from an executable called
+//! `"echo foo"`, including the space in the executable file name.
+//! But that executable doesn't exist.
+//! `cradle` provides a new-type wrapper [`Split`] to help with that:
+//!
+//! ```
+//! use cradle::*;
+//!
+//! let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+//! assert_eq!(output, "foo");
+//! ```
+//!
+//! Wrapping an argument of type `&str` in [`Split`] will cause `cradle` to first
+//! split it by whitespace and then use the resulting words as if they were passed
+//! into [`cmd!`] as separate arguments.
+//! And -- since this is such a common case -- `cradle` provides a syntactical shortcut
+//! for [`Split`]: the `~` symbol:
+//!
+//! ```
+//! use cradle::*;
+//!
+//! let StdoutTrimmed(output) = cmd!(~"echo foo");
+//! assert_eq!(output, "foo");
+//! ```
 //!
 //! # Output
 //!
@@ -40,7 +74,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(output) = cmd!("echo foo".split(' '));
+//! let StdoutTrimmed(output) = cmd!(~"echo foo");
 //! assert_eq!(output, "foo");
 //! ```
 //!
@@ -53,7 +87,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let () = cmd!("touch foo".split(' '));
+//! let () = cmd!(~"touch foo");
 //! ```
 //!
 //! Since that's a very common case, `cradle` provides the [`cmd_unit!`]
@@ -63,7 +97,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! cmd_unit!("touch foo".split(' '));
+//! cmd_unit!(~"touch foo");
 //! ```
 //!
 //! See the implementations for [`CmdOutput`] for all the supported types.
@@ -111,7 +145,7 @@
 //!     "false:\n  exited with exit code: 1"
 //! );
 //!
-//! let result = cmd_result!("echo foo".split(' '));
+//! let result = cmd_result!(~"echo foo");
 //! let StdoutTrimmed(output) = result.unwrap();
 //! assert_eq!(output, "foo".to_string());
 //! ```
@@ -123,10 +157,10 @@
 //! use cradle::*;
 //!
 //! fn build() -> Result<(), Error> {
-//!     cmd_result!("which make".split(' '))?;
-//!     cmd_result!("which gcc".split(' '))?;
-//!     cmd_result!("which ld".split(' '))?;
-//!     cmd_result!("make build".split(' '))?;
+//!     cmd_result!(~"which make")?;
+//!     cmd_result!(~"which gcc")?;
+//!     cmd_result!(~"which ld")?;
+//!     cmd_result!(~"make build")?;
 //!     Ok(())
 //! }
 //! ```

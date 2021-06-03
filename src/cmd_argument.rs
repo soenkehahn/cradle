@@ -18,8 +18,8 @@ where
     }
 }
 
-/// Arguments of type [`&str`] are being split up into words by whitespace
-/// and then passed into the child process as arguments.
+/// Arguments of type [`&str`] are passed into the child process
+/// as arguments.
 impl CmdArgument for &str {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
@@ -39,8 +39,27 @@ impl CmdArgument for String {
 /// See the [`CmdArgument`] implementation for [`Split`] below.
 pub struct Split<'a>(pub &'a str);
 
-/// Splits the contained string by whitespace and passes the words into
-/// the child process as arguments.
+/// Splits the contained string by whitespace (using [`split_whitespace`])
+/// and uses the resulting words as separate arguments.
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+/// assert_eq!(output, "foo");
+/// ```
+///
+/// Since this is such a common case, `cradle` also provides a syntactical shortcut
+/// for [`Split`]: the `~` symbol:
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutTrimmed(output) = cmd!(~"echo foo");
+/// assert_eq!(output, "foo");
+/// ```
+///
+/// [`split_whitespace`]: str::split_whitespace
 impl<'a> CmdArgument for Split<'a> {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
@@ -139,6 +158,8 @@ where
 /// let StdoutTrimmed(output) = cmd!(["echo", "foo"]);
 /// assert_eq!(output, "foo");
 /// ```
+///
+/// Only works on rust version `1.51` and up.
 #[rustversion::since(1.51)]
 impl<T, const N: usize> CmdArgument for [T; N]
 where
@@ -175,7 +196,7 @@ pub struct LogCommand;
 /// ```
 /// use cradle::*;
 ///
-/// cmd_unit!(LogCommand, Split("echo foo"));
+/// cmd_unit!(LogCommand, ~"echo foo");
 /// // writes '+ echo foo' to stderr
 /// ```
 impl CmdArgument for LogCommand {
