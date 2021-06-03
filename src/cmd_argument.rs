@@ -50,12 +50,12 @@ pub struct Split<'a>(pub &'a str);
 /// ```
 ///
 /// Since this is such a common case, `cradle` also provides a syntactical shortcut
-/// for [`Split`]: the `~` symbol:
+/// for [`Split`]: the `@` symbol:
 ///
 /// ```
 /// use cradle::*;
 ///
-/// let StdoutTrimmed(output) = cmd!(~"echo foo");
+/// let StdoutTrimmed(output) = cmd!(@"echo foo");
 /// assert_eq!(output, "foo");
 /// ```
 ///
@@ -196,7 +196,7 @@ pub struct LogCommand;
 /// ```
 /// use cradle::*;
 ///
-/// cmd_unit!(LogCommand, ~"echo foo");
+/// cmd_unit!(LogCommand, @"echo foo");
 /// // writes '+ echo foo' to stderr
 /// ```
 impl CmdArgument for LogCommand {
