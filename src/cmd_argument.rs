@@ -18,8 +18,8 @@ where
     }
 }
 
-/// Arguments of type [`&str`] are passed into the child process
-/// as arguments.
+/// Arguments of type [`&str`] are being split up into words by whitespace
+/// and then passed into the child process as arguments.
 impl CmdArgument for &str {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
