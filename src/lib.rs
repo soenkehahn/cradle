@@ -8,7 +8,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(stdout) = cmd!(~"echo foo");
+//! let StdoutTrimmed(stdout) = cmd!(Split("echo foo"));
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -53,6 +53,7 @@
 //! Wrapping an argument of type `&str` in [`Split`] will cause `cradle` to first
 //! split it by whitespace and then use the resulting words as if they were passed
 //! into [`cmd!`] as separate arguments.
+//!
 //! And -- since this is such a common case -- `cradle` provides a syntactical shortcut
 //! for [`Split`]: the `~` symbol:
 //!
