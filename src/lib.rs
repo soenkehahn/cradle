@@ -8,7 +8,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(stdout) = cmd!("echo foo".split(' '));
+//! let StdoutTrimmed(stdout) = cmd!(~"echo foo");
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -24,6 +24,8 @@
 //! let StdoutTrimmed(stdout) = cmd!("echo", "foo", "bar");
 //! assert_eq!(stdout, "foo bar");
 //! ```
+//!
+//! todo: splitting docs
 //!
 //! For all possible inputs to [`cmd!`], see [`CmdArgument`].
 //!
@@ -152,17 +154,17 @@ use std::{
 /// Execute child processes. See the module documentation on how to use it.
 #[macro_export]
 macro_rules! cmd {
-    ($($args:expr),+) => {{
+    ($($args:tt)*) => {{
         let context = $crate::Context::production();
-        $crate::panic_on_error($crate::cmd_result_with_context!(context, $($args),+))
+        $crate::panic_on_error($crate::cmd_result_with_context!(context, $($args)*))
     }}
 }
 
 /// Like [`cmd!`], but fixes the return type to `()`.
 #[macro_export]
 macro_rules! cmd_unit {
-    ($($args:expr),+) => {{
-        let () = $crate::cmd!($($args),+);
+    ($($args:tt)*) => {{
+        let () = $crate::cmd!($($args)*);
     }}
 }
 
@@ -170,18 +172,37 @@ macro_rules! cmd_unit {
 /// where `T` is any type that implements [`CmdOutput`].
 #[macro_export]
 macro_rules! cmd_result {
-    ($($args:expr),+) => {{
+    ($($args:tt)*) => {{
         let context = $crate::Context::production();
-        $crate::cmd_result_with_context!(context, $($args),+)
+        $crate::cmd_result_with_context!(context, $($args)*)
     }}
 }
 
 #[doc(hidden)]
 #[macro_export]
+macro_rules! prepare_config {
+    ($config:ident # ~ $head:expr, $($tail:tt)*) => {
+        $crate::CmdArgument::prepare_config(Split($head), &mut $config);
+        $crate::prepare_config!($config # $($tail)*);
+    };
+    ($config:ident # $head:expr, $($tail:tt)*) => {
+        $crate::CmdArgument::prepare_config($head, &mut $config);
+        $crate::prepare_config!($config # $($tail)*);
+    };
+    ($config:ident # ~ $head:expr) => {
+        $crate::CmdArgument::prepare_config(Split($head), &mut $config);
+    };
+    ($config:ident # $head:expr) => {
+        $crate::CmdArgument::prepare_config($head, &mut $config);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! cmd_result_with_context {
-    ($context:expr, $($args:expr),+) => {{
+    ($context:expr, $($args:tt)*) => {{
         let mut config = $crate::Config::default();
-        $($crate::CmdArgument::prepare_config($args, &mut config);)+
+        $crate::prepare_config!(config # $($args)*);
         $crate::run_cmd($context, config)
     }}
 }
@@ -1082,15 +1103,49 @@ mod tests {
         }
 
         #[test]
-        fn trims_trailing_whitespace() {
+        fn trims_leading_whitespace() {
             let StdoutTrimmed(output) = cmd!(Split(" echo foo"));
             assert_eq!(output, "foo");
         }
 
         #[test]
-        fn trims_leading_whitespace() {
+        fn trims_trailing_whitespace() {
             let StdoutUntrimmed(output) = cmd!("echo", Split("foo "));
             assert_eq!(output, "foo\n");
+        }
+
+        mod tilde {
+            use super::*;
+
+            #[test]
+            fn tilde_splits_words() {
+                let StdoutUntrimmed(output) = cmd!(~"echo foo");
+                assert_eq!(output, "foo\n");
+            }
+
+            #[test]
+            fn tilde_works_for_later_arguments() {
+                let StdoutUntrimmed(output) = cmd!("echo", ~"foo\tbar");
+                assert_eq!(output, "foo bar\n");
+            }
+
+            #[test]
+            fn works_for_first_of_multiple_arguments() {
+                let StdoutUntrimmed(output) = cmd!(~"echo foo", "bar");
+                assert_eq!(output, "foo bar\n");
+            }
+
+            #[test]
+            fn non_literals() {}
+
+            #[test]
+            fn in_arrays() {}
+
+            #[test]
+            fn in_cmd_unit() {}
+
+            #[test]
+            fn in_cmd_result() {}
         }
     }
 
