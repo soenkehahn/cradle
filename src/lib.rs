@@ -8,7 +8,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(stdout) = cmd!("echo foo".split(' '));
+//! let StdoutTrimmed(stdout) = cmd!(Split("echo foo"));
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -25,7 +25,34 @@
 //! assert_eq!(stdout, "foo bar");
 //! ```
 //!
-//! For all possible inputs to [`cmd!`], see [`CmdArgument`].
+//! For all possible inputs to [`cmd!`], see the documentation of [`CmdArgument`].
+//!
+//! ## Whitespace Splitting
+//!
+//! `cradle` does *not* split given string arguments on whitespace by default.
+//! So for example this code fails:
+//!
+//! ``` should_panic
+//! use cradle::*;
+//!
+//! let StdoutTrimmed(_) = cmd!("echo foo");
+//! ```
+//!
+//! In this code `cradle` tries to run a process from an executable called
+//! `"echo foo"`, including the space in the executable file name.
+//! But that executable doesn't exist.
+//! `cradle` provides a new-type wrapper [`Split`] to help with that:
+//!
+//! ```
+//! use cradle::*;
+//!
+//! let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+//! assert_eq!(output, "foo");
+//! ```
+//!
+//! Wrapping an argument of type `&str` in [`Split`] will cause `cradle` to first
+//! split it by whitespace and then use the resulting words as if they were passed
+//! into [`cmd!`] as separate arguments.
 //!
 //! # Output
 //!
@@ -38,7 +65,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(output) = cmd!("echo foo".split(' '));
+//! let StdoutTrimmed(output) = cmd!(Split("echo foo"));
 //! assert_eq!(output, "foo");
 //! ```
 //!
@@ -51,7 +78,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let () = cmd!("touch foo".split(' '));
+//! let () = cmd!(Split("touch foo"));
 //! ```
 //!
 //! Since that's a very common case, `cradle` provides the [`cmd_unit!`]
@@ -61,7 +88,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! cmd_unit!("touch foo".split(' '));
+//! cmd_unit!(Split("touch foo"));
 //! ```
 //!
 //! See the implementations for [`CmdOutput`] for all the supported types.
@@ -109,7 +136,7 @@
 //!     "false:\n  exited with exit code: 1"
 //! );
 //!
-//! let result = cmd_result!("echo foo".split(' '));
+//! let result = cmd_result!(Split("echo foo"));
 //! let StdoutTrimmed(output) = result.unwrap();
 //! assert_eq!(output, "foo".to_string());
 //! ```
@@ -121,10 +148,10 @@
 //! use cradle::*;
 //!
 //! fn build() -> Result<(), Error> {
-//!     cmd_result!("which make".split(' '))?;
-//!     cmd_result!("which gcc".split(' '))?;
-//!     cmd_result!("which ld".split(' '))?;
-//!     cmd_result!("make build".split(' '))?;
+//!     cmd_result!(Split("which make"))?;
+//!     cmd_result!(Split("which gcc"))?;
+//!     cmd_result!(Split("which ld"))?;
+//!     cmd_result!(Split("make build"))?;
 //!     Ok(())
 //! }
 //! ```
@@ -1082,13 +1109,13 @@ mod tests {
         }
 
         #[test]
-        fn trims_trailing_whitespace() {
+        fn trims_leading_whitespace() {
             let StdoutTrimmed(output) = cmd!(Split(" echo foo"));
             assert_eq!(output, "foo");
         }
 
         #[test]
-        fn trims_leading_whitespace() {
+        fn trims_trailing_whitespace() {
             let StdoutUntrimmed(output) = cmd!("echo", Split("foo "));
             assert_eq!(output, "foo\n");
         }
