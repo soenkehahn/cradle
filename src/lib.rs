@@ -213,18 +213,18 @@ macro_rules! cmd_result {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! prepare_config {
-    ($config:ident # @ $head:expr, $($tail:tt)*) => {
+    (config: $config:ident, args: @ $head:expr, $($tail:tt)*) => {
         $crate::CmdArgument::prepare_config(Split($head), &mut $config);
-        $crate::prepare_config!($config # $($tail)*);
+        $crate::prepare_config!(config: $config, args: $($tail)*);
     };
-    ($config:ident # $head:expr, $($tail:tt)*) => {
+    (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
         $crate::CmdArgument::prepare_config($head, &mut $config);
-        $crate::prepare_config!($config # $($tail)*);
+        $crate::prepare_config!(config: $config, args: $($tail)*);
     };
-    ($config:ident # @ $head:expr) => {
+    (config: $config:ident, args: @ $head:expr) => {
         $crate::CmdArgument::prepare_config(Split($head), &mut $config);
     };
-    ($config:ident # $head:expr) => {
+    (config: $config:ident, args: $head:expr) => {
         $crate::CmdArgument::prepare_config($head, &mut $config);
     };
 }
@@ -234,7 +234,7 @@ macro_rules! prepare_config {
 macro_rules! cmd_result_with_context {
     ($context:expr, $($args:tt)*) => {{
         let mut config = $crate::Config::default();
-        $crate::prepare_config!(config # $($args)*);
+        $crate::prepare_config!(config: config, args: $($args)*);
         $crate::run_cmd($context, config)
     }}
 }
