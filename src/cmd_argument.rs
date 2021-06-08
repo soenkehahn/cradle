@@ -7,74 +7,140 @@ pub trait CmdArgument {
     fn prepare_config(self, config: &mut Config);
 }
 
+/// Blanket implementation for `&_`.
 impl<T> CmdArgument for &T
 where
     T: CmdArgument + Clone,
 {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        <T as CmdArgument>::prepare_config(self.clone(), config);
+        self.clone().prepare_config(config);
     }
 }
 
-/// Arguments of type [`&str`] are being split up into words by whitespace
-/// and then passed into the child process as arguments.
+/// Arguments of type [`&str`] are passed into the child process
+/// as arguments.
 impl CmdArgument for &str {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        for argument in self.split_whitespace() {
-            config.arguments.push(argument.to_string());
-        }
+        config.arguments.push(self.to_string());
     }
 }
 
-/// Same as for [`&str`], arguments of type [`String`] are being split
-/// up into words by whitespace and then passed into the child process
+/// Arguments of type [`String`] are passed into the child process
 /// as arguments.
 impl CmdArgument for String {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        for argument in self.split_whitespace() {
-            config.arguments.push(argument.to_string());
-        }
+        config.arguments.push(self);
     }
 }
 
-/// All elements of the given [`Vec`] are being passed into the child
-/// process as arguments, **without** splitting them by whitespace.
-///
-/// This can come in handy to avoid whitespace splitting, even if you only want
-/// to encode a single argument:
+/// See the [`CmdArgument`] implementation for [`Split`] below.
+pub struct Split<'a>(pub &'a str);
+
+/// Splits the contained string by whitespace (using [`split_whitespace`])
+/// and uses the resulting words as separate arguments.
 ///
 /// ```
-/// use std::path::PathBuf;
 /// use cradle::*;
 ///
-/// cmd_unit!("touch", vec!["filename with spaces"]);
-/// assert!(PathBuf::from("filename with spaces").exists());
+/// let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+/// assert_eq!(output, "foo");
 /// ```
-impl CmdArgument for Vec<&str> {
+///
+/// [`split_whitespace`]: str::split_whitespace
+impl<'a> CmdArgument for Split<'a> {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        for argument in self {
+        for argument in self.0.split_whitespace() {
             config.arguments.push(argument.to_string());
         }
     }
 }
 
-/// Similar to the implementation for [`Vec<&str>`].
-/// All elements of the given [`Vec`] are being passed into the child
-/// process as arguments, **without** splitting them by whitespace.
-impl CmdArgument for Vec<String> {
+/// Allows to use [`split`] to split your argument into words:
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutTrimmed(output) = cmd!("echo foo".split(' '));
+/// assert_eq!(output, "foo");
+/// ```
+///
+/// Arguments to [`split`] must be of type [`char`].
+///
+/// [`split`]: str::split
+impl<'a> CmdArgument for std::str::Split<'a, char> {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.arguments.extend(self);
+        for word in self {
+            word.prepare_config(config);
+        }
     }
 }
 
-/// Similar to the implementation for [`Vec<&str>`].
-/// All elements of the array will be passed into the child
-/// process as arguments, **without** splitting them by whitespace.
+/// Allows to use [`split_whitespace`] to split your argument into words:
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutTrimmed(output) = cmd!("echo foo".split_whitespace());
+/// assert_eq!(output, "foo");
+/// ```
+///
+/// [`split_whitespace`]: str::split_whitespace
+impl<'a> CmdArgument for std::str::SplitWhitespace<'a> {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        for word in self {
+            word.prepare_config(config);
+        }
+    }
+}
+
+/// Allows to use [`split_ascii_whitespace`] to split your argument into words:
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutTrimmed(output) = cmd!("echo foo".split_ascii_whitespace());
+/// assert_eq!(output, "foo");
+/// ```
+///
+/// [`split_ascii_whitespace`]: str::split_ascii_whitespace
+impl<'a> CmdArgument for std::str::SplitAsciiWhitespace<'a> {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        for word in self {
+            word.prepare_config(config);
+        }
+    }
+}
+
+/// All elements of the given [`Vec`] are used as arguments to [`cmd!`].
+/// Same as passing in the elements separately.
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutTrimmed(output) = cmd!(vec!["echo", "foo"]);
+/// assert_eq!(output, "foo");
+/// ```
+impl<T> CmdArgument for Vec<T>
+where
+    T: CmdArgument,
+{
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        for t in self.into_iter() {
+            t.prepare_config(config);
+        }
+    }
+}
+
+/// Similar to the implementation for [`Vec<T>`].
+/// All elements of the array will be used as arguments.
 ///
 /// ```
 /// use cradle::*;
@@ -82,23 +148,30 @@ impl CmdArgument for Vec<String> {
 /// let StdoutTrimmed(output) = cmd!(["echo", "foo"]);
 /// assert_eq!(output, "foo");
 /// ```
+///
+/// Only works on rust version `1.51` and up.
 #[rustversion::since(1.51)]
-impl<const N: usize> CmdArgument for [&str; N] {
+impl<T, const N: usize> CmdArgument for [T; N]
+where
+    T: CmdArgument,
+{
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        self[..].prepare_config(config);
+        for t in std::array::IntoIter::new(self) {
+            t.prepare_config(config);
+        }
     }
 }
 
-/// Similar to the implementation for [`Vec<&str>`].
-/// All elements of the slice will be passed into the child
-/// process as arguments, **without** splitting them by whitespace.
-impl CmdArgument for &[&str] {
+/// Similar to the implementation for [`Vec<T>`].
+/// All elements of the slice will be used as arguments.
+impl<T> CmdArgument for &[T]
+where
+    T: CmdArgument + Clone,
+{
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        for argument in self.iter() {
-            config.arguments.push((*argument).to_string());
-        }
+        self.to_vec().prepare_config(config);
     }
 }
 
@@ -113,7 +186,7 @@ pub struct LogCommand;
 /// ```
 /// use cradle::*;
 ///
-/// cmd_unit!(LogCommand, "echo foo");
+/// cmd_unit!(LogCommand, Split("echo foo"));
 /// // writes '+ echo foo' to stderr
 /// ```
 impl CmdArgument for LogCommand {

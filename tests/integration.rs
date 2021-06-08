@@ -9,7 +9,7 @@ const WHICH: &str = "where";
 fn capturing_stdout() {
     use cradle::*;
 
-    let StdoutTrimmed(output) = cmd!("echo foo");
+    let StdoutTrimmed(output) = cmd!(Split("echo foo"));
     assert_eq!(output, "foo");
 }
 

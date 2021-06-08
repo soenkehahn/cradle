@@ -8,7 +8,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(stdout) = cmd!("echo foo");
+//! let StdoutTrimmed(stdout) = cmd!(Split("echo foo"));
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -25,51 +25,34 @@
 //! assert_eq!(stdout, "foo bar");
 //! ```
 //!
-//! Arguments of type [`&str`] will be split by whitespace into words.
-//! You can also pass in arrays of type [`[&str]`]. All elements will
-//! be used as arguments:
+//! For all possible inputs to [`cmd!`], see the documentation of [`CmdArgument`].
+//!
+//! ## Whitespace Splitting
+//!
+//! `cradle` does *not* split given string arguments on whitespace by default.
+//! So for example this code fails:
+//!
+//! ``` should_panic
+//! use cradle::*;
+//!
+//! let StdoutTrimmed(_) = cmd!("echo foo");
+//! ```
+//!
+//! In this code `cradle` tries to run a process from an executable called
+//! `"echo foo"`, including the space in the file name of the executable.
+//! That fails, because an executable with that name doesn't exist.
+//! `cradle` provides a new-type wrapper [`Split`] to help with that:
 //!
 //! ```
 //! use cradle::*;
 //!
-//! # #[rustversion::since(1.51)]
-//! # fn test() {
-//! let StdoutTrimmed(stdout) = cmd!("echo", ["foo", "bar"]);
-//! assert_eq!(stdout, "foo bar");
-//! # }
-//! # #[rustversion::before(1.51)]
-//! # fn test() {}
-//! # test();
+//! let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+//! assert_eq!(output, "foo");
 //! ```
 //!
-//! Elements of arrays are **not** being split by whitespace, so you can
-//! use that to avoid whitespace splitting:
-//!
-//! ```
-//! use std::path::PathBuf;
-//! use cradle::*;
-//!
-//! # #[rustversion::since(1.51)]
-//! # fn test() {
-//! let StdoutTrimmed(_) = cmd!("touch", ["filename with spaces"]);
-//! assert!(PathBuf::from("filename with spaces").exists());
-//! # }
-//! # #[rustversion::before(1.51)]
-//! # fn test() {}
-//! # test();
-//! ```
-//!
-//! Before rust version `1.51`, instead of arrays, use [`Vec<&str>`]:
-//!
-//! ```
-//! use std::path::PathBuf;
-//! use cradle::*;
-//!
-//! let StdoutTrimmed(_) = cmd!("touch", vec!["filename with spaces"]);
-//! assert!(PathBuf::from("filename with spaces").exists());
-//! ```
-//!
-//! For all possible inputs to [`cmd!`], see [`CmdArgument`].
+//! Wrapping an argument of type `&str` in [`Split`] will cause `cradle` to first
+//! split it by whitespace and then use the resulting words as if they were passed
+//! into [`cmd!`] as separate arguments.
 //!
 //! # Output
 //!
@@ -82,7 +65,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(output) = cmd!("echo foo");
+//! let StdoutTrimmed(output) = cmd!(Split("echo foo"));
 //! assert_eq!(output, "foo");
 //! ```
 //!
@@ -95,7 +78,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let () = cmd!("touch foo");
+//! let () = cmd!(Split("touch foo"));
 //! ```
 //!
 //! Since that's a very common case, `cradle` provides the [`cmd_unit!`]
@@ -105,7 +88,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! cmd_unit!("touch foo");
+//! cmd_unit!(Split("touch foo"));
 //! ```
 //!
 //! See the implementations for [`CmdOutput`] for all the supported types.
@@ -153,7 +136,7 @@
 //!     "false:\n  exited with exit code: 1"
 //! );
 //!
-//! let result = cmd_result!("echo foo");
+//! let result = cmd_result!(Split("echo foo"));
 //! let StdoutTrimmed(output) = result.unwrap();
 //! assert_eq!(output, "foo".to_string());
 //! ```
@@ -165,10 +148,10 @@
 //! use cradle::*;
 //!
 //! fn build() -> Result<(), Error> {
-//!     cmd_result!("which make")?;
-//!     cmd_result!("which gcc")?;
-//!     cmd_result!("which ld")?;
-//!     cmd_result!("make build")?;
+//!     cmd_result!(Split("which make"))?;
+//!     cmd_result!(Split("which gcc"))?;
+//!     cmd_result!(Split("which ld"))?;
+//!     cmd_result!(Split("make build"))?;
 //!     Ok(())
 //! }
 //! ```
@@ -182,7 +165,7 @@ mod error;
 
 use crate::collected_output::Waiter;
 pub use crate::{
-    cmd_argument::{CmdArgument, CurrentDir, LogCommand},
+    cmd_argument::{CmdArgument, CurrentDir, LogCommand, Split},
     cmd_output::{CmdOutput, Exit, Stderr, StdoutTrimmed, StdoutUntrimmed},
     error::{panic_on_error, Error},
 };
@@ -358,7 +341,7 @@ mod tests {
     #[test]
     fn allows_to_execute_a_command() {
         in_temporary_directory(|| {
-            cmd_unit!("touch foo");
+            cmd_unit!(Split("touch foo"));
             assert!(PathBuf::from("foo").exists());
         })
     }
@@ -384,7 +367,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "cmd!: false foo bar:\n  exited with exit code: 1")]
             fn includes_full_command_on_non_zero_exit_codes() {
-                cmd_unit!("false foo bar");
+                cmd_unit!(Split("false foo bar"));
             }
 
             #[test]
@@ -427,13 +410,14 @@ mod tests {
                 )
             )]
             fn includes_full_command_on_missing_executables() {
-                cmd_unit!("does-not-exist foo bar");
+                cmd_unit!(Split("does-not-exist foo bar"));
             }
 
             #[test]
             #[should_panic(expected = "cmd!: no arguments given")]
             fn no_executable() {
-                cmd_unit!("");
+                let vector: Vec<String> = Vec::new();
+                cmd_unit!(vector);
             }
 
             #[test]
@@ -475,7 +459,7 @@ mod tests {
 
             #[test]
             fn combine_ok_with_other_outputs() {
-                let StdoutTrimmed(output) = cmd_result!("echo foo").unwrap();
+                let StdoutTrimmed(output) = cmd_result!(Split("echo foo")).unwrap();
                 assert_eq!(output, "foo".to_string());
             }
 
@@ -490,7 +474,7 @@ mod tests {
 
             #[test]
             fn includes_full_command_on_non_zero_exit_codes() {
-                let result: Result<(), Error> = cmd_result!("false foo bar");
+                let result: Result<(), Error> = cmd_result!(Split("false foo bar"));
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false foo bar:\n  exited with exit code: 1"
@@ -499,7 +483,7 @@ mod tests {
 
             #[test]
             fn includes_full_command_on_missing_executables() {
-                let result: Result<(), Error> = cmd_result!("does-not-exist foo bar");
+                let result: Result<(), Error> = cmd_result!(Split("does-not-exist foo bar"));
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     if cfg!(target_os = "windows") {
@@ -537,7 +521,8 @@ mod tests {
 
             #[test]
             fn no_executable() {
-                let result: Result<(), Error> = cmd_result!("");
+                let vector: Vec<String> = Vec::new();
+                let result: Result<(), Error> = cmd_result!(vector);
                 assert_eq!(result.unwrap_err().to_string(), "no arguments given");
             }
 
@@ -560,7 +545,7 @@ mod tests {
 
     #[test]
     fn allows_to_retrieve_stdout() {
-        let StdoutTrimmed(stdout) = cmd!("echo foo");
+        let StdoutTrimmed(stdout) = cmd!(Split("echo foo"));
         assert_eq!(stdout, "foo");
     }
 
@@ -592,56 +577,104 @@ mod tests {
         assert_eq!(stdout, "foo");
     }
 
-    #[rustversion::since(1.51)]
-    #[test]
-    fn arrays_as_arguments() {
-        let args: [&str; 2] = ["echo", "foo"];
-        let StdoutTrimmed(stdout) = cmd!(args);
-        assert_eq!(stdout, "foo");
-    }
+    mod sequences {
+        use super::*;
 
-    #[rustversion::since(1.51)]
-    #[test]
-    fn elements_in_arrays_are_not_split_by_whitespace() {
-        in_temporary_directory(|| {
-            let args: [&str; 1] = ["foo bar"];
-            cmd_unit!("touch", args);
-            assert!(PathBuf::from("foo bar").exists());
-        });
-    }
+        #[test]
+        fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
+            let args: Vec<&str> = vec!["foo"];
+            let StdoutTrimmed(stdout) = cmd!("echo", args);
+            assert_eq!(stdout, "foo");
+        }
 
-    #[rustversion::since(1.51)]
-    #[test]
-    fn array_refs_as_arguments() {
-        let args: &[&str; 2] = &["echo", "foo"];
-        let StdoutTrimmed(stdout) = cmd!(args);
-        assert_eq!(stdout, "foo");
-    }
+        #[test]
+        fn vector_of_non_strings() {
+            let context = Context::test();
+            let config: Vec<LogCommand> = vec![LogCommand];
+            let StdoutTrimmed(stdout) =
+                cmd_result_with_context!(context.clone(), config, Split("echo foo")).unwrap();
+            assert_eq!(stdout, "foo");
+            assert_eq!(context.stderr(), "+ echo foo\n");
+        }
 
-    #[rustversion::since(1.51)]
-    #[test]
-    fn elements_in_array_refs_are_not_split_by_whitespace() {
-        in_temporary_directory(|| {
-            let args: &[&str; 1] = &["foo bar"];
-            cmd_unit!("touch", args);
-            assert!(PathBuf::from("foo bar").exists());
-        });
-    }
+        #[rustversion::since(1.51)]
+        #[test]
+        fn arrays_as_arguments() {
+            let args: [&str; 2] = ["echo", "foo"];
+            let StdoutTrimmed(stdout) = cmd!(args);
+            assert_eq!(stdout, "foo");
+        }
 
-    #[test]
-    fn slices_as_arguments() {
-        let args: &[&str] = &["echo", "foo"];
-        let StdoutTrimmed(stdout) = cmd!(args);
-        assert_eq!(stdout, "foo");
-    }
+        #[rustversion::since(1.51)]
+        #[test]
+        fn arrays_of_non_strings() {
+            let context = Context::test();
+            let config: [LogCommand; 1] = [LogCommand];
+            let StdoutTrimmed(stdout) =
+                cmd_result_with_context!(context.clone(), config, Split("echo foo")).unwrap();
+            assert_eq!(stdout, "foo");
+            assert_eq!(context.stderr(), "+ echo foo\n");
+        }
 
-    #[test]
-    fn elements_in_slices_are_not_split_by_whitespace() {
-        in_temporary_directory(|| {
-            let args: &[&str] = &["foo bar"];
-            cmd_unit!("touch", args);
-            assert!(PathBuf::from("foo bar").exists());
-        });
+        #[rustversion::since(1.51)]
+        #[test]
+        fn elements_in_arrays_are_not_split_by_whitespace() {
+            in_temporary_directory(|| {
+                let args: [&str; 1] = ["foo bar"];
+                cmd_unit!("touch", args);
+                assert!(PathBuf::from("foo bar").exists());
+            });
+        }
+
+        #[rustversion::since(1.51)]
+        #[test]
+        fn array_refs_as_arguments() {
+            let args: &[&str; 2] = &["echo", "foo"];
+            let StdoutTrimmed(stdout) = cmd!(args);
+            assert_eq!(stdout, "foo");
+        }
+
+        #[rustversion::since(1.51)]
+        #[test]
+        fn elements_in_array_refs_are_not_split_by_whitespace() {
+            in_temporary_directory(|| {
+                let args: &[&str; 1] = &["foo bar"];
+                cmd_unit!("touch", args);
+                assert!(PathBuf::from("foo bar").exists());
+            });
+        }
+
+        #[test]
+        fn slices_as_arguments() {
+            let args: &[&str] = &["echo", "foo"];
+            let StdoutTrimmed(stdout) = cmd!(args);
+            assert_eq!(stdout, "foo");
+        }
+
+        #[test]
+        fn slices_of_non_strings() {
+            let context = Context::test();
+            let config: &[LogCommand] = &[LogCommand];
+            let StdoutTrimmed(stdout) =
+                cmd_result_with_context!(context.clone(), config, Split("echo foo")).unwrap();
+            assert_eq!(stdout, "foo");
+            assert_eq!(context.stderr(), "+ echo foo\n");
+        }
+
+        #[test]
+        fn elements_in_slices_are_not_split_by_whitespace() {
+            in_temporary_directory(|| {
+                let args: &[&str] = &["foo bar"];
+                cmd_unit!("touch", args);
+                assert!(PathBuf::from("foo bar").exists());
+            });
+        }
+
+        #[test]
+        fn vector_of_vectors() {
+            let StdoutTrimmed(output) = cmd!(vec![vec!["echo"], vec!["foo", "bar"]]);
+            assert_eq!(output, "foo bar");
+        }
     }
 
     mod strings {
@@ -651,13 +684,6 @@ mod tests {
         fn works_for_string() {
             let command: String = "true".to_string();
             cmd_unit!(command);
-        }
-
-        #[test]
-        fn splits_strings_into_words() {
-            let command: String = "echo foo".to_string();
-            let StdoutTrimmed(output) = cmd!(command);
-            assert_eq!(output, "foo");
         }
 
         #[test]
@@ -692,7 +718,7 @@ mod tests {
         #[test]
         fn relays_stdout_by_default() {
             let context = Context::test();
-            cmd_result_with_context_unit!(context.clone(), "echo foo").unwrap();
+            cmd_result_with_context_unit!(context.clone(), Split("echo foo")).unwrap();
             assert_eq!(context.stdout(), "foo\n");
         }
 
@@ -723,7 +749,7 @@ mod tests {
                 while (context.stdout()) != "foo\n" {
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
-                cmd_unit!("touch file");
+                cmd_unit!(Split("touch file"));
                 thread.join().unwrap();
             });
         }
@@ -731,7 +757,8 @@ mod tests {
         #[test]
         fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
-            let StdoutTrimmed(_) = cmd_result_with_context!(context.clone(), "echo foo").unwrap();
+            let StdoutTrimmed(_) =
+                cmd_result_with_context!(context.clone(), Split("echo foo")).unwrap();
             assert_eq!(context.stdout(), "");
         }
 
@@ -739,7 +766,7 @@ mod tests {
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
             let _: Result<StdoutTrimmed, Error> =
-                cmd_result_with_context!(context.clone(), "echo foo");
+                cmd_result_with_context!(context.clone(), Split("echo foo"));
             assert_eq!(context.stdout(), "");
         }
     }
@@ -799,7 +826,7 @@ mod tests {
                     );
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
-                cmd_unit!("touch file");
+                cmd_unit!(Split("touch file"));
                 thread.join().unwrap();
             });
         }
@@ -862,7 +889,7 @@ mod tests {
         #[test]
         fn logs_commands_with_arguments() {
             let context = Context::test();
-            cmd_result_with_context_unit!(context.clone(), LogCommand, "echo foo").unwrap();
+            cmd_result_with_context_unit!(context.clone(), LogCommand, Split("echo foo")).unwrap();
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
 
@@ -932,7 +959,7 @@ mod tests {
 
         #[test]
         fn result_of_tuple() {
-            let (StdoutTrimmed(output), Exit(status)) = cmd_result!("echo foo").unwrap();
+            let (StdoutTrimmed(output), Exit(status)) = cmd_result!(Split("echo foo")).unwrap();
             assert_eq!(output, "foo");
             assert!(status.success());
         }
@@ -946,7 +973,7 @@ mod tests {
 
         #[test]
         fn three_tuples() {
-            let (Stderr(stderr), StdoutTrimmed(stdout), Exit(status)) = cmd!("echo foo");
+            let (Stderr(stderr), StdoutTrimmed(stdout), Exit(status)) = cmd!(Split("echo foo"));
             assert_eq!(stderr, "");
             assert_eq!(stdout, "foo");
             assert_eq!(status.code(), Some(0));
@@ -983,7 +1010,7 @@ mod tests {
                 fs::create_dir("dir").unwrap();
                 fs::write("dir/file", "foo").unwrap();
                 fs::write("file", "wrong file").unwrap();
-                let StdoutUntrimmed(output) = cmd!("cat file", CurrentDir("dir"));
+                let StdoutUntrimmed(output) = cmd!(Split("cat file"), CurrentDir("dir"));
                 assert_eq!(output, "foo");
             });
         }
@@ -1010,25 +1037,25 @@ mod tests {
 
             #[test]
             fn trims_trailing_whitespace() {
-                let StdoutTrimmed(output) = cmd!("echo foo");
+                let StdoutTrimmed(output) = cmd!(Split("echo foo"));
                 assert_eq!(output, "foo");
             }
 
             #[test]
             fn trims_leading_whitespace() {
-                let StdoutTrimmed(output) = cmd!("echo -n", vec![" foo"]);
+                let StdoutTrimmed(output) = cmd!(Split("echo -n"), vec![" foo"]);
                 assert_eq!(output, "foo");
             }
 
             #[test]
             fn does_not_remove_whitespace_within_output() {
-                let StdoutTrimmed(output) = cmd!("echo -n", vec!["foo bar"]);
+                let StdoutTrimmed(output) = cmd!(Split("echo -n"), vec!["foo bar"]);
                 assert_eq!(output, "foo bar");
             }
 
             #[test]
             fn does_not_modify_output_without_whitespace() {
-                let StdoutTrimmed(output) = cmd!("echo -n foo");
+                let StdoutTrimmed(output) = cmd!(Split("echo -n foo"));
                 assert_eq!(output, "foo");
             }
 
@@ -1036,7 +1063,7 @@ mod tests {
             fn does_not_relay_stdout() {
                 let context = Context::test();
                 let StdoutTrimmed(_) =
-                    cmd_result_with_context!(context.clone(), "echo foo").unwrap();
+                    cmd_result_with_context!(context.clone(), Split("echo foo")).unwrap();
                 assert_eq!(context.stdout(), "");
             }
         }
@@ -1046,13 +1073,13 @@ mod tests {
 
             #[test]
             fn does_not_trim_trailing_newline() {
-                let StdoutUntrimmed(output) = cmd!("echo foo");
+                let StdoutUntrimmed(output) = cmd!(Split("echo foo"));
                 assert_eq!(output, "foo\n");
             }
 
             #[test]
             fn does_not_trim_leading_whitespace() {
-                let StdoutUntrimmed(output) = cmd!("echo -n", vec![" foo"]);
+                let StdoutUntrimmed(output) = cmd!(Split("echo -n"), vec![" foo"]);
                 assert_eq!(output, " foo");
             }
 
@@ -1060,9 +1087,59 @@ mod tests {
             fn does_not_relay_stdout() {
                 let context = Context::test();
                 let StdoutUntrimmed(_) =
-                    cmd_result_with_context!(context.clone(), "echo foo").unwrap();
+                    cmd_result_with_context!(context.clone(), Split("echo foo")).unwrap();
                 assert_eq!(context.stdout(), "");
             }
+        }
+    }
+
+    mod split {
+        use super::*;
+
+        #[test]
+        fn splits_words_by_whitespace() {
+            let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn skips_multiple_whitespace_characters() {
+            let StdoutUntrimmed(output) = cmd!("echo", Split("foo  bar"));
+            assert_eq!(output, "foo bar\n");
+        }
+
+        #[test]
+        fn trims_leading_whitespace() {
+            let StdoutTrimmed(output) = cmd!(Split(" echo foo"));
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn trims_trailing_whitespace() {
+            let StdoutUntrimmed(output) = cmd!("echo", Split("foo "));
+            assert_eq!(output, "foo\n");
+        }
+    }
+
+    mod splitting_with_library_functions {
+        use super::*;
+
+        #[test]
+        fn allow_to_use_split() {
+            let StdoutTrimmed(output) = cmd!("echo foo".split(' '));
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn split_whitespace() {
+            let StdoutTrimmed(output) = cmd!("echo foo".split_whitespace());
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn split_ascii_whitespace() {
+            let StdoutTrimmed(output) = cmd!("echo foo".split_ascii_whitespace());
+            assert_eq!(output, "foo");
         }
     }
 }

@@ -14,7 +14,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 /// use cradle::*;
 ///
-/// let (StdoutUntrimmed(stdout), Exit(status)) = cmd!("echo foo");
+/// let (StdoutUntrimmed(stdout), Exit(status)) = cmd!(Split("echo foo"));
 /// assert_eq!(stdout, "foo\n");
 /// assert!(status.success());
 /// ```
@@ -58,7 +58,7 @@ pub struct StdoutTrimmed(pub String);
 ///
 /// # #[cfg(unix)]
 /// # {
-/// let StdoutTrimmed(output) = cmd!("which ls");
+/// let StdoutTrimmed(output) = cmd!(Split("which ls"));
 /// assert!(Path::new(&output).exists());
 /// # }
 /// ```
@@ -82,7 +82,7 @@ pub struct StdoutUntrimmed(pub String);
 /// ```
 /// use cradle::*;
 ///
-/// let StdoutUntrimmed(output) = cmd!("echo foo");
+/// let StdoutUntrimmed(output) = cmd!(Split("echo foo"));
 /// assert_eq!(output, "foo\n");
 /// ```
 impl CmdOutput for StdoutUntrimmed {
@@ -137,7 +137,7 @@ pub struct Exit(pub ExitStatus);
 /// ```
 /// use cradle::*;
 ///
-/// let Exit(status) = cmd!("echo foo");
+/// let Exit(status) = cmd!(Split("echo foo"));
 /// assert!(status.success());
 /// ```
 ///
@@ -180,7 +180,7 @@ pub struct Stderr(pub String);
 ///
 /// // (`Exit` is used here to suppress panics caused by `ls`
 /// // terminating with a non-zero exit code.)
-/// let (Stderr(stderr), Exit(_)) = cmd!("ls does-not-exist");
+/// let (Stderr(stderr), Exit(_)) = cmd!(Split("ls does-not-exist"));
 /// assert!(stderr.contains("No such file or directory"));
 /// ```
 ///
