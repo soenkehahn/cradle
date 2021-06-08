@@ -51,8 +51,8 @@
 //! split it by whitespace and then use the resulting words as if they were passed
 //! into [`cmd!`] as separate arguments.
 //!
-//! And -- since this is such a common case -- `cradle` provides a syntactical shortcut
-//! for [`Split`]: the `@` symbol:
+//! And -- since this is such a common case -- `cradle` provides a syntactic shortcut
+//! for [`Split`], the `@` symbol:
 //!
 //! ```
 //! use cradle::*;
