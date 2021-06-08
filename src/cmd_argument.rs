@@ -49,7 +49,7 @@ pub struct Split<'a>(pub &'a str);
 /// assert_eq!(output, "foo");
 /// ```
 ///
-/// Since this is such a common case, `cradle` also provides a syntactical shortcut
+/// Since this is such a common case, `cradle` also provides a syntactic shortcut
 /// for [`Split`]: the `@` symbol:
 ///
 /// ```
