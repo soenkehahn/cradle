@@ -39,8 +39,8 @@
 //! ```
 //!
 //! In this code `cradle` tries to run a process from an executable called
-//! `"echo foo"`, including the space in the executable file name.
-//! But that executable doesn't exist.
+//! `"echo foo"`, including the space in the file name of the executable.
+//! That fails, because an executable with that name doesn't exist.
 //! `cradle` provides a new-type wrapper [`Split`] to help with that:
 //!
 //! ```
