@@ -1181,7 +1181,7 @@ mod tests {
 
             #[test]
             fn in_cmd_result() {
-                let () = cmd_result!(@"echo foo").unwrap();
+                let StdoutTrimmed(_) = cmd_result!(@"echo foo").unwrap();
             }
         }
     }
