@@ -50,7 +50,7 @@ pub struct Split<'a>(pub &'a str);
 /// ```
 ///
 /// Since this is such a common case, `cradle` also provides a syntactic shortcut
-/// for [`Split`]: the `@` symbol:
+/// for [`Split`], the `@` symbol:
 ///
 /// ```
 /// use cradle::*;
