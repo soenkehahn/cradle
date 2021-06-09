@@ -1152,19 +1152,19 @@ mod tests {
             use super::*;
 
             #[test]
-            fn tilde_splits_words() {
+            fn splits_words() {
                 let StdoutUntrimmed(output) = cmd!(%"echo foo");
                 assert_eq!(output, "foo\n");
             }
 
             #[test]
-            fn tilde_works_for_later_arguments() {
+            fn works_for_later_arguments() {
                 let StdoutUntrimmed(output) = cmd!("echo", %"foo\tbar");
                 assert_eq!(output, "foo bar\n");
             }
 
             #[test]
-            fn works_for_first_of_multiple_arguments() {
+            fn for_first_of_multiple_arguments() {
                 let StdoutUntrimmed(output) = cmd!(%"echo foo", "bar");
                 assert_eq!(output, "foo bar\n");
             }
