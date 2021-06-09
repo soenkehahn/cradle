@@ -29,6 +29,9 @@
 //!
 //! ## Whitespace Splitting
 //!
+//! `cradle` does *not* split given string arguments on whitespace by default.
+//! So for example this code fails:
+//!
 //! ``` should_panic
 //! use cradle::*;
 //!
