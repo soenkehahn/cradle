@@ -215,6 +215,16 @@ macro_rules! cmd_result {
 
 #[doc(hidden)]
 #[macro_export]
+macro_rules! cmd_result_with_context {
+    ($context:expr, $($args:tt)*) => {{
+        let mut config = $crate::Config::default();
+        $crate::prepare_config!(config: config, args: $($args)*);
+        $crate::run_cmd($context, config)
+    }}
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! prepare_config {
     (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
         $crate::CmdArgument::prepare_config($crate::Split($head), &mut $config);
@@ -230,16 +240,6 @@ macro_rules! prepare_config {
     (config: $config:ident, args: $head:expr) => {
         $crate::CmdArgument::prepare_config($head, &mut $config);
     };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! cmd_result_with_context {
-    ($context:expr, $($args:tt)*) => {{
-        let mut config = $crate::Config::default();
-        $crate::prepare_config!(config: config, args: $($args)*);
-        $crate::run_cmd($context, config)
-    }}
 }
 
 #[doc(hidden)]
