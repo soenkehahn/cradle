@@ -222,7 +222,7 @@ macro_rules! prepare_config {
         $crate::prepare_config!(config: $config, args: $($tail)*);
     };
     (config: $config:ident, args: % $head:expr) => {
-        $crate::CmdArgument::prepare_config(Split($head), &mut $config);
+        $crate::CmdArgument::prepare_config($crate::Split($head), &mut $config);
     };
     (config: $config:ident, args: $head:expr) => {
         $crate::CmdArgument::prepare_config($head, &mut $config);
