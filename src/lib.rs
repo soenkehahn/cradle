@@ -8,7 +8,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(stdout) = cmd!(Split("echo foo"));
+//! let StdoutTrimmed(stdout) = cmd!(%"echo foo");
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
@@ -54,6 +54,16 @@
 //! split it by whitespace and then use the resulting words as if they were passed
 //! into [`cmd!`] as separate arguments.
 //!
+//! And -- since this is such a common case -- `cradle` provides a syntactic shortcut
+//! for [`Split`], the `%` symbol:
+//!
+//! ```
+//! use cradle::*;
+//!
+//! let StdoutTrimmed(output) = cmd!(%"echo foo");
+//! assert_eq!(output, "foo");
+//! ```
+//!
 //! # Output
 //!
 //! You can choose which return type you want [`cmd!`] to return,
@@ -65,7 +75,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+//! let StdoutTrimmed(output) = cmd!(%"echo foo");
 //! assert_eq!(output, "foo");
 //! ```
 //!
@@ -78,7 +88,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let () = cmd!(Split("touch foo"));
+//! let () = cmd!(%"touch foo");
 //! ```
 //!
 //! Since that's a very common case, `cradle` provides the [`cmd_unit!`]
@@ -88,7 +98,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! cmd_unit!(Split("touch foo"));
+//! cmd_unit!(%"touch foo");
 //! ```
 //!
 //! See the implementations for [`CmdOutput`] for all the supported types.
@@ -136,7 +146,7 @@
 //!     "false:\n  exited with exit code: 1"
 //! );
 //!
-//! let result = cmd_result!(Split("echo foo"));
+//! let result = cmd_result!(%"echo foo");
 //! let StdoutTrimmed(output) = result.unwrap();
 //! assert_eq!(output, "foo".to_string());
 //! ```
@@ -148,10 +158,10 @@
 //! use cradle::*;
 //!
 //! fn build() -> Result<(), Error> {
-//!     cmd_result!(Split("which make"))?;
-//!     cmd_result!(Split("which gcc"))?;
-//!     cmd_result!(Split("which ld"))?;
-//!     cmd_result!(Split("make build"))?;
+//!     cmd_result!(%"which make")?;
+//!     cmd_result!(%"which gcc")?;
+//!     cmd_result!(%"which ld")?;
+//!     cmd_result!(%"make build")?;
 //!     Ok(())
 //! }
 //! ```
@@ -179,17 +189,17 @@ use std::{
 /// Execute child processes. See the module documentation on how to use it.
 #[macro_export]
 macro_rules! cmd {
-    ($($args:expr),+) => {{
+    ($($args:tt)*) => {{
         let context = $crate::Context::production();
-        $crate::panic_on_error($crate::cmd_result_with_context!(context, $($args),+))
+        $crate::panic_on_error($crate::cmd_result_with_context!(context, $($args)*))
     }}
 }
 
 /// Like [`cmd!`], but fixes the return type to `()`.
 #[macro_export]
 macro_rules! cmd_unit {
-    ($($args:expr),+) => {{
-        let () = $crate::cmd!($($args),+);
+    ($($args:tt)*) => {{
+        let () = $crate::cmd!($($args)*);
     }}
 }
 
@@ -197,20 +207,39 @@ macro_rules! cmd_unit {
 /// where `T` is any type that implements [`CmdOutput`].
 #[macro_export]
 macro_rules! cmd_result {
-    ($($args:expr),+) => {{
+    ($($args:tt)*) => {{
         let context = $crate::Context::production();
-        $crate::cmd_result_with_context!(context, $($args),+)
+        $crate::cmd_result_with_context!(context, $($args)*)
     }}
 }
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! cmd_result_with_context {
-    ($context:expr, $($args:expr),+) => {{
+    ($context:expr, $($args:tt)*) => {{
         let mut config = $crate::Config::default();
-        $($crate::CmdArgument::prepare_config($args, &mut config);)+
+        $crate::prepare_config!(config: config, args: $($args)*);
         $crate::run_cmd($context, config)
     }}
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! prepare_config {
+    (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
+        $crate::CmdArgument::prepare_config($crate::Split($head), &mut $config);
+        $crate::prepare_config!(config: $config, args: $($tail)*);
+    };
+    (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
+        $crate::CmdArgument::prepare_config($head, &mut $config);
+        $crate::prepare_config!(config: $config, args: $($tail)*);
+    };
+    (config: $config:ident, args: % $head:expr) => {
+        $crate::CmdArgument::prepare_config($crate::Split($head), &mut $config);
+    };
+    (config: $config:ident, args: $head:expr) => {
+        $crate::CmdArgument::prepare_config($head, &mut $config);
+    };
 }
 
 #[doc(hidden)]
@@ -331,9 +360,9 @@ mod tests {
     }
 
     macro_rules! cmd_result_with_context_unit {
-        ($context:expr, $($args:expr),+) => {{
+        ($context:expr, $($args:tt)*) => {{
             let result: std::result::Result<(), $crate::Error> =
-              $crate::cmd_result_with_context!($context, $($args),+);
+              $crate::cmd_result_with_context!($context, $($args)*);
             result
         }}
     }
@@ -341,7 +370,7 @@ mod tests {
     #[test]
     fn allows_to_execute_a_command() {
         in_temporary_directory(|| {
-            cmd_unit!(Split("touch foo"));
+            cmd_unit!(%"touch foo");
             assert!(PathBuf::from("foo").exists());
         })
     }
@@ -367,7 +396,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "cmd!: false foo bar:\n  exited with exit code: 1")]
             fn includes_full_command_on_non_zero_exit_codes() {
-                cmd_unit!(Split("false foo bar"));
+                cmd_unit!(%"false foo bar");
             }
 
             #[test]
@@ -410,7 +439,7 @@ mod tests {
                 )
             )]
             fn includes_full_command_on_missing_executables() {
-                cmd_unit!(Split("does-not-exist foo bar"));
+                cmd_unit!(%"does-not-exist foo bar");
             }
 
             #[test]
@@ -459,7 +488,7 @@ mod tests {
 
             #[test]
             fn combine_ok_with_other_outputs() {
-                let StdoutTrimmed(output) = cmd_result!(Split("echo foo")).unwrap();
+                let StdoutTrimmed(output) = cmd_result!(%"echo foo").unwrap();
                 assert_eq!(output, "foo".to_string());
             }
 
@@ -474,7 +503,7 @@ mod tests {
 
             #[test]
             fn includes_full_command_on_non_zero_exit_codes() {
-                let result: Result<(), Error> = cmd_result!(Split("false foo bar"));
+                let result: Result<(), Error> = cmd_result!(%"false foo bar");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false foo bar:\n  exited with exit code: 1"
@@ -483,7 +512,7 @@ mod tests {
 
             #[test]
             fn includes_full_command_on_missing_executables() {
-                let result: Result<(), Error> = cmd_result!(Split("does-not-exist foo bar"));
+                let result: Result<(), Error> = cmd_result!(%"does-not-exist foo bar");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     if cfg!(target_os = "windows") {
@@ -545,7 +574,7 @@ mod tests {
 
     #[test]
     fn allows_to_retrieve_stdout() {
-        let StdoutTrimmed(stdout) = cmd!(Split("echo foo"));
+        let StdoutTrimmed(stdout) = cmd!(%"echo foo");
         assert_eq!(stdout, "foo");
     }
 
@@ -592,7 +621,7 @@ mod tests {
             let context = Context::test();
             let config: Vec<LogCommand> = vec![LogCommand];
             let StdoutTrimmed(stdout) =
-                cmd_result_with_context!(context.clone(), config, Split("echo foo")).unwrap();
+                cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -611,7 +640,7 @@ mod tests {
             let context = Context::test();
             let config: [LogCommand; 1] = [LogCommand];
             let StdoutTrimmed(stdout) =
-                cmd_result_with_context!(context.clone(), config, Split("echo foo")).unwrap();
+                cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -656,7 +685,7 @@ mod tests {
             let context = Context::test();
             let config: &[LogCommand] = &[LogCommand];
             let StdoutTrimmed(stdout) =
-                cmd_result_with_context!(context.clone(), config, Split("echo foo")).unwrap();
+                cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -718,7 +747,7 @@ mod tests {
         #[test]
         fn relays_stdout_by_default() {
             let context = Context::test();
-            cmd_result_with_context_unit!(context.clone(), Split("echo foo")).unwrap();
+            cmd_result_with_context_unit!(context.clone(), %"echo foo").unwrap();
             assert_eq!(context.stdout(), "foo\n");
         }
 
@@ -749,7 +778,7 @@ mod tests {
                 while (context.stdout()) != "foo\n" {
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
-                cmd_unit!(Split("touch file"));
+                cmd_unit!(%"touch file");
                 thread.join().unwrap();
             });
         }
@@ -757,8 +786,7 @@ mod tests {
         #[test]
         fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
-            let StdoutTrimmed(_) =
-                cmd_result_with_context!(context.clone(), Split("echo foo")).unwrap();
+            let StdoutTrimmed(_) = cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
             assert_eq!(context.stdout(), "");
         }
 
@@ -766,7 +794,7 @@ mod tests {
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
             let _: Result<StdoutTrimmed, Error> =
-                cmd_result_with_context!(context.clone(), Split("echo foo"));
+                cmd_result_with_context!(context.clone(), %"echo foo");
             assert_eq!(context.stdout(), "");
         }
     }
@@ -826,7 +854,7 @@ mod tests {
                     );
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
-                cmd_unit!(Split("touch file"));
+                cmd_unit!(%"touch file");
                 thread.join().unwrap();
             });
         }
@@ -889,7 +917,7 @@ mod tests {
         #[test]
         fn logs_commands_with_arguments() {
             let context = Context::test();
-            cmd_result_with_context_unit!(context.clone(), LogCommand, Split("echo foo")).unwrap();
+            cmd_result_with_context_unit!(context.clone(), LogCommand, %"echo foo").unwrap();
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
 
@@ -959,7 +987,7 @@ mod tests {
 
         #[test]
         fn result_of_tuple() {
-            let (StdoutTrimmed(output), Exit(status)) = cmd_result!(Split("echo foo")).unwrap();
+            let (StdoutTrimmed(output), Exit(status)) = cmd_result!(%"echo foo").unwrap();
             assert_eq!(output, "foo");
             assert!(status.success());
         }
@@ -973,7 +1001,7 @@ mod tests {
 
         #[test]
         fn three_tuples() {
-            let (Stderr(stderr), StdoutTrimmed(stdout), Exit(status)) = cmd!(Split("echo foo"));
+            let (Stderr(stderr), StdoutTrimmed(stdout), Exit(status)) = cmd!(%"echo foo");
             assert_eq!(stderr, "");
             assert_eq!(stdout, "foo");
             assert_eq!(status.code(), Some(0));
@@ -1010,7 +1038,7 @@ mod tests {
                 fs::create_dir("dir").unwrap();
                 fs::write("dir/file", "foo").unwrap();
                 fs::write("file", "wrong file").unwrap();
-                let StdoutUntrimmed(output) = cmd!(Split("cat file"), CurrentDir("dir"));
+                let StdoutUntrimmed(output) = cmd!(%"cat file", CurrentDir("dir"));
                 assert_eq!(output, "foo");
             });
         }
@@ -1037,25 +1065,25 @@ mod tests {
 
             #[test]
             fn trims_trailing_whitespace() {
-                let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+                let StdoutTrimmed(output) = cmd!(%"echo foo");
                 assert_eq!(output, "foo");
             }
 
             #[test]
             fn trims_leading_whitespace() {
-                let StdoutTrimmed(output) = cmd!(Split("echo -n"), vec![" foo"]);
+                let StdoutTrimmed(output) = cmd!(%"echo -n", vec![" foo"]);
                 assert_eq!(output, "foo");
             }
 
             #[test]
             fn does_not_remove_whitespace_within_output() {
-                let StdoutTrimmed(output) = cmd!(Split("echo -n"), vec!["foo bar"]);
+                let StdoutTrimmed(output) = cmd!(%"echo -n", vec!["foo bar"]);
                 assert_eq!(output, "foo bar");
             }
 
             #[test]
             fn does_not_modify_output_without_whitespace() {
-                let StdoutTrimmed(output) = cmd!(Split("echo -n foo"));
+                let StdoutTrimmed(output) = cmd!(%"echo -n foo");
                 assert_eq!(output, "foo");
             }
 
@@ -1063,7 +1091,7 @@ mod tests {
             fn does_not_relay_stdout() {
                 let context = Context::test();
                 let StdoutTrimmed(_) =
-                    cmd_result_with_context!(context.clone(), Split("echo foo")).unwrap();
+                    cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
                 assert_eq!(context.stdout(), "");
             }
         }
@@ -1073,13 +1101,13 @@ mod tests {
 
             #[test]
             fn does_not_trim_trailing_newline() {
-                let StdoutUntrimmed(output) = cmd!(Split("echo foo"));
+                let StdoutUntrimmed(output) = cmd!(%"echo foo");
                 assert_eq!(output, "foo\n");
             }
 
             #[test]
             fn does_not_trim_leading_whitespace() {
-                let StdoutUntrimmed(output) = cmd!(Split("echo -n"), vec![" foo"]);
+                let StdoutUntrimmed(output) = cmd!(%"echo -n", vec![" foo"]);
                 assert_eq!(output, " foo");
             }
 
@@ -1087,7 +1115,7 @@ mod tests {
             fn does_not_relay_stdout() {
                 let context = Context::test();
                 let StdoutUntrimmed(_) =
-                    cmd_result_with_context!(context.clone(), Split("echo foo")).unwrap();
+                    cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
                 assert_eq!(context.stdout(), "");
             }
         }
@@ -1118,6 +1146,45 @@ mod tests {
         fn trims_trailing_whitespace() {
             let StdoutUntrimmed(output) = cmd!("echo", Split("foo "));
             assert_eq!(output, "foo\n");
+        }
+
+        mod percent_sign {
+            use super::*;
+
+            #[test]
+            fn splits_words() {
+                let StdoutUntrimmed(output) = cmd!(%"echo foo");
+                assert_eq!(output, "foo\n");
+            }
+
+            #[test]
+            fn works_for_later_arguments() {
+                let StdoutUntrimmed(output) = cmd!("echo", %"foo\tbar");
+                assert_eq!(output, "foo bar\n");
+            }
+
+            #[test]
+            fn for_first_of_multiple_arguments() {
+                let StdoutUntrimmed(output) = cmd!(%"echo foo", "bar");
+                assert_eq!(output, "foo bar\n");
+            }
+
+            #[test]
+            fn non_literals() {
+                let command = "echo foo";
+                let StdoutUntrimmed(output) = cmd!(%command);
+                assert_eq!(output, "foo\n");
+            }
+
+            #[test]
+            fn in_cmd_unit() {
+                cmd_unit!(%"echo foo");
+            }
+
+            #[test]
+            fn in_cmd_result() {
+                let StdoutTrimmed(_) = cmd_result!(%"echo foo").unwrap();
+            }
         }
     }
 

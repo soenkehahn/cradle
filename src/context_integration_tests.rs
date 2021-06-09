@@ -19,7 +19,7 @@ fn main() {
 
         {
             assert_eq!(
-                with_gag(BufferRedirect::stdout, || cmd!(Split("echo foo"))),
+                with_gag(BufferRedirect::stdout, || cmd!(%"echo foo")),
                 "foo\n"
             );
         }
