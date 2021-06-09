@@ -52,12 +52,12 @@
 //! into [`cmd!`] as separate arguments.
 //!
 //! And -- since this is such a common case -- `cradle` provides a syntactic shortcut
-//! for [`Split`], the `@` symbol:
+//! for [`Split`], the `%` symbol:
 //!
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(output) = cmd!(@"echo foo");
+//! let StdoutTrimmed(output) = cmd!(%"echo foo");
 //! assert_eq!(output, "foo");
 //! ```
 //!
@@ -72,7 +72,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let StdoutTrimmed(output) = cmd!(@"echo foo");
+//! let StdoutTrimmed(output) = cmd!(%"echo foo");
 //! assert_eq!(output, "foo");
 //! ```
 //!
@@ -85,7 +85,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let () = cmd!(@"touch foo");
+//! let () = cmd!(%"touch foo");
 //! ```
 //!
 //! Since that's a very common case, `cradle` provides the [`cmd_unit!`]
@@ -95,7 +95,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! cmd_unit!(@"touch foo");
+//! cmd_unit!(%"touch foo");
 //! ```
 //!
 //! See the implementations for [`CmdOutput`] for all the supported types.
@@ -143,7 +143,7 @@
 //!     "false:\n  exited with exit code: 1"
 //! );
 //!
-//! let result = cmd_result!(@"echo foo");
+//! let result = cmd_result!(%"echo foo");
 //! let StdoutTrimmed(output) = result.unwrap();
 //! assert_eq!(output, "foo".to_string());
 //! ```
@@ -155,10 +155,10 @@
 //! use cradle::*;
 //!
 //! fn build() -> Result<(), Error> {
-//!     cmd_result!(@"which make")?;
-//!     cmd_result!(@"which gcc")?;
-//!     cmd_result!(@"which ld")?;
-//!     cmd_result!(@"make build")?;
+//!     cmd_result!(%"which make")?;
+//!     cmd_result!(%"which gcc")?;
+//!     cmd_result!(%"which ld")?;
+//!     cmd_result!(%"make build")?;
 //!     Ok(())
 //! }
 //! ```
@@ -213,7 +213,7 @@ macro_rules! cmd_result {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! prepare_config {
-    (config: $config:ident, args: @ $head:expr, $($tail:tt)*) => {
+    (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
         $crate::CmdArgument::prepare_config(Split($head), &mut $config);
         $crate::prepare_config!(config: $config, args: $($tail)*);
     };
@@ -221,7 +221,7 @@ macro_rules! prepare_config {
         $crate::CmdArgument::prepare_config($head, &mut $config);
         $crate::prepare_config!(config: $config, args: $($tail)*);
     };
-    (config: $config:ident, args: @ $head:expr) => {
+    (config: $config:ident, args: % $head:expr) => {
         $crate::CmdArgument::prepare_config(Split($head), &mut $config);
     };
     (config: $config:ident, args: $head:expr) => {
@@ -1151,37 +1151,37 @@ mod tests {
 
             #[test]
             fn tilde_splits_words() {
-                let StdoutUntrimmed(output) = cmd!(@"echo foo");
+                let StdoutUntrimmed(output) = cmd!(%"echo foo");
                 assert_eq!(output, "foo\n");
             }
 
             #[test]
             fn tilde_works_for_later_arguments() {
-                let StdoutUntrimmed(output) = cmd!("echo", @"foo\tbar");
+                let StdoutUntrimmed(output) = cmd!("echo", %"foo\tbar");
                 assert_eq!(output, "foo bar\n");
             }
 
             #[test]
             fn works_for_first_of_multiple_arguments() {
-                let StdoutUntrimmed(output) = cmd!(@"echo foo", "bar");
+                let StdoutUntrimmed(output) = cmd!(%"echo foo", "bar");
                 assert_eq!(output, "foo bar\n");
             }
 
             #[test]
             fn non_literals() {
                 let command = "echo foo";
-                let StdoutUntrimmed(output) = cmd!(@command);
+                let StdoutUntrimmed(output) = cmd!(%command);
                 assert_eq!(output, "foo\n");
             }
 
             #[test]
             fn in_cmd_unit() {
-                cmd_unit!(@"echo foo");
+                cmd_unit!(%"echo foo");
             }
 
             #[test]
             fn in_cmd_result() {
-                let StdoutTrimmed(_) = cmd_result!(@"echo foo").unwrap();
+                let StdoutTrimmed(_) = cmd_result!(%"echo foo").unwrap();
             }
         }
     }
