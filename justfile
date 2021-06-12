@@ -1,4 +1,4 @@
-ci: test build doc clippy fmt context-integration-tests forbidden-words
+ci: test build doc clippy fmt context-integration-tests run-examples forbidden-words render-readme-check
 
 build:
   cargo build --all-targets --all-features
@@ -22,8 +22,18 @@ clippy:
 fmt:
   cargo fmt --all -- --check
 
+run-examples:
+  cargo run --example readme
+
+render-readme:
+  php README.php > README.md
+
+render-readme-check:
+  #!/usr/bin/env bash
+  diff <(php README.php) README.md
+
 forbidden-words:
   ! grep -rni \
     'dbg!\|fixme\|todo\|ignore' \
-    src tests
+    src tests examples
   @echo No forbidden words found
