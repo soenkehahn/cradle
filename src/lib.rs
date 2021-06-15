@@ -1,5 +1,5 @@
-//! (`cradle` is currently in an experimental stage.
-//! There's no promises on API stability yet, so APIs may change drastically!
+//! (`cradle` is in an early stage of development.
+//! APIs may change drastically!
 //! Use at your own risk!)
 //!
 //! `cradle` provides the [`cmd!`] macro, that makes
@@ -165,6 +165,13 @@
 //!     Ok(())
 //! }
 //! ```
+//!
+//! # Prior Art
+//!
+//! `cradle` is heavily inspired by [shake](https://shakebuild.com/),
+//! specifically by its
+//! [`cmd`](https://hackage.haskell.org/package/shake-0.19.4/docs/Development-Shake.html#v:cmd)
+//! function.
 
 mod cmd_argument;
 mod cmd_output;
