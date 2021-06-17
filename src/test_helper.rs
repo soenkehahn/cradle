@@ -1,5 +1,5 @@
 use std::{
-    io::{self, Write},
+    io::{self, Read, Write},
     path::PathBuf,
     thread::sleep,
     time::Duration,
@@ -33,11 +33,17 @@ fn main() {
         }
         "stream chunk to stderr then wait for file" => {
             eprintln!("foo");
-            io::stdout().flush().unwrap();
             let file = PathBuf::from("./file");
             while !file.exists() {
                 sleep(Duration::from_secs_f32(0.1));
             }
+        }
+        "reverse" => {
+            let mut input = Vec::new();
+            io::stdin().read_to_end(&mut input).unwrap();
+            input.reverse();
+            io::stdout().write_all(&input).unwrap();
+            io::stdout().flush().unwrap();
         }
         arg => panic!("cradle_test_helper: invalid arg: {}", arg),
     }

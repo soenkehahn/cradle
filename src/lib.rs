@@ -182,7 +182,7 @@ mod error;
 
 use crate::collected_output::Waiter;
 pub use crate::{
-    cmd_argument::{CmdArgument, CurrentDir, LogCommand, Split},
+    cmd_argument::{CmdArgument, CurrentDir, LogCommand, Split, Stdin},
     cmd_output::{CmdOutput, Exit, Stderr, StdoutTrimmed, StdoutUntrimmed},
     error::{panic_on_error, Error},
 };
@@ -288,6 +288,7 @@ where
     let mut command = Command::new(&executable);
     command
         .args(arguments)
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     if let Some(working_directory) = &config.working_directory {
@@ -299,6 +300,10 @@ where
     let waiter = Waiter::spawn_standard_stream_relaying(
         &context,
         config.clone(),
+        child
+            .stdin
+            .take()
+            .expect("child process should have stdout"),
         child
             .stdout
             .take()
@@ -1292,6 +1297,29 @@ mod tests {
                 let StdoutTrimmed(output) = cmd!(file);
                 assert_eq!(output, "test-output");
             })
+        }
+    }
+
+    mod stdin {
+        use super::*;
+
+        #[test]
+        fn allows_to_pass_in_strings_as_stdin() {
+            let StdoutUntrimmed(output) = cmd!(
+                executable_path("cradle_test_helper").to_str().unwrap(),
+                "reverse",
+                Stdin("foo")
+            );
+            assert_eq!(output, "oof");
+        }
+
+        #[test]
+        fn stdin_is_closed_by_default() {
+            let StdoutUntrimmed(output) = cmd!(
+                executable_path("cradle_test_helper").to_str().unwrap(),
+                "reverse"
+            );
+            assert_eq!(output, "");
         }
     }
 }

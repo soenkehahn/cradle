@@ -268,3 +268,26 @@ impl CmdArgument for &Path {
         self.to_path_buf().prepare_config(config);
     }
 }
+
+/// See the [`CmdArgument`] implementation for [`Stdin`] below.
+pub struct Stdin<'a>(pub &'a str);
+
+/// Passes the given [`&str`] into the child on `stdin`.
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutUntrimmed(output) = cmd!("sort", Stdin("foo\nbar\n"));
+/// assert_eq!(output, "bar\nfoo\n");
+/// ```
+impl<'a> CmdArgument for Stdin<'a> {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        match config.stdin {
+            None => {
+                config.stdin = Some(self.0.to_string());
+            }
+            Some(_) => todo!(),
+        }
+    }
+}
