@@ -48,16 +48,12 @@ impl Display for Error {
                 full_command,
                 exit_status,
             } => {
-                if cfg!(unix) {
-                    if let Some(exit_code) = exit_status.code() {
-                        write!(
-                            f,
-                            "{}:\n  exited with exit code: {}",
-                            full_command, exit_code
-                        )
-                    } else {
-                        write!(f, "{}:\n  exited with {}", full_command, exit_status)
-                    }
+                if let Some(exit_code) = exit_status.code() {
+                    write!(
+                        f,
+                        "{}:\n  exited with exit code: {}",
+                        full_command, exit_code
+                    )
                 } else {
                     write!(f, "{}:\n  exited with {}", full_command, exit_status)
                 }
