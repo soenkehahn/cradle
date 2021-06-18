@@ -47,7 +47,21 @@ impl Display for Error {
             Error::NonZeroExitCode {
                 full_command,
                 exit_status,
-            } => write!(f, "{}:\n  exited with {}", full_command, exit_status),
+            } => {
+                if cfg!(unix) {
+                    if let Some(exit_code) = exit_status.code() {
+                        write!(
+                            f,
+                            "{}:\n  exited with exit code: {}",
+                            full_command, exit_code
+                        )
+                    } else {
+                        write!(f, "{}:\n  exited with {}", full_command, exit_status)
+                    }
+                } else {
+                    write!(f, "{}:\n  exited with {}", full_command, exit_status)
+                }
+            }
             Error::InvalidUtf8ToStdout { full_command, .. } => {
                 write!(f, "{}:\n  invalid utf-8 written to stdout", full_command)
             }
