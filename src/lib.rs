@@ -1216,4 +1216,54 @@ mod tests {
             assert_eq!(output, "foo");
         }
     }
+
+    mod paths {
+        use super::*;
+        use pretty_assertions::assert_eq;
+        use std::path::Path;
+
+        #[test]
+        fn ref_path_as_argument() {
+            in_temporary_directory(|| {
+                let file: &Path = Path::new("file");
+                std::fs::write(file, "test-contents").unwrap();
+                let StdoutUntrimmed(output) = cmd!("cat", file);
+                assert_eq!(output, "test-contents");
+            })
+        }
+
+        #[test]
+        fn ref_path_as_executable() {
+            in_temporary_directory(|| {
+                let file: &Path = Path::new("./file");
+                let script = "#!/usr/bin/env bash\necho -n test-output\n";
+                std::fs::write(file, script).unwrap();
+                cmd_unit!(%"chmod +x file");
+                let StdoutUntrimmed(output) = cmd!(file);
+                assert_eq!(output, "test-output");
+            })
+        }
+
+        #[test]
+        fn path_buf_as_argument() {
+            in_temporary_directory(|| {
+                let file: PathBuf = PathBuf::from("file");
+                std::fs::write(&file, "test-contents").unwrap();
+                let StdoutUntrimmed(output) = cmd!("cat", file);
+                assert_eq!(output, "test-contents");
+            })
+        }
+
+        #[test]
+        fn path_buf_as_executable() {
+            in_temporary_directory(|| {
+                let file: PathBuf = PathBuf::from("./file");
+                let script = "#!/usr/bin/env bash\necho -n test-output\n";
+                std::fs::write(&file, script).unwrap();
+                cmd_unit!(%"chmod +x file");
+                let StdoutUntrimmed(output) = cmd!(file);
+                assert_eq!(output, "test-output");
+            })
+        }
+    }
 }

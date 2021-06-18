@@ -1,5 +1,5 @@
 use crate::config::Config;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// All types that are possible arguments to [`cmd!`] have to implement this trait.
 pub trait CmdArgument {
@@ -230,5 +230,35 @@ where
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         config.working_directory = Some(self.0.as_ref().to_owned());
+    }
+}
+
+/// Arguments of type [`PathBuf`] are passed into the child process
+/// as arguments.
+///
+/// ```
+/// use cradle::*;
+/// use std::path::PathBuf;
+///
+/// let current_dir: PathBuf = std::env::current_dir().unwrap();
+/// cmd_unit!("ls", current_dir);
+/// ```
+impl CmdArgument for PathBuf {
+    fn prepare_config(self, config: &mut Config) {
+        config
+            .arguments
+            .push(self.as_os_str().to_str().expect("fixme").to_string());
+    }
+}
+
+/// Arguments of type [`&Path`] are passed into the child process
+/// as arguments.
+///
+/// Similar to the impl for [`PathBuf`].
+impl CmdArgument for &Path {
+    fn prepare_config(self, config: &mut Config) {
+        config
+            .arguments
+            .push(self.to_str().expect("fixme").to_string());
     }
 }
