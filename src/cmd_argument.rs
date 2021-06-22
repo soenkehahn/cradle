@@ -18,7 +18,7 @@ where
     }
 }
 
-/// Arguments of type [`&str`] are passed into the child process
+/// Arguments of type [`&str`] are passed to the child process
 /// as arguments.
 impl CmdArgument for &str {
     #[doc(hidden)]
@@ -27,7 +27,7 @@ impl CmdArgument for &str {
     }
 }
 
-/// Arguments of type [`String`] are passed into the child process
+/// Arguments of type [`String`] are passed to the child process
 /// as arguments.
 impl CmdArgument for String {
     #[doc(hidden)]
@@ -233,7 +233,7 @@ where
     }
 }
 
-/// Arguments of type [`PathBuf`] are passed into the child process
+/// Arguments of type [`PathBuf`] are passed to the child process
 /// as arguments.
 ///
 /// ```
@@ -250,7 +250,7 @@ impl CmdArgument for PathBuf {
     }
 }
 
-/// Arguments of type [`&Path`] are passed into the child process
+/// Arguments of type [`&Path`] are passed to the child process
 /// as arguments.
 ///
 /// Similar to the impl for [`PathBuf`].
