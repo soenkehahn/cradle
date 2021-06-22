@@ -23,7 +23,7 @@ where
 impl CmdArgument for &str {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.arguments.push(self.to_string());
+        config.arguments.push(self.into());
     }
 }
 
@@ -32,7 +32,7 @@ impl CmdArgument for &str {
 impl CmdArgument for String {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.arguments.push(self);
+        config.arguments.push(self.into());
     }
 }
 
@@ -64,7 +64,7 @@ impl<'a> CmdArgument for Split<'a> {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         for argument in self.0.split_whitespace() {
-            config.arguments.push(argument.to_string());
+            argument.prepare_config(config);
         }
     }
 }
@@ -246,9 +246,7 @@ where
 impl CmdArgument for PathBuf {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config
-            .arguments
-            .push(self.as_os_str().to_str().expect("fixme").to_string());
+        config.arguments.push(self.into_os_string());
     }
 }
 
@@ -261,8 +259,6 @@ impl CmdArgument for PathBuf {
 impl CmdArgument for &Path {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config
-            .arguments
-            .push(self.to_str().expect("fixme").to_string());
+        self.to_path_buf().prepare_config(config);
     }
 }

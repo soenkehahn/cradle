@@ -189,6 +189,7 @@ pub use crate::{
 #[doc(hidden)]
 pub use crate::{config::Config, context::Context};
 use std::{
+    ffi::OsString,
     io::Write,
     process::{Command, ExitStatus, Stdio},
 };
@@ -321,7 +322,7 @@ where
     })
 }
 
-fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = String>), Error> {
+fn parse_input(input: Vec<OsString>) -> Result<(OsString, impl Iterator<Item = OsString>), Error> {
     let mut words = input.into_iter();
     {
         match words.next() {
@@ -934,6 +935,24 @@ mod tests {
             cmd_result_with_context_unit!(context.clone(), LogCommand, "echo", vec!["foo bar"])
                 .unwrap();
             assert_eq!(context.stderr(), "+ echo 'foo bar'\n");
+        }
+
+        #[test]
+        #[cfg(unix)]
+        fn arguments_with_invalid_utf8_will_be_logged_with_lossy_conversion() {
+            use std::{ffi::OsStr, os::unix::prelude::OsStrExt, path::Path};
+            let context = Context::test();
+            let argument_with_invalid_utf8: &OsStr =
+                OsStrExt::from_bytes(&[102, 111, 111, 0x80, 98, 97, 114]);
+            let argument_with_invalid_utf8: &Path = argument_with_invalid_utf8.as_ref();
+            cmd_result_with_context_unit!(
+                context.clone(),
+                LogCommand,
+                "echo",
+                argument_with_invalid_utf8
+            )
+            .unwrap();
+            assert_eq!(context.stderr(), "+ echo foo�bar\n");
         }
     }
 

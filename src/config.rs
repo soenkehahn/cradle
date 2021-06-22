@@ -1,9 +1,9 @@
-use std::path::PathBuf;
+use std::{ffi::OsString, path::PathBuf};
 
 #[doc(hidden)]
 #[derive(Clone)]
 pub struct Config {
-    pub(crate) arguments: Vec<String>,
+    pub(crate) arguments: Vec<OsString>,
     pub(crate) log_command: bool,
     pub(crate) working_directory: Option<PathBuf>,
     pub(crate) relay_stdout: bool,
@@ -15,6 +15,7 @@ impl Config {
     pub(crate) fn full_command(&self) -> String {
         let mut result = String::new();
         for argument in self.arguments.iter() {
+            let argument = argument.to_string_lossy();
             if !result.is_empty() {
                 result.push(' ');
             }
