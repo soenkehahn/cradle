@@ -246,7 +246,7 @@ where
 impl CmdArgument for PathBuf {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.arguments.push(self.into_os_string());
+        config.arguments.push(self.into());
     }
 }
 
