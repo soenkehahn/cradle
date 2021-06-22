@@ -189,6 +189,7 @@ pub use crate::{
 #[doc(hidden)]
 pub use crate::{config::Config, context::Context};
 use std::{
+    ffi::OsString,
     io::Write,
     process::{Command, ExitStatus, Stdio},
 };
@@ -321,7 +322,7 @@ where
     })
 }
 
-fn parse_input(input: Vec<String>) -> Result<(String, impl Iterator<Item = String>), Error> {
+fn parse_input(input: Vec<OsString>) -> Result<(OsString, impl Iterator<Item = OsString>), Error> {
     let mut words = input.into_iter();
     {
         match words.next() {
@@ -935,6 +936,24 @@ mod tests {
                 .unwrap();
             assert_eq!(context.stderr(), "+ echo 'foo bar'\n");
         }
+
+        #[test]
+        #[cfg(unix)]
+        fn arguments_with_invalid_utf8_will_be_logged_with_lossy_conversion() {
+            use std::{ffi::OsStr, os::unix::prelude::OsStrExt, path::Path};
+            let context = Context::test();
+            let argument_with_invalid_utf8: &OsStr =
+                OsStrExt::from_bytes(&[102, 111, 111, 0x80, 98, 97, 114]);
+            let argument_with_invalid_utf8: &Path = argument_with_invalid_utf8.as_ref();
+            cmd_result_with_context_unit!(
+                context.clone(),
+                LogCommand,
+                "echo",
+                argument_with_invalid_utf8
+            )
+            .unwrap();
+            assert_eq!(context.stderr(), "+ echo foo�bar\n");
+        }
     }
 
     mod exit_status {
@@ -1214,6 +1233,65 @@ mod tests {
         fn split_ascii_whitespace() {
             let StdoutTrimmed(output) = cmd!("echo foo".split_ascii_whitespace());
             assert_eq!(output, "foo");
+        }
+    }
+
+    mod paths {
+        use super::*;
+        use pretty_assertions::assert_eq;
+        use std::path::Path;
+
+        fn write_test_script() -> PathBuf {
+            if cfg!(unix) {
+                let file = PathBuf::from("./test-script");
+                let script = "#!/usr/bin/env bash\necho test-output\n";
+                std::fs::write(&file, script).unwrap();
+                cmd_unit!(%"chmod +x test-script");
+                file
+            } else {
+                let file = PathBuf::from("./test-script.bat");
+                let script = "@echo test-output\n";
+                std::fs::write(&file, script).unwrap();
+                file
+            }
+        }
+
+        #[test]
+        fn ref_path_as_argument() {
+            in_temporary_directory(|| {
+                let file: &Path = Path::new("file");
+                std::fs::write(file, "test-contents").unwrap();
+                let StdoutUntrimmed(output) = cmd!("cat", file);
+                assert_eq!(output, "test-contents");
+            })
+        }
+
+        #[test]
+        fn ref_path_as_executable() {
+            in_temporary_directory(|| {
+                let file: &Path = &write_test_script();
+                let StdoutTrimmed(output) = cmd!(file);
+                assert_eq!(output, "test-output");
+            })
+        }
+
+        #[test]
+        fn path_buf_as_argument() {
+            in_temporary_directory(|| {
+                let file: PathBuf = PathBuf::from("file");
+                std::fs::write(&file, "test-contents").unwrap();
+                let StdoutUntrimmed(output) = cmd!("cat", file);
+                assert_eq!(output, "test-contents");
+            })
+        }
+
+        #[test]
+        fn path_buf_as_executable() {
+            in_temporary_directory(|| {
+                let file: PathBuf = write_test_script();
+                let StdoutTrimmed(output) = cmd!(file);
+                assert_eq!(output, "test-output");
+            })
         }
     }
 }

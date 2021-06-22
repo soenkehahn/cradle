@@ -1,5 +1,5 @@
 use crate::config::Config;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// All types that are possible arguments to [`cmd!`] have to implement this trait.
 pub trait CmdArgument {
@@ -18,21 +18,21 @@ where
     }
 }
 
-/// Arguments of type [`&str`] are passed into the child process
+/// Arguments of type [`&str`] are passed to the child process
 /// as arguments.
 impl CmdArgument for &str {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.arguments.push(self.to_string());
+        config.arguments.push(self.into());
     }
 }
 
-/// Arguments of type [`String`] are passed into the child process
+/// Arguments of type [`String`] are passed to the child process
 /// as arguments.
 impl CmdArgument for String {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.arguments.push(self);
+        config.arguments.push(self.into());
     }
 }
 
@@ -64,7 +64,7 @@ impl<'a> CmdArgument for Split<'a> {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         for argument in self.0.split_whitespace() {
-            config.arguments.push(argument.to_string());
+            argument.prepare_config(config);
         }
     }
 }
@@ -230,5 +230,41 @@ where
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         config.working_directory = Some(self.0.as_ref().to_owned());
+    }
+}
+
+/// Arguments of type [`PathBuf`] are passed to the child process
+/// as arguments.
+///
+/// ```
+/// use cradle::*;
+/// use std::path::PathBuf;
+///
+/// let current_dir: PathBuf = std::env::current_dir().unwrap();
+/// cmd_unit!("ls", current_dir);
+/// ```
+impl CmdArgument for PathBuf {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        config.arguments.push(self.into());
+    }
+}
+
+/// Arguments of type [`&Path`] are passed to the child process
+/// as arguments.
+///
+/// ```
+/// use cradle::*;
+/// use std::path::Path;
+///
+/// let file: &Path = Path::new("./foo");
+/// cmd_unit!("touch", file);
+/// ```
+///
+/// [`&Path`]: std::path::Path
+impl CmdArgument for &Path {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        self.to_path_buf().prepare_config(config);
     }
 }
