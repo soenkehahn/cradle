@@ -244,6 +244,7 @@ where
 /// cmd_unit!("ls", current_dir);
 /// ```
 impl CmdArgument for PathBuf {
+    #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         config
             .arguments
@@ -255,7 +256,10 @@ impl CmdArgument for PathBuf {
 /// as arguments.
 ///
 /// Similar to the impl for [`PathBuf`].
+///
+/// [`&Path`]: std::path::Path
 impl CmdArgument for &Path {
+    #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         config
             .arguments
