@@ -253,7 +253,13 @@ impl CmdArgument for PathBuf {
 /// Arguments of type [`&Path`] are passed to the child process
 /// as arguments.
 ///
-/// Similar to the impl for [`PathBuf`].
+/// ```
+/// use cradle::*;
+/// use std::path::Path;
+///
+/// let file: &Path = Path::new("./foo");
+/// cmd_unit!("touch", file);
+/// ```
 ///
 /// [`&Path`]: std::path::Path
 impl CmdArgument for &Path {
