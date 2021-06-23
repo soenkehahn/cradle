@@ -215,7 +215,7 @@ pub struct CurrentDir<T: AsRef<Path>>(pub T);
 /// ```
 /// use cradle::*;
 ///
-/// # #[cfg(target_os = "linux")]
+/// # #[cfg(linux)]
 /// # {
 /// let StdoutTrimmed(output) = cmd!("pwd", CurrentDir("/tmp"));
 /// assert_eq!(output, "/tmp");
