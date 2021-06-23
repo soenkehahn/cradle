@@ -1321,5 +1321,16 @@ mod tests {
             );
             assert_eq!(output, "");
         }
+
+        #[test]
+        fn multiple_stdin_arguments_are_all_passed_into_the_child_process() {
+            let StdoutUntrimmed(output) = cmd!(
+                executable_path("cradle_test_helper").to_str().unwrap(),
+                "reverse",
+                Stdin("foo"),
+                Stdin("bar")
+            );
+            assert_eq!(output, "raboof");
+        }
     }
 }

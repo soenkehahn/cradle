@@ -23,10 +23,11 @@ impl Waiter {
         Stdout: Write + Send + Clone + 'static,
         Stderr: Write + Send + Clone + 'static,
     {
-        let config_stdin = config.stdin.take();
+        let mut config_stdin = Vec::new();
+        std::mem::swap(&mut config.stdin, &mut config_stdin);
         let stdin_join_handle = thread::spawn(move || {
-            if let Some(stdin) = config_stdin {
-                write!(child_stdin, "{}", stdin)?;
+            for stdin_snippet in config_stdin {
+                write!(child_stdin, "{}", stdin_snippet)?;
             }
             Ok(())
         });

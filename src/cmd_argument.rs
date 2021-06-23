@@ -283,11 +283,6 @@ pub struct Stdin<'a>(pub &'a str);
 impl<'a> CmdArgument for Stdin<'a> {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        match config.stdin {
-            None => {
-                config.stdin = Some(self.0.to_string());
-            }
-            Some(_) => todo!(),
-        }
+        config.stdin.push(self.0.to_string());
     }
 }
