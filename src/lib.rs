@@ -300,10 +300,7 @@ where
     let waiter = Waiter::spawn_standard_stream_relaying(
         &context,
         config.clone(),
-        child
-            .stdin
-            .take()
-            .expect("child process should have stdout"),
+        child.stdin.take().expect("child process should have stdin"),
         child
             .stdout
             .take()
@@ -1315,11 +1312,11 @@ mod tests {
 
         #[test]
         fn stdin_is_closed_by_default() {
-            let StdoutUntrimmed(output) = cmd!(
+            let StdoutTrimmed(output) = cmd!(
                 executable_path("cradle_test_helper").to_str().unwrap(),
-                "reverse"
+                "stdin_is_closed"
             );
-            assert_eq!(output, "");
+            assert_eq!(output, "true");
         }
 
         #[test]
