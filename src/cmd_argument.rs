@@ -277,7 +277,7 @@ pub struct Stdin<'a>(pub &'a str);
 /// ```
 /// use cradle::*;
 ///
-/// # #[cfg(target_os = "linux")]
+/// # #[cfg(linux)]
 /// # {
 /// let StdoutUntrimmed(output) = cmd!("sort", Stdin("foo\nbar\n"));
 /// assert_eq!(output, "bar\nfoo\n");
