@@ -418,13 +418,13 @@ mod tests {
 
             #[test]
             #[cfg_attr(
-                target_family = "unix",
+                unix,
                 should_panic(
                     expected = "cmd!: does-not-exist:\n  No such file or directory (os error 2)"
                 )
             )]
             #[cfg_attr(
-                target_family = "windows",
+                windows,
                 should_panic(
                     expected = "cmd!: does-not-exist:\n  The system cannot find the file specified. (os error 2)"
                 )
@@ -435,13 +435,13 @@ mod tests {
 
             #[test]
             #[cfg_attr(
-                target_family = "unix",
+                unix,
                 should_panic(
                     expected = "cmd!: does-not-exist foo bar:\n  No such file or directory (os error 2)"
                 )
             )]
             #[cfg_attr(
-                target_family = "windows",
+                windows,
                 should_panic(
                     expected = "cmd!: does-not-exist foo bar:\n  The system cannot find the file specified. (os error 2)"
                 )
@@ -523,7 +523,7 @@ mod tests {
                 let result: Result<(), Error> = cmd_result!(%"does-not-exist foo bar");
                 assert_eq!(
                     result.unwrap_err().to_string(),
-                    if cfg!(target_os = "windows") {
+                    if cfg!(windows) {
                         "does-not-exist foo bar:\n  The system cannot find the file specified. (os error 2)"
                     } else {
                         "does-not-exist foo bar:\n  No such file or directory (os error 2)"
@@ -548,7 +548,7 @@ mod tests {
                 let result: Result<(), Error> = cmd_result!("does-not-exist");
                 assert_eq!(
                     result.unwrap_err().to_string(),
-                    if cfg!(target_os = "windows") {
+                    if cfg!(windows) {
                         "does-not-exist:\n  The system cannot find the file specified. (os error 2)"
                     } else {
                         "does-not-exist:\n  No such file or directory (os error 2)"

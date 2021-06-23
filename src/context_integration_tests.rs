@@ -1,5 +1,5 @@
 fn main() {
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(unix)]
     {
         use cradle::*;
         use executable_path::executable_path;
