@@ -272,7 +272,8 @@ impl CmdArgument for &Path {
 /// See the [`CmdArgument`] implementation for [`Stdin`] below.
 pub struct Stdin<'a>(pub &'a str);
 
-/// Passes the given [`&str`] into the child on `stdin`.
+/// Writes the given [`&str`] to the child's standard input.  If `Stdin` is used multiple times,
+/// each string will be written written to the child's standard input in the order it appears.
 ///
 /// ```
 /// use cradle::*;
