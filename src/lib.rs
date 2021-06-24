@@ -1311,6 +1311,7 @@ mod tests {
         }
 
         #[test]
+        #[cfg(unix)]
         fn stdin_is_closed_by_default() {
             let StdoutTrimmed(output) = cmd!(
                 executable_path("cradle_test_helper").to_str().unwrap(),

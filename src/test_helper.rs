@@ -1,4 +1,3 @@
-use nix::poll::{poll, PollFd, PollFlags};
 use std::{
     io::{self, Read, Write},
     path::PathBuf,
@@ -46,7 +45,7 @@ fn main() {
             io::stdout().write_all(&input).unwrap();
             io::stdout().flush().unwrap();
         }
-        "stdin_is_closed" if cfg!(unix) => {
+        "stdin_is_closed" => {
             while !stdin_is_closed() {}
             println!("stdin is closed");
         }
@@ -55,11 +54,17 @@ fn main() {
 }
 
 fn stdin_is_closed() -> bool {
-    let mut poll_fds = [PollFd::new(0, PollFlags::all())];
-    poll(&mut poll_fds, 0).unwrap();
-    if let Some(events) = poll_fds[0].revents() {
-        events.contains(PollFlags::POLLHUP)
-    } else {
-        false
+    #[cfg(unix)]
+    {
+        use nix::poll::{poll, PollFd, PollFlags};
+        let mut poll_fds = [PollFd::new(0, PollFlags::all())];
+        poll(&mut poll_fds, 0).unwrap();
+        if let Some(events) = poll_fds[0].revents() {
+            events.contains(PollFlags::POLLHUP)
+        } else {
+            false
+        }
     }
+    #[cfg(windows)]
+    panic!("stdin_is_closed is not supported on windows")
 }
