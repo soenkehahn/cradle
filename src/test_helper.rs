@@ -45,7 +45,7 @@ fn main() {
             io::stdout().write_all(&input).unwrap();
             io::stdout().flush().unwrap();
         }
-        "stdin_is_closed" => {
+        "wait until stdin is closed" => {
             while !stdin_is_closed() {}
             println!("stdin is closed");
         }

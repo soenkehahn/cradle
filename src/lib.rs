@@ -1315,7 +1315,7 @@ mod tests {
         fn stdin_is_closed_by_default() {
             let StdoutTrimmed(output) = cmd!(
                 executable_path("cradle_test_helper").to_str().unwrap(),
-                "stdin_is_closed"
+                "wait until stdin is closed"
             );
             assert_eq!(output, "stdin is closed");
         }
