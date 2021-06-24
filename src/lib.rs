@@ -1330,5 +1330,16 @@ mod tests {
             );
             assert_eq!(output, "raboof");
         }
+
+        #[test]
+        fn works_for_owned_strings() {
+            let argument: String = "foo".to_string();
+            let StdoutUntrimmed(output) = cmd!(
+                executable_path("cradle_test_helper").to_str().unwrap(),
+                "reverse",
+                Stdin(argument)
+            );
+            assert_eq!(output, "oof");
+        }
     }
 }

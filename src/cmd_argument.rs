@@ -270,7 +270,7 @@ impl CmdArgument for &Path {
 }
 
 /// See the [`CmdArgument`] implementation for [`Stdin`] below.
-pub struct Stdin<'a>(pub &'a str);
+pub struct Stdin<T: Into<String>>(pub T);
 
 /// Writes the given [`&str`] to the child's standard input.
 /// If `Stdin` is used multiple times,
@@ -285,9 +285,12 @@ pub struct Stdin<'a>(pub &'a str);
 /// assert_eq!(output, "bar\nfoo\n");
 /// # }
 /// ```
-impl<'a> CmdArgument for Stdin<'a> {
+impl<T> CmdArgument for Stdin<T>
+where
+    T: Into<String>,
+{
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.stdin.push(self.0.to_string());
+        config.stdin.push(self.0.into());
     }
 }
