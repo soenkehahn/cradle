@@ -25,7 +25,7 @@ impl Waiter {
     {
         let mut config_stdin = Vec::new();
         std::mem::swap(&mut config.stdin, &mut config_stdin);
-        let stdin_join_handle = thread::spawn(move || {
+        let stdin_join_handle = thread::spawn(move || -> io::Result<()> {
             for stdin_snippet in config_stdin {
                 write!(child_stdin, "{}", stdin_snippet)?;
             }
@@ -33,7 +33,7 @@ impl Waiter {
         });
         let relay_stdout = config.relay_stdout;
         let mut context_clone = context.clone();
-        let stdout_join_handle = thread::spawn(move || {
+        let stdout_join_handle = thread::spawn(move || -> io::Result<Vec<u8>> {
             let mut collected_stdout = Vec::new();
             let buffer = &mut [0; 256];
             loop {
@@ -49,7 +49,7 @@ impl Waiter {
             Ok(collected_stdout)
         });
         let mut context_clone = context.clone();
-        let stderr_join_handle = thread::spawn(move || {
+        let stderr_join_handle = thread::spawn(move || -> io::Result<Vec<u8>> {
             let mut collected_stderr = Vec::new();
             let buffer = &mut [0; 256];
             loop {
