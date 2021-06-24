@@ -1324,14 +1324,16 @@ mod tests {
         fn writing_too_many_bytes_into_a_non_reading_child_may_error() {
             let big_string = String::from_utf8(vec![b'a'; 2_usize.pow(16) + 1]).unwrap();
             let result: Result<(), crate::Error> = cmd_result!("true", Stdin(big_string));
-            assert_eq!(
-                result.unwrap_err().to_string(),
-                if cfg!(unix) {
-                    "true:\n  Broken pipe (os error 32)"
-                } else {
-                    "true:\n  The pipe is being closed. (os error 232)"
-                }
-            );
+            let message = result.unwrap_err().to_string();
+            assert!(if cfg!(unix) {
+                message == "true:\n  Broken pipe (os error 32)"
+            } else {
+                [
+                    "true:\n  The pipe is being closed. (os error 232)",
+                    "true:\n  The pipe has been ended. (os error 109)",
+                ]
+                .contains(&message.as_str())
+            });
         }
 
         #[test]
