@@ -1316,7 +1316,7 @@ mod tests {
                 executable_path("cradle_test_helper").to_str().unwrap(),
                 "stdin_is_closed"
             );
-            assert_eq!(output, "true");
+            assert_eq!(output, "stdin is closed");
         }
 
         #[test]

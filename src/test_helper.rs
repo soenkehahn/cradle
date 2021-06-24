@@ -47,7 +47,8 @@ fn main() {
             io::stdout().flush().unwrap();
         }
         "stdin_is_closed" if cfg!(unix) => {
-            println!("{:?}", stdin_is_closed());
+            while !stdin_is_closed() {}
+            println!("stdin is closed");
         }
         arg => panic!("cradle_test_helper: invalid arg: {}", arg),
     }
