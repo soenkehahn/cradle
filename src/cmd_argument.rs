@@ -37,7 +37,7 @@ impl CmdArgument for String {
 }
 
 /// See the [`CmdArgument`] implementation for [`Split`] below.
-pub struct Split<'a>(pub &'a str);
+pub struct Split<T: AsRef<str>>(pub T);
 
 /// Splits the contained string by whitespace (using [`split_whitespace`])
 /// and uses the resulting words as separate arguments.
@@ -47,6 +47,9 @@ pub struct Split<'a>(pub &'a str);
 ///
 /// let StdoutTrimmed(output) = cmd!(Split("echo foo"));
 /// assert_eq!(output, "foo");
+///
+/// let StdoutTrimmed(output) = cmd!(Split(format!("echo {}", 100)));
+/// assert_eq!(output, "100");
 /// ```
 ///
 /// Since this is such a common case, `cradle` also provides a syntactic shortcut
@@ -60,10 +63,10 @@ pub struct Split<'a>(pub &'a str);
 /// ```
 ///
 /// [`split_whitespace`]: str::split_whitespace
-impl<'a> CmdArgument for Split<'a> {
+impl<T: AsRef<str>> CmdArgument for Split<T> {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        for argument in self.0.split_whitespace() {
+        for argument in self.0.as_ref().split_whitespace() {
             argument.prepare_config(config);
         }
     }
