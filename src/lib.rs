@@ -298,7 +298,7 @@ where
         .map_err(|error| Error::command_io_error(&config, error))?;
     let waiter = Waiter::spawn_standard_stream_relaying(
         &context,
-        config.clone(),
+        &config,
         child
             .stdout
             .take()

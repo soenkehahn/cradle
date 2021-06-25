@@ -13,7 +13,7 @@ pub(crate) struct Waiter {
 impl Waiter {
     pub(crate) fn spawn_standard_stream_relaying<Stdout, Stderr>(
         context: &Context<Stdout, Stderr>,
-        config: Config,
+        config: &Config,
         mut child_stdout: ChildStdout,
         mut child_stderr: ChildStderr,
     ) -> Self
@@ -22,7 +22,7 @@ impl Waiter {
         Stderr: Write + Send + Clone + 'static,
     {
         let mut context_clone = context.clone();
-        let config_clone = config.clone();
+        let relay_stdout = config.relay_stdout;
         let stdout_join_handle = thread::spawn(move || {
             let mut collected_stdout = Vec::new();
             let buffer = &mut [0; 256];
@@ -31,7 +31,7 @@ impl Waiter {
                 if (length) == 0 {
                     break;
                 }
-                if config_clone.relay_stdout {
+                if relay_stdout {
                     context_clone.stdout.write_all(&buffer[..length])?;
                 }
                 collected_stdout.extend(&buffer[..length]);
@@ -39,6 +39,7 @@ impl Waiter {
             Ok(collected_stdout)
         });
         let mut context_clone = context.clone();
+        let relay_stderr = config.relay_stderr;
         let stderr_join_handle = thread::spawn(move || {
             let mut collected_stderr = Vec::new();
             let buffer = &mut [0; 256];
@@ -47,7 +48,7 @@ impl Waiter {
                 if (length) == 0 {
                     break;
                 }
-                if config.relay_stderr {
+                if relay_stderr {
                     context_clone.stderr.write_all(&buffer[..length])?;
                 }
                 collected_stderr.extend(&buffer[..length]);
