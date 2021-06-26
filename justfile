@@ -3,11 +3,11 @@ ci: test build doc clippy fmt context-integration-tests run-examples forbidden-w
 build:
   cargo build --all-targets --all-features
 
-test pattern="": build
+test +pattern="": build
   cargo test --all -- --test-threads=1 {{ pattern }}
   rm -f 'filename with spaces' foo
 
-test-lib-fast pattern="":
+test-lib-fast +pattern="":
   cargo test --lib -- --test-threads=1 {{ pattern }}
 
 context-integration-tests: build
