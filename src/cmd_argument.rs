@@ -1,5 +1,8 @@
 use crate::config::Config;
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 /// All types that are possible arguments to [`cmd!`] have to implement this trait.
 pub trait CmdArgument {
@@ -269,5 +272,31 @@ impl CmdArgument for &Path {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         self.to_path_buf().prepare_config(config);
+    }
+}
+
+/// See the [`CmdArgument`] implementation for [`Stdin`] below.
+pub struct Stdin<T: Into<String>>(pub T);
+
+/// Writes the given [`&str`] to the child's standard input.
+/// If `Stdin` is used multiple times,
+/// all given strings will be written to the child's standard input in order.
+///
+/// ```
+/// use cradle::*;
+///
+/// # #[cfg(linux)]
+/// # {
+/// let StdoutUntrimmed(output) = cmd!("sort", Stdin("foo\nbar\n"));
+/// assert_eq!(output, "bar\nfoo\n");
+/// # }
+/// ```
+impl<T> CmdArgument for Stdin<T>
+where
+    T: Into<String>,
+{
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        Arc::make_mut(&mut config.stdin).push(self.0.into());
     }
 }

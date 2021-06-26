@@ -182,7 +182,7 @@ mod error;
 
 use crate::collected_output::Waiter;
 pub use crate::{
-    cmd_argument::{CmdArgument, CurrentDir, LogCommand, Split},
+    cmd_argument::{CmdArgument, CurrentDir, LogCommand, Split, Stdin},
     cmd_output::{CmdOutput, Exit, Stderr, StdoutTrimmed, StdoutUntrimmed},
     error::{panic_on_error, Error},
 };
@@ -261,7 +261,8 @@ where
     T: CmdOutput,
 {
     <T as CmdOutput>::prepare_config(&mut config);
-    T::from_run_result(&config, run_cmd_safe(context, &config))
+    let result = run_cmd_safe(context, &config);
+    T::from_run_result(&config, result)
 }
 
 #[doc(hidden)]
@@ -288,6 +289,7 @@ where
     let mut command = Command::new(&executable);
     command
         .args(arguments)
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     if let Some(working_directory) = &config.working_directory {
@@ -298,7 +300,8 @@ where
         .map_err(|error| Error::command_io_error(&config, error))?;
     let waiter = Waiter::spawn_standard_stream_relaying(
         &context,
-        &config,
+        config,
+        child.stdin.take().expect("child process should have stdin"),
         child
             .stdout
             .take()
@@ -1298,6 +1301,68 @@ mod tests {
                 let StdoutTrimmed(output) = cmd!(file);
                 assert_eq!(output, "test-output");
             })
+        }
+    }
+
+    mod stdin {
+        use super::*;
+
+        #[test]
+        fn allows_to_pass_in_strings_as_stdin() {
+            let StdoutUntrimmed(output) = cmd!(
+                executable_path("cradle_test_helper").to_str().unwrap(),
+                "reverse",
+                Stdin("foo")
+            );
+            assert_eq!(output, "oof");
+        }
+
+        #[test]
+        #[cfg(unix)]
+        fn stdin_is_closed_by_default() {
+            let StdoutTrimmed(output) = cmd!(
+                executable_path("cradle_test_helper").to_str().unwrap(),
+                "wait until stdin is closed"
+            );
+            assert_eq!(output, "stdin is closed");
+        }
+
+        #[test]
+        fn writing_too_many_bytes_into_a_non_reading_child_may_error() {
+            let big_string = String::from_utf8(vec![b'a'; 2_usize.pow(16) + 1]).unwrap();
+            let result: Result<(), crate::Error> = cmd_result!("true", Stdin(big_string));
+            let message = result.unwrap_err().to_string();
+            assert!(if cfg!(unix) {
+                message == "true:\n  Broken pipe (os error 32)"
+            } else {
+                [
+                    "true:\n  The pipe is being closed. (os error 232)",
+                    "true:\n  The pipe has been ended. (os error 109)",
+                ]
+                .contains(&message.as_str())
+            });
+        }
+
+        #[test]
+        fn multiple_stdin_arguments_are_all_passed_into_the_child_process() {
+            let StdoutUntrimmed(output) = cmd!(
+                executable_path("cradle_test_helper").to_str().unwrap(),
+                "reverse",
+                Stdin("foo"),
+                Stdin("bar")
+            );
+            assert_eq!(output, "raboof");
+        }
+
+        #[test]
+        fn works_for_owned_strings() {
+            let argument: String = "foo".to_string();
+            let StdoutUntrimmed(output) = cmd!(
+                executable_path("cradle_test_helper").to_str().unwrap(),
+                "reverse",
+                Stdin(argument)
+            );
+            assert_eq!(output, "oof");
         }
     }
 }

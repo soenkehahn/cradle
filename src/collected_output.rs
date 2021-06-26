@@ -1,11 +1,12 @@
 use crate::{Config, Context};
 use std::{
     io::{self, Read, Write},
-    process::{ChildStderr, ChildStdout},
+    process::{ChildStderr, ChildStdin, ChildStdout},
     thread::{self, JoinHandle},
 };
 
 pub(crate) struct Waiter {
+    stdin: JoinHandle<io::Result<()>>,
     stdout: JoinHandle<io::Result<Vec<u8>>>,
     stderr: JoinHandle<io::Result<Vec<u8>>>,
 }
@@ -14,6 +15,7 @@ impl Waiter {
     pub(crate) fn spawn_standard_stream_relaying<Stdout, Stderr>(
         context: &Context<Stdout, Stderr>,
         config: &Config,
+        mut child_stdin: ChildStdin,
         mut child_stdout: ChildStdout,
         mut child_stderr: ChildStderr,
     ) -> Self
@@ -21,9 +23,16 @@ impl Waiter {
         Stdout: Write + Send + Clone + 'static,
         Stderr: Write + Send + Clone + 'static,
     {
+        let config_stdin = config.stdin.clone();
+        let stdin_join_handle = thread::spawn(move || -> io::Result<()> {
+            for stdin_snippet in config_stdin.iter() {
+                write!(child_stdin, "{}", stdin_snippet)?;
+            }
+            Ok(())
+        });
         let mut context_clone = context.clone();
         let relay_stdout = config.relay_stdout;
-        let stdout_join_handle = thread::spawn(move || {
+        let stdout_join_handle = thread::spawn(move || -> io::Result<Vec<u8>> {
             let mut collected_stdout = Vec::new();
             let buffer = &mut [0; 256];
             loop {
@@ -40,7 +49,7 @@ impl Waiter {
         });
         let mut context_clone = context.clone();
         let relay_stderr = config.relay_stderr;
-        let stderr_join_handle = thread::spawn(move || {
+        let stderr_join_handle = thread::spawn(move || -> io::Result<Vec<u8>> {
             let mut collected_stderr = Vec::new();
             let buffer = &mut [0; 256];
             loop {
@@ -56,12 +65,16 @@ impl Waiter {
             Ok(collected_stderr)
         });
         Waiter {
+            stdin: stdin_join_handle,
             stdout: stdout_join_handle,
             stderr: stderr_join_handle,
         }
     }
 
     pub(crate) fn join(self) -> io::Result<CollectedOutput> {
+        self.stdin
+            .join()
+            .expect("stdout relaying thread panicked")?;
         Ok(CollectedOutput {
             stdout: self
                 .stdout

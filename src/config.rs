@@ -1,10 +1,12 @@
-use std::{ffi::OsString, path::PathBuf};
+use std::{ffi::OsString, path::PathBuf, sync::Arc};
 
 #[doc(hidden)]
+#[rustversion::attr(since(1.48), allow(clippy::rc_buffer))]
 pub struct Config {
     pub(crate) arguments: Vec<OsString>,
     pub(crate) log_command: bool,
     pub(crate) working_directory: Option<PathBuf>,
+    pub(crate) stdin: Arc<Vec<String>>,
     pub(crate) relay_stdout: bool,
     pub(crate) relay_stderr: bool,
     pub(crate) error_on_non_zero_exit_code: bool,
@@ -37,6 +39,7 @@ impl Default for Config {
             arguments: Vec::new(),
             log_command: false,
             working_directory: None,
+            stdin: Arc::new(Vec::new()),
             relay_stdout: true,
             relay_stderr: true,
             error_on_non_zero_exit_code: true,
