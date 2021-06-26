@@ -1,11 +1,11 @@
 use std::{ffi::OsString, path::PathBuf, sync::Arc};
 
 #[doc(hidden)]
+#[rustversion::attr(since(1.48), allow(clippy::rc_buffer))]
 pub struct Config {
     pub(crate) arguments: Vec<OsString>,
     pub(crate) log_command: bool,
     pub(crate) working_directory: Option<PathBuf>,
-    #[allow(clippy::rc_buffer)]
     pub(crate) stdin: Arc<Vec<String>>,
     pub(crate) relay_stdout: bool,
     pub(crate) relay_stderr: bool,
