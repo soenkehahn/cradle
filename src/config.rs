@@ -1,7 +1,6 @@
 use std::{ffi::OsString, path::PathBuf};
 
 #[doc(hidden)]
-#[derive(Clone)]
 pub struct Config {
     pub(crate) arguments: Vec<OsString>,
     pub(crate) log_command: bool,

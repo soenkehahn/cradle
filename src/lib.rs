@@ -261,7 +261,8 @@ where
     T: CmdOutput,
 {
     <T as CmdOutput>::prepare_config(&mut config);
-    T::from_run_result(&config, run_cmd_safe(context, &config))
+    let result = run_cmd_safe(context, &mut config);
+    T::from_run_result(&config, result)
 }
 
 #[doc(hidden)]
@@ -274,7 +275,7 @@ pub struct RunResult {
 
 fn run_cmd_safe<Stdout, Stderr>(
     mut context: Context<Stdout, Stderr>,
-    config: &Config,
+    config: &mut Config,
 ) -> Result<RunResult, Error>
 where
     Stdout: Write + Clone + Send + 'static,
@@ -299,7 +300,7 @@ where
         .map_err(|error| Error::command_io_error(&config, error))?;
     let waiter = Waiter::spawn_standard_stream_relaying(
         &context,
-        config.clone(),
+        config,
         child.stdin.take().expect("child process should have stdin"),
         child
             .stdout
