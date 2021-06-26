@@ -7,3 +7,6 @@ Here's an example:
 
 For comprehensive documentation, head over to
 [docs.rs/cradle](https://docs.rs/cradle/latest/cradle/).
+
+## MSRV
+The minimal supported rust version is `0.41`.
