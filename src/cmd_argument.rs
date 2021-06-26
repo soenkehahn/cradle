@@ -1,5 +1,8 @@
 use crate::config::Config;
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 /// All types that are possible arguments to [`cmd!`] have to implement this trait.
 pub trait CmdArgument {
@@ -291,6 +294,6 @@ where
 {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.stdin.push(self.0.into());
+        Arc::make_mut(&mut config.stdin).push(self.0.into());
     }
 }

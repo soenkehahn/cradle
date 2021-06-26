@@ -261,7 +261,7 @@ where
     T: CmdOutput,
 {
     <T as CmdOutput>::prepare_config(&mut config);
-    let result = run_cmd_safe(context, &mut config);
+    let result = run_cmd_safe(context, &config);
     T::from_run_result(&config, result)
 }
 
@@ -275,7 +275,7 @@ pub struct RunResult {
 
 fn run_cmd_safe<Stdout, Stderr>(
     mut context: Context<Stdout, Stderr>,
-    config: &mut Config,
+    config: &Config,
 ) -> Result<RunResult, Error>
 where
     Stdout: Write + Clone + Send + 'static,

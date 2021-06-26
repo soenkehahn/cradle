@@ -14,7 +14,7 @@ pub(crate) struct Waiter {
 impl Waiter {
     pub(crate) fn spawn_standard_stream_relaying<Stdout, Stderr>(
         context: &Context<Stdout, Stderr>,
-        config: &mut Config,
+        config: &Config,
         mut child_stdin: ChildStdin,
         mut child_stdout: ChildStdout,
         mut child_stderr: ChildStderr,
@@ -23,10 +23,9 @@ impl Waiter {
         Stdout: Write + Send + Clone + 'static,
         Stderr: Write + Send + Clone + 'static,
     {
-        let mut config_stdin = Vec::new();
-        std::mem::swap(&mut config.stdin, &mut config_stdin);
+        let config_stdin = config.stdin.clone();
         let stdin_join_handle = thread::spawn(move || -> io::Result<()> {
-            for stdin_snippet in config_stdin {
+            for stdin_snippet in config_stdin.iter() {
                 write!(child_stdin, "{}", stdin_snippet)?;
             }
             Ok(())
