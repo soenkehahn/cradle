@@ -1,5 +1,6 @@
 use crate::config::Config;
 use std::{
+    ffi::{OsStr, OsString},
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -21,12 +22,30 @@ where
     }
 }
 
+/// Arguments of type [`OsString`] are passed to the child process
+/// as arguments.
+impl CmdArgument for OsString {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        config.arguments.push(self);
+    }
+}
+
+/// Arguments of type [`OsStr`] are passed to the child process
+/// as arguments.
+impl CmdArgument for &OsStr {
+    #[doc(hidden)]
+    fn prepare_config(self, config: &mut Config) {
+        self.to_os_string().prepare_config(config);
+    }
+}
+
 /// Arguments of type [`&str`] are passed to the child process
 /// as arguments.
 impl CmdArgument for &str {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.arguments.push(self.into());
+        OsStr::new(self).prepare_config(config);
     }
 }
 
@@ -35,7 +54,7 @@ impl CmdArgument for &str {
 impl CmdArgument for String {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.arguments.push(self.into());
+        OsString::from(self).prepare_config(config);
     }
 }
 
@@ -252,7 +271,7 @@ where
 impl CmdArgument for PathBuf {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        config.arguments.push(self.into());
+        self.into_os_string().prepare_config(config);
     }
 }
 
@@ -271,7 +290,7 @@ impl CmdArgument for PathBuf {
 impl CmdArgument for &Path {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        self.to_path_buf().prepare_config(config);
+        self.as_os_str().to_os_string().prepare_config(config);
     }
 }
 
