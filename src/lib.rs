@@ -1372,11 +1372,15 @@ mod tests {
         #[test]
         fn trailing_comma_is_accepted_after_normal_argument() {
             cmd_unit!("echo", "foo",);
+            let () = cmd!("echo", "foo",);
+            let _result: Result<(), Error> = cmd_result!("echo", "foo",);
         }
 
         #[test]
         fn trailing_comma_is_accepted_after_split_argument() {
             cmd_unit!("echo", %"foo",);
+            let () = cmd!("echo", %"foo",);
+            let _result: Result<(), Error> = cmd_result!("echo", %"foo",);
         }
     }
 }
