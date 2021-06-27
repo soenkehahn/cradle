@@ -44,4 +44,5 @@ path = "src/context_integration_tests.rs"
 required-features = ["test_executables"]
 
 [features]
+tempdir = ["tempfile"]
 test_executables = ["gag", "executable-path", "nix"]

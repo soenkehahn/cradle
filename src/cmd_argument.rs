@@ -305,7 +305,7 @@ where
 
 /// Argument of type [`TempDir`] configure the child to run
 /// with the current directory set to the tempdir.
-#[cfg(any(test, feature = "tempfile"))]
+#[cfg(any(test, feature = "tempdir"))]
 impl CmdArgument for &tempfile::TempDir {
     fn prepare_config(self, config: &mut Config) {
         CurrentDir(self.path()).prepare_config(config);
