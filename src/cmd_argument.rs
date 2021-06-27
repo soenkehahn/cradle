@@ -24,6 +24,12 @@ where
 
 /// Arguments of type [`OsString`] are passed to the child process
 /// as arguments.
+///
+/// ```
+/// use cradle::*;
+///
+/// cmd_unit!("echo", std::env::var_os("PATH").unwrap());
+/// ```
 impl CmdArgument for OsString {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
@@ -33,6 +39,12 @@ impl CmdArgument for OsString {
 
 /// Arguments of type [`OsStr`] are passed to the child process
 /// as arguments.
+///
+/// ```
+/// use cradle::*;
+///
+/// cmd_unit!("echo", std::env::current_dir().unwrap().file_name().unwrap());
+/// ```
 impl CmdArgument for &OsStr {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
