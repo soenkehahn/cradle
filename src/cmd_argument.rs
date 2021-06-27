@@ -276,11 +276,12 @@ impl CmdArgument for &Path {
 }
 
 /// See the [`CmdArgument`] implementation for [`Stdin`] below.
-pub struct Stdin<T: Into<String>>(pub T);
+pub struct Stdin<T: AsRef<[u8]>>(pub T);
 
-/// Writes the given [`&str`] to the child's standard input.
-/// If `Stdin` is used multiple times,
-/// all given strings will be written to the child's standard input in order.
+/// Writes the given byte slice to the child's standard input.
+///
+/// If `Stdin` is used multiple times, all given bytes slices will be written
+/// to the child's standard input in order.
 ///
 /// ```
 /// use cradle::*;
@@ -293,10 +294,10 @@ pub struct Stdin<T: Into<String>>(pub T);
 /// ```
 impl<T> CmdArgument for Stdin<T>
 where
-    T: Into<String>,
+    T: AsRef<[u8]>,
 {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
-        Arc::make_mut(&mut config.stdin).push(self.0.into());
+        Arc::make_mut(&mut config.stdin).extend_from_slice(self.0.as_ref());
     }
 }
