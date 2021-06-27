@@ -4,11 +4,10 @@ build:
   cargo build --all-targets --all-features
 
 test +pattern="": build
-  cargo test --all -- --test-threads=1 {{ pattern }}
-  rm -f 'filename with spaces' foo
+  cargo test --all -- {{ pattern }}
 
 test-lib-fast +pattern="":
-  cargo test --lib -- --test-threads=1 {{ pattern }}
+  cargo test --lib -- {{ pattern }}
 
 context-integration-tests: build
   cargo run --features "test_executables" --bin context_integration_tests

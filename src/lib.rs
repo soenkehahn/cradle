@@ -88,7 +88,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! let () = cmd!(%"touch foo");
+//! let () = cmd!(%"echo foo");
 //! ```
 //!
 //! Since that's a very common case, `cradle` provides the [`cmd_unit!`]
@@ -98,7 +98,7 @@
 //! ```
 //! use cradle::*;
 //!
-//! cmd_unit!(%"touch foo");
+//! cmd_unit!(%"echo foo");
 //! ```
 //!
 //! See the implementations for [`CmdOutput`] for all the supported types.
@@ -350,25 +350,8 @@ fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Err
 mod tests {
     use super::*;
     use executable_path::executable_path;
-    use std::{
-        env::{current_dir, set_current_dir},
-        path::PathBuf,
-    };
+    use std::path::PathBuf;
     use tempfile::TempDir;
-
-    fn in_temporary_directory<F>(f: F)
-    where
-        F: FnOnce() + std::panic::UnwindSafe,
-    {
-        let temp_dir = TempDir::new().unwrap();
-        let original_working_directory = current_dir().unwrap();
-        set_current_dir(&temp_dir).unwrap();
-        let result = std::panic::catch_unwind(|| {
-            f();
-        });
-        set_current_dir(original_working_directory).unwrap();
-        result.unwrap();
-    }
 
     macro_rules! cmd_result_with_context_unit {
         ($context:expr, $($args:tt)*) => {{
@@ -380,10 +363,9 @@ mod tests {
 
     #[test]
     fn allows_to_execute_a_command() {
-        in_temporary_directory(|| {
-            cmd_unit!(%"touch foo");
-            assert!(PathBuf::from("foo").exists());
-        })
+        let tempdir = TempDir::new().unwrap();
+        cmd_unit!(%"touch foo", &tempdir);
+        assert!(tempdir.path().join("foo").exists());
     }
 
     mod errors {
@@ -659,11 +641,10 @@ mod tests {
         #[rustversion::since(1.51)]
         #[test]
         fn elements_in_arrays_are_not_split_by_whitespace() {
-            in_temporary_directory(|| {
-                let args: [&str; 1] = ["foo bar"];
-                cmd_unit!("touch", args);
-                assert!(PathBuf::from("foo bar").exists());
-            });
+            let tempdir = TempDir::new().unwrap();
+            let args: [&str; 1] = ["foo bar"];
+            cmd_unit!("touch", args, &tempdir);
+            assert!(tempdir.path().join("foo bar").exists());
         }
 
         #[rustversion::since(1.51)]
@@ -677,11 +658,10 @@ mod tests {
         #[rustversion::since(1.51)]
         #[test]
         fn elements_in_array_refs_are_not_split_by_whitespace() {
-            in_temporary_directory(|| {
-                let args: &[&str; 1] = &["foo bar"];
-                cmd_unit!("touch", args);
-                assert!(PathBuf::from("foo bar").exists());
-            });
+            let tempdir = TempDir::new().unwrap();
+            let args: &[&str; 1] = &["foo bar"];
+            cmd_unit!("touch", args, &tempdir);
+            assert!(tempdir.path().join("foo bar").exists());
         }
 
         #[test]
@@ -703,11 +683,10 @@ mod tests {
 
         #[test]
         fn elements_in_slices_are_not_split_by_whitespace() {
-            in_temporary_directory(|| {
-                let args: &[&str] = &["foo bar"];
-                cmd_unit!("touch", args);
-                assert!(PathBuf::from("foo bar").exists());
-            });
+            let tempdir = TempDir::new().unwrap();
+            let args: &[&str] = &["foo bar"];
+            cmd_unit!("touch", args, &tempdir);
+            assert!(tempdir.path().join("foo bar").exists());
         }
 
         #[test]
@@ -743,11 +722,10 @@ mod tests {
 
         #[test]
         fn does_not_split_strings_in_vectors() {
-            in_temporary_directory(|| {
-                let argument: Vec<String> = vec!["filename with spaces".to_string()];
-                cmd_unit!("touch", argument);
-                assert!(PathBuf::from("filename with spaces").exists());
-            });
+            let tempdir = TempDir::new().unwrap();
+            let argument: Vec<String> = vec!["filename with spaces".to_string()];
+            cmd_unit!("touch", argument, &tempdir);
+            assert!(tempdir.path().join("filename with spaces").exists());
         }
     }
 
@@ -775,23 +753,24 @@ mod tests {
 
         #[test]
         fn streams_stdout() {
-            in_temporary_directory(|| {
-                let context = Context::test();
-                let context_clone = context.clone();
-                let thread = thread::spawn(|| {
-                    cmd_result_with_context_unit!(
-                        context_clone,
-                        executable_path("cradle_test_helper").to_str().unwrap(),
-                        vec!["stream chunk then wait for file"]
-                    )
-                    .unwrap();
-                });
-                while (context.stdout()) != "foo\n" {
-                    thread::sleep(Duration::from_secs_f32(0.05));
-                }
-                cmd_unit!(%"touch file");
-                thread.join().unwrap();
+            let tempdir = TempDir::new().unwrap();
+            let context = Context::test();
+            let context_clone = context.clone();
+            let tempdir_path = tempdir.path().to_owned();
+            let thread = thread::spawn(move || {
+                cmd_result_with_context_unit!(
+                    context_clone,
+                    executable_path("cradle_test_helper").to_str().unwrap(),
+                    vec!["stream chunk then wait for file"],
+                    CurrentDir(tempdir_path)
+                )
+                .unwrap();
             });
+            while (context.stdout()) != "foo\n" {
+                thread::sleep(Duration::from_secs_f32(0.05));
+            }
+            cmd_unit!(%"touch file", &tempdir);
+            thread.join().unwrap();
         }
 
         #[test]
@@ -840,34 +819,35 @@ mod tests {
 
         #[test]
         fn streams_stderr() {
-            in_temporary_directory(|| {
-                let context = Context::test();
-                let context_clone = context.clone();
-                let thread = thread::spawn(|| {
-                    cmd_result_with_context_unit!(
-                        context_clone,
-                        executable_path("cradle_test_helper").to_str().unwrap(),
-                        vec!["stream chunk to stderr then wait for file"]
-                    )
-                    .unwrap();
-                });
-                loop {
-                    let expected = "foo\n";
-                    let stderr = context.stderr();
-                    if stderr == expected {
-                        break;
-                    }
-                    assert!(
-                        stderr.len() <= expected.len(),
-                        "expected: {}, got: {}",
-                        expected,
-                        stderr
-                    );
-                    thread::sleep(Duration::from_secs_f32(0.05));
-                }
-                cmd_unit!(%"touch file");
-                thread.join().unwrap();
+            let tempdir = TempDir::new().unwrap();
+            let context = Context::test();
+            let context_clone = context.clone();
+            let tempdir_path = tempdir.path().to_owned();
+            let thread = thread::spawn(move || {
+                cmd_result_with_context_unit!(
+                    context_clone,
+                    executable_path("cradle_test_helper").to_str().unwrap(),
+                    vec!["stream chunk to stderr then wait for file"],
+                    CurrentDir(tempdir_path)
+                )
+                .unwrap();
             });
+            loop {
+                let expected = "foo\n";
+                let stderr = context.stderr();
+                if stderr == expected {
+                    break;
+                }
+                assert!(
+                    stderr.len() <= expected.len(),
+                    "expected: {}, got: {}",
+                    expected,
+                    stderr
+                );
+                thread::sleep(Duration::from_secs_f32(0.05));
+            }
+            cmd_unit!(%"touch file", &tempdir);
+            thread.join().unwrap();
         }
 
         #[test]
@@ -1063,26 +1043,26 @@ mod tests {
 
         #[test]
         fn sets_the_working_directory() {
-            in_temporary_directory(|| {
-                fs::create_dir("dir").unwrap();
-                fs::write("dir/file", "foo").unwrap();
-                fs::write("file", "wrong file").unwrap();
-                let StdoutUntrimmed(output) = cmd!(%"cat file", CurrentDir("dir"));
-                assert_eq!(output, "foo");
-            });
+            let tempdir = TempDir::new().unwrap();
+            let dir = tempdir.path().join("dir");
+            let file = dir.join("file");
+            fs::create_dir(&dir).unwrap();
+            fs::write(file, "foo").unwrap();
+            fs::write(tempdir.path().join("file"), "wrong file").unwrap();
+            let StdoutUntrimmed(output) = cmd!(%"cat file", CurrentDir(dir));
+            assert_eq!(output, "foo");
         }
 
         #[test]
         fn works_for_other_types() {
-            in_temporary_directory(|| {
-                fs::create_dir("dir").unwrap();
-                let dir: String = "dir".to_string();
-                cmd_unit!("true", CurrentDir(dir));
-                let dir: PathBuf = PathBuf::from("dir");
-                cmd_unit!("true", CurrentDir(dir));
-                let dir: &Path = Path::new("dir");
-                cmd_unit!("true", CurrentDir(dir));
-            });
+            let tempdir = TempDir::new().unwrap();
+            let pathbuf = tempdir.path().join("dir");
+            fs::create_dir(&pathbuf).unwrap();
+            cmd_unit!("true", CurrentDir(&pathbuf));
+            let dir: &str = pathbuf.to_str().unwrap();
+            cmd_unit!("true", CurrentDir(dir));
+            let dir: &Path = &pathbuf;
+            cmd_unit!("true", CurrentDir(dir));
         }
     }
 
@@ -1250,15 +1230,15 @@ mod tests {
         use pretty_assertions::assert_eq;
         use std::path::Path;
 
-        fn write_test_script() -> PathBuf {
+        fn write_test_script(dir: &Path) -> PathBuf {
             if cfg!(unix) {
-                let file = PathBuf::from("./test-script");
+                let file = dir.join("test-script");
                 let script = "#!/usr/bin/env bash\necho test-output\n";
                 std::fs::write(&file, script).unwrap();
-                cmd_unit!(%"chmod +x test-script");
+                cmd_unit!(%"chmod +x", &file);
                 file
             } else {
-                let file = PathBuf::from("./test-script.bat");
+                let file = dir.join("test-script.bat");
                 let script = "@echo test-output\n";
                 std::fs::write(&file, script).unwrap();
                 file
@@ -1267,40 +1247,37 @@ mod tests {
 
         #[test]
         fn ref_path_as_argument() {
-            in_temporary_directory(|| {
-                let file: &Path = Path::new("file");
-                std::fs::write(file, "test-contents").unwrap();
-                let StdoutUntrimmed(output) = cmd!("cat", file);
-                assert_eq!(output, "test-contents");
-            })
+            let tempdir = TempDir::new().unwrap();
+            let file = tempdir.path().join("file");
+            let file: &Path = &file;
+            std::fs::write(file, "test-contents").unwrap();
+            let StdoutUntrimmed(output) = cmd!("cat", file);
+            assert_eq!(output, "test-contents");
         }
 
         #[test]
         fn ref_path_as_executable() {
-            in_temporary_directory(|| {
-                let file: &Path = &write_test_script();
-                let StdoutTrimmed(output) = cmd!(file);
-                assert_eq!(output, "test-output");
-            })
+            let tempdir = TempDir::new().unwrap();
+            let file: &Path = &write_test_script(&tempdir.path());
+            let StdoutTrimmed(output) = cmd!(file);
+            assert_eq!(output, "test-output");
         }
 
         #[test]
         fn path_buf_as_argument() {
-            in_temporary_directory(|| {
-                let file: PathBuf = PathBuf::from("file");
-                std::fs::write(&file, "test-contents").unwrap();
-                let StdoutUntrimmed(output) = cmd!("cat", file);
-                assert_eq!(output, "test-contents");
-            })
+            let tempdir = TempDir::new().unwrap();
+            let file: PathBuf = tempdir.path().join("file");
+            std::fs::write(&file, "test-contents").unwrap();
+            let StdoutUntrimmed(output) = cmd!("cat", file, &tempdir);
+            assert_eq!(output, "test-contents");
         }
 
         #[test]
         fn path_buf_as_executable() {
-            in_temporary_directory(|| {
-                let file: PathBuf = write_test_script();
-                let StdoutTrimmed(output) = cmd!(file);
-                assert_eq!(output, "test-output");
-            })
+            let tempdir = TempDir::new().unwrap();
+            let file: PathBuf = write_test_script(tempdir.path());
+            let StdoutTrimmed(output) = cmd!(file);
+            assert_eq!(output, "test-output");
         }
     }
 

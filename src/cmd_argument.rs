@@ -263,7 +263,9 @@ impl CmdArgument for PathBuf {
 /// use cradle::*;
 /// use std::path::Path;
 ///
-/// let file: &Path = Path::new("./foo");
+/// let tempdir = tempfile::tempdir().unwrap();
+///
+/// let file: &Path = &tempdir.path().join("foo");
 /// cmd_unit!("touch", file);
 /// ```
 ///
@@ -298,5 +300,14 @@ where
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
         Arc::make_mut(&mut config.stdin).push(self.0.into());
+    }
+}
+
+/// Argument of type [`TempDir`] configure the child to run
+/// with the current directory set to the tempdir.
+#[cfg(any(test, feature = "tempfile"))]
+impl CmdArgument for &tempfile::TempDir {
+    fn prepare_config(self, config: &mut Config) {
+        CurrentDir(self.path()).prepare_config(config);
     }
 }
