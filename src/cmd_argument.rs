@@ -28,7 +28,7 @@ where
 /// ```
 /// use cradle::*;
 ///
-/// cmd_unit!("echo", std::env::var_os("PATH").unwrap());
+/// cmd_unit!("ls", std::env::var_os("HOME").unwrap());
 /// ```
 impl CmdArgument for OsString {
     #[doc(hidden)]
