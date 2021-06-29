@@ -352,6 +352,7 @@ mod tests {
     use executable_path::executable_path;
     use std::{
         env::{current_dir, set_current_dir},
+        ffi::OsStr,
         path::PathBuf,
     };
     use tempfile::TempDir;
@@ -742,6 +743,20 @@ mod tests {
                 cmd_unit!("touch", argument);
                 assert!(PathBuf::from("filename with spaces").exists());
             });
+        }
+    }
+
+    mod os_strings {
+        use super::*;
+
+        #[test]
+        fn works_for_os_string() {
+            cmd_unit!(OsString::from("true"));
+        }
+
+        #[test]
+        fn works_for_os_str() {
+            cmd_unit!(OsStr::new("true"));
         }
     }
 
