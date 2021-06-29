@@ -37,7 +37,7 @@ impl CmdArgument for OsString {
     }
 }
 
-/// Arguments of type [`OsStr`] are passed to the child process
+/// Arguments of type [`&OsStr`] are passed to the child process
 /// as arguments.
 ///
 /// ```
@@ -45,6 +45,8 @@ impl CmdArgument for OsString {
 ///
 /// cmd_unit!("echo", std::env::current_dir().unwrap().file_name().unwrap());
 /// ```
+///
+/// [`&OsStr`]: std::ffi::OsStr
 impl CmdArgument for &OsStr {
     #[doc(hidden)]
     fn prepare_config(self, config: &mut Config) {
