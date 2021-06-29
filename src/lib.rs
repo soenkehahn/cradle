@@ -234,6 +234,12 @@ macro_rules! cmd_result_with_context {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! prepare_config {
+    (config: $config:ident, args: % $head:expr $(,)?) => {
+        $crate::CmdArgument::prepare_config($crate::Split($head), &mut $config);
+    };
+    (config: $config:ident, args: $head:expr $(,)?) => {
+        $crate::CmdArgument::prepare_config($head, &mut $config);
+    };
     (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
         $crate::CmdArgument::prepare_config($crate::Split($head), &mut $config);
         $crate::prepare_config!(config: $config, args: $($tail)*);
@@ -241,12 +247,6 @@ macro_rules! prepare_config {
     (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
         $crate::CmdArgument::prepare_config($head, &mut $config);
         $crate::prepare_config!(config: $config, args: $($tail)*);
-    };
-    (config: $config:ident, args: % $head:expr) => {
-        $crate::CmdArgument::prepare_config($crate::Split($head), &mut $config);
-    };
-    (config: $config:ident, args: $head:expr) => {
-        $crate::CmdArgument::prepare_config($head, &mut $config);
     };
 }
 
@@ -1354,6 +1354,24 @@ mod tests {
                 Stdin(argument)
             );
             assert_eq!(output, "oof");
+        }
+    }
+
+    mod invocation_syntax {
+        use super::*;
+
+        #[test]
+        fn trailing_comma_is_accepted_after_normal_argument() {
+            cmd_unit!("echo", "foo",);
+            let StdoutUntrimmed(_) = cmd!("echo", "foo",);
+            let _result: Result<(), Error> = cmd_result!("echo", "foo",);
+        }
+
+        #[test]
+        fn trailing_comma_is_accepted_after_split_argument() {
+            cmd_unit!("echo", %"foo",);
+            let StdoutUntrimmed(_) = cmd!("echo", %"foo",);
+            let _result: Result<(), Error> = cmd_result!("echo", %"foo",);
         }
     }
 }
