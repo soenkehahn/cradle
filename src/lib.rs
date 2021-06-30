@@ -15,7 +15,7 @@
 //! # Arguments
 //!
 //! You can pass in multiple arguments (of different types) to [`cmd!`]
-//! to specify arguments, as long as they implement the [`CmdInput`]
+//! to specify arguments, as long as they implement the [`Input`]
 //! trait:
 //!
 //! ```
@@ -25,7 +25,7 @@
 //! assert_eq!(stdout, "foo bar");
 //! ```
 //!
-//! For all possible inputs to [`cmd!`], see the documentation of [`CmdInput`].
+//! For all possible inputs to [`cmd!`], see the documentation of [`Input`].
 //!
 //! ## Whitespace Splitting
 //!
@@ -173,18 +173,18 @@
 //! [`cmd`](https://hackage.haskell.org/package/shake-0.19.4/docs/Development-Shake.html#v:cmd)
 //! function.
 
-mod cmd_input;
 mod cmd_output;
 mod collected_output;
 mod config;
 mod context;
 mod error;
+mod input;
 
 use crate::collected_output::Waiter;
 pub use crate::{
-    cmd_input::{CmdInput, CurrentDir, LogCommand, Split, Stdin},
     cmd_output::{CmdOutput, Exit, Stderr, StdoutTrimmed, StdoutUntrimmed},
     error::{panic_on_error, Error},
+    input::{CurrentDir, Input, LogCommand, Split, Stdin},
 };
 #[doc(hidden)]
 pub use crate::{config::Config, context::Context};
@@ -235,17 +235,17 @@ macro_rules! cmd_result_with_context {
 #[macro_export]
 macro_rules! prepare_config {
     (config: $config:ident, args: % $head:expr $(,)?) => {
-        $crate::CmdInput::prepare_config($crate::Split($head), &mut $config);
+        $crate::Input::prepare_config($crate::Split($head), &mut $config);
     };
     (config: $config:ident, args: $head:expr $(,)?) => {
-        $crate::CmdInput::prepare_config($head, &mut $config);
+        $crate::Input::prepare_config($head, &mut $config);
     };
     (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
-        $crate::CmdInput::prepare_config($crate::Split($head), &mut $config);
+        $crate::Input::prepare_config($crate::Split($head), &mut $config);
         $crate::prepare_config!(config: $config, args: $($tail)*);
     };
     (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
-        $crate::CmdInput::prepare_config($head, &mut $config);
+        $crate::Input::prepare_config($head, &mut $config);
         $crate::prepare_config!(config: $config, args: $($tail)*);
     };
 }
