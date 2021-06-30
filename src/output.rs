@@ -20,7 +20,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 pub trait Output: Sized {
     #[doc(hidden)]
-    fn prepare_config(config: &mut Config);
+    fn configure(config: &mut Config);
 
     #[doc(hidden)]
     fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error>;
@@ -29,7 +29,7 @@ pub trait Output: Sized {
 /// Use this when you don't need any result from the child process.
 impl Output for () {
     #[doc(hidden)]
-    fn prepare_config(_config: &mut Config) {}
+    fn configure(_config: &mut Config) {}
 
     #[doc(hidden)]
     fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
@@ -63,8 +63,8 @@ pub struct StdoutTrimmed(pub String);
 /// # }
 /// ```
 impl Output for StdoutTrimmed {
-    fn prepare_config(config: &mut Config) {
-        StdoutUntrimmed::prepare_config(config);
+    fn configure(config: &mut Config) {
+        StdoutUntrimmed::configure(config);
     }
 
     fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
@@ -87,7 +87,7 @@ pub struct StdoutUntrimmed(pub String);
 /// ```
 impl Output for StdoutUntrimmed {
     #[doc(hidden)]
-    fn prepare_config(config: &mut Config) {
+    fn configure(config: &mut Config) {
         config.relay_stdout = false;
     }
 
@@ -110,8 +110,8 @@ macro_rules! tuple_impl {
             $($generics: Output,)+
         {
             #[doc(hidden)]
-            fn prepare_config(config: &mut Config) {
-                $($generics::prepare_config(config);)+
+            fn configure(config: &mut Config) {
+                $($generics::configure(config);)+
             }
 
             #[doc(hidden)]
@@ -159,7 +159,7 @@ pub struct Exit(pub ExitStatus);
 /// the module documentation.
 impl Output for Exit {
     #[doc(hidden)]
-    fn prepare_config(config: &mut Config) {
+    fn configure(config: &mut Config) {
         config.error_on_non_zero_exit_code = false;
     }
 
@@ -192,7 +192,7 @@ pub struct Stderr(pub String);
 /// is used, this is switched off.
 impl Output for Stderr {
     #[doc(hidden)]
-    fn prepare_config(config: &mut Config) {
+    fn configure(config: &mut Config) {
         config.relay_stderr = false;
     }
 

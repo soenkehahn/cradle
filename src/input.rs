@@ -8,7 +8,7 @@ use std::{
 /// All types that are possible arguments to [`cmd!`] have to implement this trait.
 pub trait Input {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config);
+    fn configure(self, config: &mut Config);
 }
 
 /// Blanket implementation for `&_`.
@@ -17,8 +17,8 @@ where
     T: Input + Clone,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        self.clone().prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        self.clone().configure(config);
     }
 }
 
@@ -32,7 +32,7 @@ where
 /// ```
 impl Input for OsString {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         config.arguments.push(self);
     }
 }
@@ -49,8 +49,8 @@ impl Input for OsString {
 /// [`&OsStr`]: std::ffi::OsStr
 impl Input for &OsStr {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        self.to_os_string().prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        self.to_os_string().configure(config);
     }
 }
 
@@ -58,8 +58,8 @@ impl Input for &OsStr {
 /// as arguments.
 impl Input for &str {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        OsStr::new(self).prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        OsStr::new(self).configure(config);
     }
 }
 
@@ -67,8 +67,8 @@ impl Input for &str {
 /// as arguments.
 impl Input for String {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        OsString::from(self).prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        OsString::from(self).configure(config);
     }
 }
 
@@ -101,9 +101,9 @@ pub struct Split<T: AsRef<str>>(pub T);
 /// [`split_whitespace`]: str::split_whitespace
 impl<T: AsRef<str>> Input for Split<T> {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for argument in self.0.as_ref().split_whitespace() {
-            argument.prepare_config(config);
+            argument.configure(config);
         }
     }
 }
@@ -122,9 +122,9 @@ impl<T: AsRef<str>> Input for Split<T> {
 /// [`split`]: str::split
 impl<'a> Input for std::str::Split<'a, char> {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for word in self {
-            word.prepare_config(config);
+            word.configure(config);
         }
     }
 }
@@ -141,9 +141,9 @@ impl<'a> Input for std::str::Split<'a, char> {
 /// [`split_whitespace`]: str::split_whitespace
 impl<'a> Input for std::str::SplitWhitespace<'a> {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for word in self {
-            word.prepare_config(config);
+            word.configure(config);
         }
     }
 }
@@ -160,9 +160,9 @@ impl<'a> Input for std::str::SplitWhitespace<'a> {
 /// [`split_ascii_whitespace`]: str::split_ascii_whitespace
 impl<'a> Input for std::str::SplitAsciiWhitespace<'a> {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for word in self {
-            word.prepare_config(config);
+            word.configure(config);
         }
     }
 }
@@ -181,9 +181,9 @@ where
     T: Input,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for t in self.into_iter() {
-            t.prepare_config(config);
+            t.configure(config);
         }
     }
 }
@@ -205,9 +205,9 @@ where
     T: Input,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for t in std::array::IntoIter::new(self) {
-            t.prepare_config(config);
+            t.configure(config);
         }
     }
 }
@@ -219,8 +219,8 @@ where
     T: Input + Clone,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        self.to_vec().prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        self.to_vec().configure(config);
     }
 }
 
@@ -240,7 +240,7 @@ pub struct LogCommand;
 /// ```
 impl Input for LogCommand {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         config.log_command = true;
     }
 }
@@ -267,7 +267,7 @@ where
     T: AsRef<Path>,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         config.working_directory = Some(self.0.as_ref().to_owned());
     }
 }
@@ -284,8 +284,8 @@ where
 /// ```
 impl Input for PathBuf {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        self.into_os_string().prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        self.into_os_string().configure(config);
     }
 }
 
@@ -303,8 +303,8 @@ impl Input for PathBuf {
 /// [`&Path`]: std::path::Path
 impl Input for &Path {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        self.as_os_str().to_os_string().prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        self.as_os_str().to_os_string().configure(config);
     }
 }
 
@@ -329,7 +329,7 @@ where
     T: Into<String>,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         Arc::make_mut(&mut config.stdin).push(self.0.into());
     }
 }

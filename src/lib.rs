@@ -226,27 +226,27 @@ macro_rules! cmd_result {
 macro_rules! cmd_result_with_context {
     ($context:expr, $($args:tt)*) => {{
         let mut config = $crate::Config::default();
-        $crate::prepare_config!(config: config, args: $($args)*);
+        $crate::configure!(config: config, args: $($args)*);
         $crate::run_cmd($context, config)
     }}
 }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! prepare_config {
+macro_rules! configure {
     (config: $config:ident, args: % $head:expr $(,)?) => {
-        $crate::Input::prepare_config($crate::Split($head), &mut $config);
+        $crate::Input::configure($crate::Split($head), &mut $config);
     };
     (config: $config:ident, args: $head:expr $(,)?) => {
-        $crate::Input::prepare_config($head, &mut $config);
+        $crate::Input::configure($head, &mut $config);
     };
     (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
-        $crate::Input::prepare_config($crate::Split($head), &mut $config);
-        $crate::prepare_config!(config: $config, args: $($tail)*);
+        $crate::Input::configure($crate::Split($head), &mut $config);
+        $crate::configure!(config: $config, args: $($tail)*);
     };
     (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
-        $crate::Input::prepare_config($head, &mut $config);
-        $crate::prepare_config!(config: $config, args: $($tail)*);
+        $crate::Input::configure($head, &mut $config);
+        $crate::configure!(config: $config, args: $($tail)*);
     };
 }
 
@@ -260,7 +260,7 @@ where
     Stderr: Write + Clone + Send + 'static,
     T: Output,
 {
-    <T as Output>::prepare_config(&mut config);
+    <T as Output>::configure(&mut config);
     let result = run_cmd_safe(context, &config);
     T::from_run_result(&config, result)
 }
