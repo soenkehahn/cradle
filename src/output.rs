@@ -5,8 +5,8 @@ use std::{process::ExitStatus, sync::Arc};
 /// For documentation about what these return types do, see the
 /// individual implementations below.
 ///
-/// Except for tuples: All [`CmdOutput`] implementations for tuples serve
-/// the same purpose: combining multiple types that implement [`CmdOutput`]
+/// Except for tuples: All [`Output`] implementations for tuples serve
+/// the same purpose: combining multiple types that implement [`Output`]
 /// to retrieve more information from a child process. The following code
 /// for example retrieves what's written to `stdout` **and** the
 /// [`ExitStatus`]:
@@ -18,7 +18,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// assert_eq!(stdout, "foo\n");
 /// assert!(status.success());
 /// ```
-pub trait CmdOutput: Sized {
+pub trait Output: Sized {
     #[doc(hidden)]
     fn prepare_config(config: &mut Config);
 
@@ -27,7 +27,7 @@ pub trait CmdOutput: Sized {
 }
 
 /// Use this when you don't need any result from the child process.
-impl CmdOutput for () {
+impl Output for () {
     #[doc(hidden)]
     fn prepare_config(_config: &mut Config) {}
 
@@ -38,7 +38,7 @@ impl CmdOutput for () {
     }
 }
 
-/// See the [`CmdOutput`] implementation for [`StdoutTrimmed`] below.
+/// See the [`Output`] implementation for [`StdoutTrimmed`] below.
 #[derive(Debug, PartialEq, Clone)]
 pub struct StdoutTrimmed(pub String);
 
@@ -62,7 +62,7 @@ pub struct StdoutTrimmed(pub String);
 /// assert!(Path::new(&output).exists());
 /// # }
 /// ```
-impl CmdOutput for StdoutTrimmed {
+impl Output for StdoutTrimmed {
     fn prepare_config(config: &mut Config) {
         StdoutUntrimmed::prepare_config(config);
     }
@@ -73,7 +73,7 @@ impl CmdOutput for StdoutTrimmed {
     }
 }
 
-/// See the [`CmdOutput`] implementation for [`StdoutUntrimmed`] below.
+/// See the [`Output`] implementation for [`StdoutUntrimmed`] below.
 #[derive(Debug, PartialEq, Clone)]
 pub struct StdoutUntrimmed(pub String);
 
@@ -85,7 +85,7 @@ pub struct StdoutUntrimmed(pub String);
 /// let StdoutUntrimmed(output) = cmd!(%"echo foo");
 /// assert_eq!(output, "foo\n");
 /// ```
-impl CmdOutput for StdoutUntrimmed {
+impl Output for StdoutUntrimmed {
     #[doc(hidden)]
     fn prepare_config(config: &mut Config) {
         config.relay_stdout = false;
@@ -105,9 +105,9 @@ impl CmdOutput for StdoutUntrimmed {
 
 macro_rules! tuple_impl {
     ($($generics:ident,)+) => {
-        impl<$($generics),+> CmdOutput for ($($generics,)+)
+        impl<$($generics),+> Output for ($($generics,)+)
         where
-            $($generics: CmdOutput,)+
+            $($generics: Output,)+
         {
             #[doc(hidden)]
             fn prepare_config(config: &mut Config) {
@@ -128,7 +128,7 @@ tuple_impl!(A,);
 tuple_impl!(A, B,);
 tuple_impl!(A, B, C,);
 
-/// See the [`CmdOutput`] implementation for [`Exit`] below.
+/// See the [`Output`] implementation for [`Exit`] below.
 pub struct Exit(pub ExitStatus);
 
 /// Using [`Exit`] as the return type for [`cmd!`] allows to
@@ -157,7 +157,7 @@ pub struct Exit(pub ExitStatus);
 /// Also see the
 /// [section about error handling](index.html#error-handling) in
 /// the module documentation.
-impl CmdOutput for Exit {
+impl Output for Exit {
     #[doc(hidden)]
     fn prepare_config(config: &mut Config) {
         config.error_on_non_zero_exit_code = false;
@@ -169,7 +169,7 @@ impl CmdOutput for Exit {
     }
 }
 
-/// See the [`CmdOutput`] implementation for [`Stderr`] below.
+/// See the [`Output`] implementation for [`Stderr`] below.
 #[derive(Debug)]
 pub struct Stderr(pub String);
 
@@ -190,7 +190,7 @@ pub struct Stderr(pub String);
 /// By default, what is written to `stderr` by the child process
 /// is relayed to the parent's `stderr`. However, when [`Stderr`]
 /// is used, this is switched off.
-impl CmdOutput for Stderr {
+impl Output for Stderr {
     #[doc(hidden)]
     fn prepare_config(config: &mut Config) {
         config.relay_stderr = false;
