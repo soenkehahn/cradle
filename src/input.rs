@@ -6,19 +6,19 @@ use std::{
 };
 
 /// All types that are possible arguments to [`cmd!`] have to implement this trait.
-pub trait CmdInput {
+pub trait Input {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config);
+    fn configure(self, config: &mut Config);
 }
 
 /// Blanket implementation for `&_`.
-impl<T> CmdInput for &T
+impl<T> Input for &T
 where
-    T: CmdInput + Clone,
+    T: Input + Clone,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        self.clone().prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        self.clone().configure(config);
     }
 }
 
@@ -30,9 +30,9 @@ where
 ///
 /// cmd_unit!("ls", std::env::var_os("HOME").unwrap());
 /// ```
-impl CmdInput for OsString {
+impl Input for OsString {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         config.arguments.push(self);
     }
 }
@@ -47,32 +47,32 @@ impl CmdInput for OsString {
 /// ```
 ///
 /// [`&OsStr`]: std::ffi::OsStr
-impl CmdInput for &OsStr {
+impl Input for &OsStr {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        self.to_os_string().prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        self.to_os_string().configure(config);
     }
 }
 
 /// Arguments of type [`&str`] are passed to the child process
 /// as arguments.
-impl CmdInput for &str {
+impl Input for &str {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        OsStr::new(self).prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        OsStr::new(self).configure(config);
     }
 }
 
 /// Arguments of type [`String`] are passed to the child process
 /// as arguments.
-impl CmdInput for String {
+impl Input for String {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        OsString::from(self).prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        OsString::from(self).configure(config);
     }
 }
 
-/// See the [`CmdInput`] implementation for [`Split`] below.
+/// See the [`Input`] implementation for [`Split`] below.
 pub struct Split<T: AsRef<str>>(pub T);
 
 /// Splits the contained string by whitespace (using [`split_whitespace`])
@@ -99,11 +99,11 @@ pub struct Split<T: AsRef<str>>(pub T);
 /// ```
 ///
 /// [`split_whitespace`]: str::split_whitespace
-impl<T: AsRef<str>> CmdInput for Split<T> {
+impl<T: AsRef<str>> Input for Split<T> {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for argument in self.0.as_ref().split_whitespace() {
-            argument.prepare_config(config);
+            argument.configure(config);
         }
     }
 }
@@ -120,11 +120,11 @@ impl<T: AsRef<str>> CmdInput for Split<T> {
 /// Arguments to [`split`] must be of type [`char`].
 ///
 /// [`split`]: str::split
-impl<'a> CmdInput for std::str::Split<'a, char> {
+impl<'a> Input for std::str::Split<'a, char> {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for word in self {
-            word.prepare_config(config);
+            word.configure(config);
         }
     }
 }
@@ -139,11 +139,11 @@ impl<'a> CmdInput for std::str::Split<'a, char> {
 /// ```
 ///
 /// [`split_whitespace`]: str::split_whitespace
-impl<'a> CmdInput for std::str::SplitWhitespace<'a> {
+impl<'a> Input for std::str::SplitWhitespace<'a> {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for word in self {
-            word.prepare_config(config);
+            word.configure(config);
         }
     }
 }
@@ -158,11 +158,11 @@ impl<'a> CmdInput for std::str::SplitWhitespace<'a> {
 /// ```
 ///
 /// [`split_ascii_whitespace`]: str::split_ascii_whitespace
-impl<'a> CmdInput for std::str::SplitAsciiWhitespace<'a> {
+impl<'a> Input for std::str::SplitAsciiWhitespace<'a> {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for word in self {
-            word.prepare_config(config);
+            word.configure(config);
         }
     }
 }
@@ -176,14 +176,14 @@ impl<'a> CmdInput for std::str::SplitAsciiWhitespace<'a> {
 /// let StdoutTrimmed(output) = cmd!(vec!["echo", "foo"]);
 /// assert_eq!(output, "foo");
 /// ```
-impl<T> CmdInput for Vec<T>
+impl<T> Input for Vec<T>
 where
-    T: CmdInput,
+    T: Input,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for t in self.into_iter() {
-            t.prepare_config(config);
+            t.configure(config);
         }
     }
 }
@@ -200,31 +200,31 @@ where
 ///
 /// Only works on rust version `1.51` and up.
 #[rustversion::since(1.51)]
-impl<T, const N: usize> CmdInput for [T; N]
+impl<T, const N: usize> Input for [T; N]
 where
-    T: CmdInput,
+    T: Input,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         for t in std::array::IntoIter::new(self) {
-            t.prepare_config(config);
+            t.configure(config);
         }
     }
 }
 
 /// Similar to the implementation for [`Vec<T>`].
 /// All elements of the slice will be used as arguments.
-impl<T> CmdInput for &[T]
+impl<T> Input for &[T]
 where
-    T: CmdInput + Clone,
+    T: Input + Clone,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        self.to_vec().prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        self.to_vec().configure(config);
     }
 }
 
-/// See the [`CmdInput`] implementation for [`LogCommand`] below.
+/// See the [`Input`] implementation for [`LogCommand`] below.
 #[derive(Clone, Debug)]
 pub struct LogCommand;
 
@@ -238,14 +238,14 @@ pub struct LogCommand;
 /// cmd_unit!(LogCommand, %"echo foo");
 /// // writes '+ echo foo' to stderr
 /// ```
-impl CmdInput for LogCommand {
+impl Input for LogCommand {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         config.log_command = true;
     }
 }
 
-/// See the [`CmdInput`] implementation for [`CurrentDir`] below.
+/// See the [`Input`] implementation for [`CurrentDir`] below.
 pub struct CurrentDir<T: AsRef<Path>>(pub T);
 
 /// By default child processes inherit the current directory from their
@@ -262,12 +262,12 @@ pub struct CurrentDir<T: AsRef<Path>>(pub T);
 /// ```
 ///
 /// Paths that are relative to the parent's current directory are allowed.
-impl<T> CmdInput for CurrentDir<T>
+impl<T> Input for CurrentDir<T>
 where
     T: AsRef<Path>,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         config.working_directory = Some(self.0.as_ref().to_owned());
     }
 }
@@ -282,10 +282,10 @@ where
 /// let current_dir: PathBuf = std::env::current_dir().unwrap();
 /// cmd_unit!("ls", current_dir);
 /// ```
-impl CmdInput for PathBuf {
+impl Input for PathBuf {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        self.into_os_string().prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        self.into_os_string().configure(config);
     }
 }
 
@@ -301,14 +301,14 @@ impl CmdInput for PathBuf {
 /// ```
 ///
 /// [`&Path`]: std::path::Path
-impl CmdInput for &Path {
+impl Input for &Path {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
-        self.as_os_str().to_os_string().prepare_config(config);
+    fn configure(self, config: &mut Config) {
+        self.as_os_str().to_os_string().configure(config);
     }
 }
 
-/// See the [`CmdInput`] implementation for [`Stdin`] below.
+/// See the [`Input`] implementation for [`Stdin`] below.
 pub struct Stdin<T: Into<String>>(pub T);
 
 /// Writes the given [`&str`] to the child's standard input.
@@ -324,12 +324,12 @@ pub struct Stdin<T: Into<String>>(pub T);
 /// assert_eq!(output, "bar\nfoo\n");
 /// # }
 /// ```
-impl<T> CmdInput for Stdin<T>
+impl<T> Input for Stdin<T>
 where
     T: Into<String>,
 {
     #[doc(hidden)]
-    fn prepare_config(self, config: &mut Config) {
+    fn configure(self, config: &mut Config) {
         Arc::make_mut(&mut config.stdin).push(self.0.into());
     }
 }

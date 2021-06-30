@@ -15,7 +15,7 @@
 //! # Arguments
 //!
 //! You can pass in multiple arguments (of different types) to [`cmd!`]
-//! to specify arguments, as long as they implement the [`CmdInput`]
+//! to specify arguments, as long as they implement the [`Input`]
 //! trait:
 //!
 //! ```
@@ -25,7 +25,7 @@
 //! assert_eq!(stdout, "foo bar");
 //! ```
 //!
-//! For all possible inputs to [`cmd!`], see the documentation of [`CmdInput`].
+//! For all possible inputs to [`cmd!`], see the documentation of [`Input`].
 //!
 //! ## Whitespace Splitting
 //!
@@ -67,7 +67,7 @@
 //! # Output
 //!
 //! You can choose which return type you want [`cmd!`] to return,
-//! as long as the chosen return type implements [`CmdOutput`].
+//! as long as the chosen return type implements [`Output`].
 //! For example you can use e.g. [`StdoutTrimmed`] to collect what the
 //! child process writes to `stdout`,
 //! trimmed of leading and trailing whitespace:
@@ -101,7 +101,7 @@
 //! cmd_unit!(%"touch foo");
 //! ```
 //!
-//! See the implementations for [`CmdOutput`] for all the supported types.
+//! See the implementations for [`Output`] for all the supported types.
 //!
 //! # Error Handling
 //!
@@ -133,7 +133,7 @@
 //! You can also turn **all** panics into [`std::result::Result::Err`]s
 //! by using [`cmd_result!`]. This will return a value of type
 //! [`Result<T, cradle::Error>`], where
-//! `T` is any type that implements [`CmdOutput`].
+//! `T` is any type that implements [`Output`].
 //! Here's some examples:
 //!
 //! ```
@@ -173,21 +173,21 @@
 //! [`cmd`](https://hackage.haskell.org/package/shake-0.19.4/docs/Development-Shake.html#v:cmd)
 //! function.
 
-mod cmd_input;
-mod cmd_output;
 mod collected_output;
 mod config;
 mod context;
 mod error;
+mod input;
+mod output;
 
 use crate::collected_output::Waiter;
-pub use crate::{
-    cmd_input::{CmdInput, CurrentDir, LogCommand, Split, Stdin},
-    cmd_output::{CmdOutput, Exit, Stderr, StdoutTrimmed, StdoutUntrimmed},
-    error::{panic_on_error, Error},
-};
 #[doc(hidden)]
 pub use crate::{config::Config, context::Context};
+pub use crate::{
+    error::{panic_on_error, Error},
+    input::{CurrentDir, Input, LogCommand, Split, Stdin},
+    output::{Exit, Output, Stderr, StdoutTrimmed, StdoutUntrimmed},
+};
 use std::{
     ffi::OsString,
     io::Write,
@@ -212,7 +212,7 @@ macro_rules! cmd_unit {
 }
 
 /// Like [`cmd!`], but fixes the return type to [`Result<T, Error>`],
-/// where `T` is any type that implements [`CmdOutput`].
+/// where `T` is any type that implements [`Output`].
 #[macro_export]
 macro_rules! cmd_result {
     ($($args:tt)*) => {{
@@ -226,27 +226,27 @@ macro_rules! cmd_result {
 macro_rules! cmd_result_with_context {
     ($context:expr, $($args:tt)*) => {{
         let mut config = $crate::Config::default();
-        $crate::prepare_config!(config: config, args: $($args)*);
+        $crate::configure!(config: config, args: $($args)*);
         $crate::run_cmd($context, config)
     }}
 }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! prepare_config {
+macro_rules! configure {
     (config: $config:ident, args: % $head:expr $(,)?) => {
-        $crate::CmdInput::prepare_config($crate::Split($head), &mut $config);
+        $crate::Input::configure($crate::Split($head), &mut $config);
     };
     (config: $config:ident, args: $head:expr $(,)?) => {
-        $crate::CmdInput::prepare_config($head, &mut $config);
+        $crate::Input::configure($head, &mut $config);
     };
     (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
-        $crate::CmdInput::prepare_config($crate::Split($head), &mut $config);
-        $crate::prepare_config!(config: $config, args: $($tail)*);
+        $crate::Input::configure($crate::Split($head), &mut $config);
+        $crate::configure!(config: $config, args: $($tail)*);
     };
     (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
-        $crate::CmdInput::prepare_config($head, &mut $config);
-        $crate::prepare_config!(config: $config, args: $($tail)*);
+        $crate::Input::configure($head, &mut $config);
+        $crate::configure!(config: $config, args: $($tail)*);
     };
 }
 
@@ -258,9 +258,9 @@ pub fn run_cmd<Stdout, Stderr, T>(
 where
     Stdout: Write + Clone + Send + 'static,
     Stderr: Write + Clone + Send + 'static,
-    T: CmdOutput,
+    T: Output,
 {
-    <T as CmdOutput>::prepare_config(&mut config);
+    <T as Output>::configure(&mut config);
     let result = run_cmd_safe(context, &config);
     T::from_run_result(&config, result)
 }
