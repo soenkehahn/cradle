@@ -1,4 +1,4 @@
-![ci status badge](https://github.com/soenkehahn/cradle/actions/workflows/ci.yaml/badge.svg)
+[![ci status badge](https://github.com/soenkehahn/cradle/actions/workflows/ci.yaml/badge.svg)](https://github.com/soenkehahn/cradle/actions?query=branch%3Amaster)
 [![crates.io](https://img.shields.io/crates/v/cradle.svg)](https://crates.io/crates/cradle)
 
 `cradle` is a library for executing commands in child processes.
