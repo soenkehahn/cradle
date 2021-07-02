@@ -1,3 +1,5 @@
+![ci status badge](https://github.com/soenkehahn/cradle/actions/workflows/ci.yaml/badge.svg)
+
 `cradle` is a library for executing commands in child processes.
 Here's an example:
 
