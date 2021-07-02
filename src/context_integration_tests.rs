@@ -28,7 +28,7 @@ fn main() {
             assert_eq!(
                 with_gag(BufferRedirect::stderr, || cmd!(
                     executable_path("cradle_test_helper").to_str().unwrap(),
-                    vec!["write to stderr"]
+                    "write to stderr"
                 )),
                 "foo\n"
             );
