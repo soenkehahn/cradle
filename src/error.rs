@@ -89,7 +89,7 @@ mod tests {
     fn invalid_utf8_to_stdout_has_source() {
         let result: Result<StdoutUntrimmed, crate::Error> = cmd_result!(
             executable_path("cradle_test_helper").to_str().unwrap(),
-            vec!["invalid utf-8 stdout"]
+            "invalid utf-8 stdout"
         );
         assert!(result.unwrap_err().source().is_some());
     }
@@ -98,7 +98,7 @@ mod tests {
     fn invalid_utf8_to_stderr_has_source() {
         let result: Result<Stderr, crate::Error> = cmd_result!(
             executable_path("cradle_test_helper").to_str().unwrap(),
-            vec!["invalid utf-8 stderr"]
+            "invalid utf-8 stderr"
         );
         assert!(result.unwrap_err().source().is_some());
     }
