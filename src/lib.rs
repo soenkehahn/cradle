@@ -15,7 +15,7 @@
 //! # Arguments
 //!
 //! You can pass in multiple arguments (of different types) to [`cmd!`]
-//! to specify arguments, as long as they implement the [`CmdArgument`]
+//! to specify arguments, as long as they implement the [`Input`]
 //! trait:
 //!
 //! ```
@@ -25,7 +25,7 @@
 //! assert_eq!(stdout, "foo bar");
 //! ```
 //!
-//! For all possible inputs to [`cmd!`], see the documentation of [`CmdArgument`].
+//! For all possible inputs to [`cmd!`], see the documentation of [`Input`].
 //!
 //! ## Whitespace Splitting
 //!
@@ -67,7 +67,7 @@
 //! # Output
 //!
 //! You can choose which return type you want [`cmd!`] to return,
-//! as long as the chosen return type implements [`CmdOutput`].
+//! as long as the chosen return type implements [`Output`].
 //! For example you can use e.g. [`StdoutTrimmed`] to collect what the
 //! child process writes to `stdout`,
 //! trimmed of leading and trailing whitespace:
@@ -101,7 +101,7 @@
 //! cmd_unit!(%"touch foo");
 //! ```
 //!
-//! See the implementations for [`CmdOutput`] for all the supported types.
+//! See the implementations for [`Output`] for all the supported types.
 //!
 //! # Error Handling
 //!
@@ -133,7 +133,7 @@
 //! You can also turn **all** panics into [`std::result::Result::Err`]s
 //! by using [`cmd_result!`]. This will return a value of type
 //! [`Result<T, cradle::Error>`], where
-//! `T` is any type that implements [`CmdOutput`].
+//! `T` is any type that implements [`Output`].
 //! Here's some examples:
 //!
 //! ```
@@ -173,21 +173,21 @@
 //! [`cmd`](https://hackage.haskell.org/package/shake-0.19.4/docs/Development-Shake.html#v:cmd)
 //! function.
 
-mod cmd_argument;
-mod cmd_output;
 mod collected_output;
 mod config;
 mod context;
 mod error;
+mod input;
+mod output;
 
 use crate::collected_output::Waiter;
-pub use crate::{
-    cmd_argument::{CmdArgument, CurrentDir, LogCommand, Split, Stdin},
-    cmd_output::{CmdOutput, Exit, Stderr, StdoutTrimmed, StdoutUntrimmed},
-    error::{panic_on_error, Error},
-};
 #[doc(hidden)]
 pub use crate::{config::Config, context::Context};
+pub use crate::{
+    error::{panic_on_error, Error},
+    input::{CurrentDir, Input, LogCommand, Split, Stdin},
+    output::{Exit, Output, Stderr, StdoutTrimmed, StdoutUntrimmed},
+};
 use std::{
     ffi::OsString,
     io::Write,
@@ -212,7 +212,7 @@ macro_rules! cmd_unit {
 }
 
 /// Like [`cmd!`], but fixes the return type to [`Result<T, Error>`],
-/// where `T` is any type that implements [`CmdOutput`].
+/// where `T` is any type that implements [`Output`].
 #[macro_export]
 macro_rules! cmd_result {
     ($($args:tt)*) => {{
@@ -226,27 +226,27 @@ macro_rules! cmd_result {
 macro_rules! cmd_result_with_context {
     ($context:expr, $($args:tt)*) => {{
         let mut config = $crate::Config::default();
-        $crate::prepare_config!(config: config, args: $($args)*);
+        $crate::configure!(config: config, args: $($args)*);
         $crate::run_cmd($context, config)
     }}
 }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! prepare_config {
+macro_rules! configure {
     (config: $config:ident, args: % $head:expr $(,)?) => {
-        $crate::CmdArgument::prepare_config($crate::Split($head), &mut $config);
+        $crate::Input::configure($crate::Split($head), &mut $config);
     };
     (config: $config:ident, args: $head:expr $(,)?) => {
-        $crate::CmdArgument::prepare_config($head, &mut $config);
+        $crate::Input::configure($head, &mut $config);
     };
     (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
-        $crate::CmdArgument::prepare_config($crate::Split($head), &mut $config);
-        $crate::prepare_config!(config: $config, args: $($tail)*);
+        $crate::Input::configure($crate::Split($head), &mut $config);
+        $crate::configure!(config: $config, args: $($tail)*);
     };
     (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
-        $crate::CmdArgument::prepare_config($head, &mut $config);
-        $crate::prepare_config!(config: $config, args: $($tail)*);
+        $crate::Input::configure($head, &mut $config);
+        $crate::configure!(config: $config, args: $($tail)*);
     };
 }
 
@@ -258,9 +258,9 @@ pub fn run_cmd<Stdout, Stderr, T>(
 where
     Stdout: Write + Clone + Send + 'static,
     Stderr: Write + Clone + Send + 'static,
-    T: CmdOutput,
+    T: Output,
 {
-    <T as CmdOutput>::prepare_config(&mut config);
+    <T as Output>::configure(&mut config);
     let result = run_cmd_safe(context, &config);
     T::from_run_result(&config, result)
 }
@@ -414,7 +414,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "exited with exit code: 42")]
             fn other_exit_codes() {
-                cmd_unit!(executable_path("cradle_test_helper"), vec!["exit code 42"]);
+                cmd_unit!(executable_path("cradle_test_helper"), "exit code 42");
             }
 
             #[test]
@@ -463,7 +463,7 @@ mod tests {
             fn invalid_utf8_stdout() {
                 let StdoutTrimmed(_) = cmd!(
                     executable_path("cradle_test_helper"),
-                    vec!["invalid utf-8 stdout"]
+                    "invalid utf-8 stdout"
                 );
             }
 
@@ -471,7 +471,7 @@ mod tests {
             fn invalid_utf8_to_stdout_is_allowed_when_not_captured() {
                 cmd_unit!(
                     executable_path("cradle_test_helper"),
-                    vec!["invalid utf-8 stdout"]
+                    "invalid utf-8 stdout"
                 );
             }
         }
@@ -535,7 +535,7 @@ mod tests {
             #[test]
             fn other_exit_codes() {
                 let result: Result<(), Error> =
-                    cmd_result!(executable_path("cradle_test_helper"), vec!["exit code 42"]);
+                    cmd_result!(executable_path("cradle_test_helper"), "exit code 42");
                 assert!(result
                     .unwrap_err()
                     .to_string()
@@ -566,7 +566,7 @@ mod tests {
             fn invalid_utf8_stdout() {
                 let test_helper = executable_path("cradle_test_helper");
                 let result: Result<StdoutTrimmed, Error> =
-                    cmd_result!(&test_helper, vec!["invalid utf-8 stdout"]);
+                    cmd_result!(&test_helper, "invalid utf-8 stdout");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     format!(
@@ -602,13 +602,6 @@ mod tests {
         let executable: &String = &"echo".to_string();
         let argument: &String = &"foo".to_string();
         let StdoutTrimmed(stdout) = cmd!(reference, executable, argument);
-        assert_eq!(stdout, "foo");
-    }
-
-    #[test]
-    fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
-        let args: Vec<&str> = vec!["foo"];
-        let StdoutTrimmed(stdout) = cmd!("echo", args);
         assert_eq!(stdout, "foo");
     }
 
@@ -777,7 +770,7 @@ mod tests {
             let _: Result<(), Error> = cmd_result_with_context!(
                 context.clone(),
                 executable_path("cradle_test_helper"),
-                vec!["output foo and exit with 42"]
+                "output foo and exit with 42"
             );
             assert_eq!(context.stdout(), "foo\n");
         }
@@ -791,7 +784,7 @@ mod tests {
                     cmd_result_with_context_unit!(
                         context_clone,
                         executable_path("cradle_test_helper"),
-                        vec!["stream chunk then wait for file"]
+                        "stream chunk then wait for file"
                     )
                     .unwrap();
                 });
@@ -830,7 +823,7 @@ mod tests {
             cmd_result_with_context_unit!(
                 context.clone(),
                 executable_path("cradle_test_helper"),
-                vec!["write to stderr"]
+                "write to stderr"
             )
             .unwrap();
             assert_eq!(context.stderr(), "foo\n");
@@ -842,7 +835,7 @@ mod tests {
             let _: Result<(), Error> = cmd_result_with_context!(
                 context.clone(),
                 executable_path("cradle_test_helper"),
-                vec!["write to stderr and exit with 42"]
+                "write to stderr and exit with 42"
             );
             assert_eq!(context.stderr(), "foo\n");
         }
@@ -856,7 +849,7 @@ mod tests {
                     cmd_result_with_context_unit!(
                         context_clone,
                         executable_path("cradle_test_helper"),
-                        vec!["stream chunk to stderr then wait for file"]
+                        "stream chunk to stderr then wait for file"
                     )
                     .unwrap();
                 });
@@ -881,18 +874,14 @@ mod tests {
 
         #[test]
         fn capture_stderr() {
-            let Stderr(stderr) = cmd!(
-                executable_path("cradle_test_helper"),
-                vec!["write to stderr"]
-            );
+            let Stderr(stderr) = cmd!(executable_path("cradle_test_helper"), "write to stderr");
             assert_eq!(stderr, "foo\n");
         }
 
         #[test]
         fn assumes_stderr_is_utf_8() {
             let test_helper = executable_path("cradle_test_helper");
-            let result: Result<Stderr, Error> =
-                cmd_result!(&test_helper, vec!["invalid utf-8 stderr"]);
+            let result: Result<Stderr, Error> = cmd_result!(&test_helper, "invalid utf-8 stderr");
             assert_eq!(
                 result.unwrap_err().to_string(),
                 format!(
@@ -906,7 +895,7 @@ mod tests {
         fn does_allow_invalid_utf_8_to_stderr_when_not_capturing() {
             cmd_unit!(
                 executable_path("cradle_test_helper"),
-                vec!["invalid utf-8 stderr"]
+                "invalid utf-8 stderr"
             );
         }
 
@@ -916,7 +905,7 @@ mod tests {
             let Stderr(_) = cmd_result_with_context!(
                 context.clone(),
                 executable_path("cradle_test_helper"),
-                vec!["write to stderr"]
+                "write to stderr"
             )
             .unwrap();
             assert_eq!(context.stderr(), "");
@@ -943,8 +932,7 @@ mod tests {
         #[test]
         fn quotes_arguments_with_spaces() {
             let context = Context::test();
-            cmd_result_with_context_unit!(context.clone(), LogCommand, "echo", vec!["foo bar"])
-                .unwrap();
+            cmd_result_with_context_unit!(context.clone(), LogCommand, "echo", "foo bar").unwrap();
             assert_eq!(context.stderr(), "+ echo 'foo bar'\n");
         }
 
@@ -984,8 +972,7 @@ mod tests {
 
         #[test]
         fn forty_two() {
-            let Exit(exit_status) =
-                cmd!(executable_path("cradle_test_helper"), vec!["exit code 42"]);
+            let Exit(exit_status) = cmd!(executable_path("cradle_test_helper"), "exit code 42");
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
         }
@@ -1004,7 +991,7 @@ mod tests {
         fn two_tuple_1() {
             let (StdoutTrimmed(output), Exit(status)) = cmd!(
                 executable_path("cradle_test_helper"),
-                vec!["output foo and exit with 42"]
+                "output foo and exit with 42"
             );
             assert_eq!(output, "foo");
             assert_eq!(status.code(), Some(42));
@@ -1014,7 +1001,7 @@ mod tests {
         fn two_tuple_2() {
             let (Exit(status), StdoutTrimmed(output)) = cmd!(
                 executable_path("cradle_test_helper"),
-                vec!["output foo and exit with 42"]
+                "output foo and exit with 42"
             );
             assert_eq!(output, "foo");
             assert_eq!(status.code(), Some(42));
@@ -1046,7 +1033,7 @@ mod tests {
         fn capturing_stdout_on_errors() {
             let (StdoutTrimmed(output), Exit(status)) = cmd!(
                 executable_path("cradle_test_helper"),
-                vec!["output foo and exit with 42"]
+                "output foo and exit with 42"
             );
             assert!(!status.success());
             assert_eq!(output, "foo");
@@ -1056,7 +1043,7 @@ mod tests {
         fn capturing_stderr_on_errors() {
             let (Stderr(output), Exit(status)) = cmd!(
                 executable_path("cradle_test_helper"),
-                vec!["write to stderr and exit with 42"]
+                "write to stderr and exit with 42"
             );
             assert!(!status.success());
             assert_eq!(output, "foo\n");
@@ -1106,19 +1093,19 @@ mod tests {
 
             #[test]
             fn trims_leading_whitespace() {
-                let StdoutTrimmed(output) = cmd!(%"echo -n", vec![" foo"]);
+                let StdoutTrimmed(output) = cmd!(%"echo -n", " foo");
                 assert_eq!(output, "foo");
             }
 
             #[test]
             fn does_not_remove_whitespace_within_output() {
-                let StdoutTrimmed(output) = cmd!(%"echo -n", vec!["foo bar"]);
+                let StdoutTrimmed(output) = cmd!(%"echo -n", "foo bar");
                 assert_eq!(output, "foo bar");
             }
 
             #[test]
             fn does_not_modify_output_without_whitespace() {
-                let StdoutTrimmed(output) = cmd!(%"echo -n foo");
+                let StdoutTrimmed(output) = cmd!(%"echo -n", "foo");
                 assert_eq!(output, "foo");
             }
 
@@ -1142,7 +1129,7 @@ mod tests {
 
             #[test]
             fn does_not_trim_leading_whitespace() {
-                let StdoutUntrimmed(output) = cmd!(%"echo -n", vec![" foo"]);
+                let StdoutUntrimmed(output) = cmd!(%"echo -n", " foo");
                 assert_eq!(output, " foo");
             }
 

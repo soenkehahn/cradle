@@ -67,7 +67,7 @@ jobs:
             ~/.cargo/git
             ~/.cargo/bin
             target
-          key: cargo-${{ env.CACHE_KEY }}-${{ runner.os }}-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-${{ env.CACHE_KEY }}-${{ runner.os }}-${{ matrix.rust }}-${{ hashFiles('Cargo.toml') }}
 
       - name: Install just
         run: |
