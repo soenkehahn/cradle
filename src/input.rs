@@ -313,9 +313,6 @@ pub struct Stdin<T: AsRef<[u8]>>(pub T);
 
 /// Writes the given byte slice to the child's standard input.
 ///
-/// If `Stdin` is used multiple times, all given bytes slices will be written
-/// to the child's standard input in order.
-///
 /// ```
 /// use cradle::*;
 ///
@@ -325,6 +322,9 @@ pub struct Stdin<T: AsRef<[u8]>>(pub T);
 /// assert_eq!(output, "bar\nfoo\n");
 /// # }
 /// ```
+///
+/// If `Stdin` is used multiple times, all given bytes slices will be written
+/// to the child's standard input in order.
 impl<T> Input for Stdin<T>
 where
     T: AsRef<[u8]>,
