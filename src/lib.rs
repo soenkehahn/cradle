@@ -1311,6 +1311,16 @@ mod tests {
         }
 
         #[test]
+        fn allows_passing_in_u8_slices_as_stdin() {
+            let StdoutUntrimmed(output) = cmd!(
+                executable_path("cradle_test_helper"),
+                "reverse",
+                Stdin(&[0, 1, 2])
+            );
+            assert_eq!(output, "\x02\x01\x00");
+        }
+
+        #[test]
         #[cfg(unix)]
         fn stdin_is_closed_by_default() {
             let StdoutTrimmed(output) = cmd!(

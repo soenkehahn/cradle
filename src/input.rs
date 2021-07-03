@@ -309,11 +309,9 @@ impl Input for &Path {
 }
 
 /// See the [`Input`] implementation for [`Stdin`] below.
-pub struct Stdin<T: Into<String>>(pub T);
+pub struct Stdin<T: AsRef<[u8]>>(pub T);
 
-/// Writes the given [`&str`] to the child's standard input.
-/// If `Stdin` is used multiple times,
-/// all given strings will be written to the child's standard input in order.
+/// Writes the given byte slice to the child's standard input.
 ///
 /// ```
 /// use cradle::*;
@@ -324,12 +322,15 @@ pub struct Stdin<T: Into<String>>(pub T);
 /// assert_eq!(output, "bar\nfoo\n");
 /// # }
 /// ```
+///
+/// If `Stdin` is used multiple times, all given bytes slices will be written
+/// to the child's standard input in order.
 impl<T> Input for Stdin<T>
 where
-    T: Into<String>,
+    T: AsRef<[u8]>,
 {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
-        Arc::make_mut(&mut config.stdin).push(self.0.into());
+        Arc::make_mut(&mut config.stdin).extend_from_slice(self.0.as_ref());
     }
 }

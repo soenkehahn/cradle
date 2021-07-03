@@ -25,9 +25,7 @@ impl Waiter {
     {
         let config_stdin = config.stdin.clone();
         let stdin_join_handle = thread::spawn(move || -> io::Result<()> {
-            for stdin_snippet in config_stdin.iter() {
-                write!(child_stdin, "{}", stdin_snippet)?;
-            }
+            child_stdin.write_all(&config_stdin)?;
             Ok(())
         });
         let mut context_clone = context.clone();

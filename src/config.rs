@@ -6,7 +6,7 @@ pub struct Config {
     pub(crate) arguments: Vec<OsString>,
     pub(crate) log_command: bool,
     pub(crate) working_directory: Option<PathBuf>,
-    pub(crate) stdin: Arc<Vec<String>>,
+    pub(crate) stdin: Arc<Vec<u8>>,
     pub(crate) relay_stdout: bool,
     pub(crate) relay_stderr: bool,
     pub(crate) error_on_non_zero_exit_code: bool,

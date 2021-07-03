@@ -13,8 +13,8 @@ test-lib-fast +pattern="":
 context-integration-tests: build
   cargo run --features "test_executables" --bin context_integration_tests
 
-doc:
-  cargo doc --all
+doc +args="":
+  cargo doc --all {{args}}
 
 clippy:
   cargo clippy --all-targets --all-features
