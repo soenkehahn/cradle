@@ -277,6 +277,32 @@ where
     }
 }
 
+impl Input for () {
+    fn configure(self, _: &mut Config) {}
+}
+
+macro_rules! tuple_impl {
+    ($($index:tt, $generics:ident,)+) => {
+        /// todo: put docs somewhere
+        impl<$($generics),+> Input for ($($generics,)+)
+        where
+            $($generics: Input,)+
+        {
+            #[doc(hidden)]
+            fn configure(self, config: &mut Config) {
+                $(<$generics as Input>::configure(self.$index, config);)+
+            }
+        }
+    };
+}
+
+tuple_impl!(0, A, 1, B,);
+tuple_impl!(0, A, 1, B, 2, C,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G,);
+
 /// See the [`Input`] implementation for [`LogCommand`] below.
 #[derive(Clone, Debug)]
 pub struct LogCommand;
