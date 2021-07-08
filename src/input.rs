@@ -24,13 +24,25 @@ use std::{
 /// see to the documentation for the individual impls for [`Input`].
 /// Here's a non-exhaustive list of the most commonly used types to get you started:
 ///
-/// - [`String`],
-/// - [`&str`],
-/// - [`Split`] (and its shortcut `%`)
+/// - [`String`] and [`&str`],
+/// - [`Split`] (and its shortcut `%`),
+/// - [`PathBuf`] and [`&Path`],
+/// - multiple sequence types, like [`vectors`], [`slices`] and (since version 1.51) [`arrays`],
+/// - [`CurrentDir`],
+/// - [`StdIn`], and
+/// - [`LogCommand`].
 ///
 /// [`String`]: trait.Input.html#impl-Input-for-String
 /// [`&str`]: trait.Input.html#impl-Input-for-%26str
-/// [`Split`]: trait.Input.html#impl-Input-for-Split<%27a%2C%20char>
+/// [`Split`]: trait.Input.html#impl-Input-3
+/// [`PathBuf`]: trait.Input.html#impl-Input-for-PathBuf
+/// [`&Path`]: trait.Input.html#impl-Input-for-%26Path
+/// [`vectors`]: trait.Input.html#impl-Input-for-Vec<T>
+/// [`slices`]: trait.Input.html#impl-Input-for-%26[T]
+/// [`arrays`]: trait.Input.html#impl-Input-for-[T%3B%20N]
+/// [`CurrentDir`]: trait.Input.html#impl-Input-1
+/// [`StdIn`]: trait.Input.html#impl-Input-2
+/// [`LogCommand`]: trait.Input.html#impl-Input
 pub trait Input {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
