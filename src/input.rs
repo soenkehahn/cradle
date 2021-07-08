@@ -5,7 +5,32 @@ use std::{
     sync::Arc,
 };
 
-/// All types that are possible arguments to [`cmd!`] have to implement this trait.
+/// All types that are possible arguments to [`cmd!`], [`cmd_unit!`] or
+/// [`cmd_result!`] have to implement this trait.
+/// This makes `cradle` very flexible.
+/// For example passing in an executable can be done as a String,
+/// and passing in a couple of arguments can be done in a [`Vec`]:
+///
+/// ```
+/// use cradle::*;
+///
+/// let executable = "echo";
+/// let arguments = vec!["foo", "bar"];
+/// let StdoutUntrimmed(output) = cmd!(executable, arguments);
+/// assert_eq!(output, "foo bar\n");
+/// ```
+///
+/// For more documentation on all possible input types,
+/// see to the documentation for the individual impls for [`Input`].
+/// Here's a non-exhaustive list of the most commonly used types to get you started:
+///
+/// - [`String`],
+/// - [`&str`],
+/// - [`Split`] (and its shortcut `%`)
+///
+/// [`String`]: trait.Input.html#impl-Input-for-String
+/// [`&str`]: trait.Input.html#impl-Input-for-%26str
+/// [`Split`]: trait.Input.html#impl-Input-for-Split<%27a%2C%20char>
 pub trait Input {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
@@ -54,8 +79,15 @@ impl Input for &OsStr {
     }
 }
 
-/// Arguments of type [`&str`] are passed to the child process
-/// as arguments.
+/// Arguments of type [`&str`] are passed to the child process as arguments.
+/// This is especially useful because it allows you to use string literals:
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutTrimmed(output) = cmd!("echo", "foo");
+/// assert_eq!(output, "foo");
+/// ```
 impl Input for &str {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
@@ -64,7 +96,16 @@ impl Input for &str {
 }
 
 /// Arguments of type [`String`] are passed to the child process
-/// as arguments.
+/// as arguments. Executables can also be passed as [`String`]s:
+///
+/// ```
+/// use cradle::*;
+///
+/// let executable: String = "echo".to_string();
+/// let argument: String = "foo".to_string();
+/// let StdoutTrimmed(output) = cmd!(executable, argument);
+/// assert_eq!(output, "foo");
+/// ```
 impl Input for String {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
