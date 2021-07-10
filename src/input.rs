@@ -21,7 +21,7 @@ use std::{
 /// ```
 ///
 /// For more documentation on all possible input types,
-/// see to the documentation for the individual impls for [`Input`].
+/// see the documentation for the individual impls of [`Input`].
 /// Here's a non-exhaustive list of the most commonly used types to get you started:
 ///
 /// - [`String`] and [`&str`],
