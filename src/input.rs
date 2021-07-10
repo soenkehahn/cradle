@@ -8,8 +8,8 @@ use std::{
 /// All types that are possible arguments to [`cmd!`], [`cmd_unit!`] or
 /// [`cmd_result!`] must implement this trait.
 /// This makes `cradle` very flexible.
-/// For example passing in an executable can be done as a String,
-/// and passing in a variable number of arguments can be done in a [`Vec`]:
+/// For example you can pass in an executable as a String,
+/// and a variable number of arguments as a [`Vec`]:
 ///
 /// ```
 /// use cradle::*;
