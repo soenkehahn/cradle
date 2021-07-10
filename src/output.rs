@@ -24,7 +24,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// assert_eq!(status.code(), Some(1));
 /// ```
 ///
-/// For documentation on what all these possible return types do,
+/// For documentation on what all the possible return types do,
 /// see the documentation for the individual impls of [`Output`].
 /// Here's a non-exhaustive list of the more commonly used return-types to get you started:
 ///
@@ -32,7 +32,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// - [`StdoutUntrimmed`], [`StdoutTrimmed`] and [`Stderr`]: To capture `stdout` and `stderr`.
 /// - [`Exit`]: To capture the commands exit code.
 ///
-/// Alse, [`Output`] is implemented for a number of tuples.
+/// Alse, [`Output`] is implemented for a number of tuples of different length.
 /// You can use this to combine other return-types that implement [`Output`].
 /// The following code for example retrieves the [`ExitStatus`]
 /// **and** what's written to `stdout`:
