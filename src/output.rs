@@ -14,7 +14,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// assert_eq!(output, "foo\n");
 /// ```
 ///
-/// But if instead you want to capture the commands exit code,
+/// But if instead you want to capture the commands [`ExitStatus`],
 /// you can use [`Exit`]:
 ///
 /// ```
@@ -26,14 +26,14 @@ use std::{process::ExitStatus, sync::Arc};
 ///
 /// For documentation on what all the possible return types do,
 /// see the documentation for the individual impls of [`Output`].
-/// Here's a non-exhaustive list of the more commonly used return-types to get you started:
+/// Here's a non-exhaustive list of the more commonly used return types to get you started:
 ///
 /// - `()`: In case you don't want to capture anything. See also [`cmd_unit`].
 /// - [`StdoutUntrimmed`], [`StdoutTrimmed`] and [`Stderr`]: To capture `stdout` and `stderr`.
-/// - [`Exit`]: To capture the commands exit code.
+/// - [`Exit`]: To capture the commands [`ExitStatus`].
 ///
-/// Alse, [`Output`] is implemented for a number of tuples of different length.
-/// You can use this to combine other return-types that implement [`Output`].
+/// Alse, [`Output`] is implemented for a number of tuples of different lengths.
+/// You can use this to combine other return types that implement [`Output`].
 /// The following code for example retrieves the [`ExitStatus`]
 /// **and** what's written to `stdout`:
 ///
