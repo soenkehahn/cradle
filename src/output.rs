@@ -160,6 +160,9 @@ macro_rules! tuple_impl {
 tuple_impl!(A,);
 tuple_impl!(A, B,);
 tuple_impl!(A, B, C,);
+tuple_impl!(A, B, C, D,);
+tuple_impl!(A, B, C, D, E,);
+tuple_impl!(A, B, C, D, E, F,);
 
 /// See the [`Output`] implementation for [`Exit`] below.
 pub struct Exit(pub ExitStatus);
