@@ -5,7 +5,44 @@ use std::{
     sync::Arc,
 };
 
-/// All types that are possible arguments to [`cmd!`] have to implement this trait.
+/// All types that are possible arguments to [`cmd!`], [`cmd_unit!`] or
+/// [`cmd_result!`] must implement this trait.
+/// This makes `cradle` very flexible.
+/// For example you can pass in an executable as a String,
+/// and a variable number of arguments as a [`Vec`]:
+///
+/// ```
+/// use cradle::*;
+///
+/// let executable = "echo";
+/// let arguments = vec!["foo", "bar"];
+/// let StdoutUntrimmed(output) = cmd!(executable, arguments);
+/// assert_eq!(output, "foo bar\n");
+/// ```
+///
+/// For more documentation on all possible input types,
+/// see the documentation for the individual impls of [`Input`].
+/// Here's a non-exhaustive list of the most commonly used types to get you started:
+///
+/// - [`String`] and [`&str`],
+/// - [`Split`] (and its shortcut `%`),
+/// - [`PathBuf`] and [`&Path`],
+/// - multiple sequence types, like [`vectors`], [`slices`] and (since version 1.51) [`arrays`],
+/// - [`CurrentDir`],
+/// - [`StdIn`], and
+/// - [`LogCommand`].
+///
+/// [`String`]: trait.Input.html#impl-Input-for-String
+/// [`&str`]: trait.Input.html#impl-Input-for-%26str
+/// [`Split`]: trait.Input.html#impl-Input-3
+/// [`PathBuf`]: trait.Input.html#impl-Input-for-PathBuf
+/// [`&Path`]: trait.Input.html#impl-Input-for-%26Path
+/// [`vectors`]: trait.Input.html#impl-Input-for-Vec<T>
+/// [`slices`]: trait.Input.html#impl-Input-for-%26[T]
+/// [`arrays`]: trait.Input.html#impl-Input-for-[T%3B%20N]
+/// [`CurrentDir`]: trait.Input.html#impl-Input-1
+/// [`StdIn`]: trait.Input.html#impl-Input-2
+/// [`LogCommand`]: trait.Input.html#impl-Input
 pub trait Input {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
@@ -54,8 +91,15 @@ impl Input for &OsStr {
     }
 }
 
-/// Arguments of type [`&str`] are passed to the child process
-/// as arguments.
+/// Arguments of type [`&str`] are passed to the child process as arguments.
+/// This is especially useful because it allows you to use string literals:
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutTrimmed(output) = cmd!("echo", "foo");
+/// assert_eq!(output, "foo");
+/// ```
 impl Input for &str {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
@@ -64,7 +108,16 @@ impl Input for &str {
 }
 
 /// Arguments of type [`String`] are passed to the child process
-/// as arguments.
+/// as arguments. Executables can also be passed as [`String`]s:
+///
+/// ```
+/// use cradle::*;
+///
+/// let executable: String = "echo".to_string();
+/// let argument: String = "foo".to_string();
+/// let StdoutTrimmed(output) = cmd!(executable, argument);
+/// assert_eq!(output, "foo");
+/// ```
 impl Input for String {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
