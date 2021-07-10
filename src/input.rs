@@ -43,6 +43,51 @@ use std::{
 /// [`CurrentDir`]: trait.Input.html#impl-Input-1
 /// [`StdIn`]: trait.Input.html#impl-Input-2
 /// [`LogCommand`]: trait.Input.html#impl-Input
+///
+/// ## Tuples
+///
+/// `cradle` also provides implementations for [`Input`] for tuples of different lengths.
+/// So instead of passing in different arguments into [`cmd!`] seperately,
+/// you could put them into a tuple:
+///
+/// ```
+/// use cradle::*;
+///
+/// let args = ("echo", "foo");
+/// let StdoutTrimmed(output) = cmd!(args);
+/// assert_eq!(output, "foo");
+/// ```
+///
+/// This is useful to allow to bundle up arguments for convenience:
+///
+/// ```
+/// use cradle::*;
+///
+/// let to_hex_command = ("xxd", "-ps", "-u", LogCommand);
+/// let StdoutTrimmed(output) = cmd!(to_hex_command, Stdin(&[14, 15, 16]));
+/// assert_eq!(output, "0E0F10");
+/// ```
+///
+/// Also, tuples allow to write flexible wrappers around [`cmd!`] without using macros:
+///
+/// ```
+/// use cradle::*;
+///
+/// fn to_hex<I: Input>(input: I) -> String {
+///   let StdoutTrimmed(hex) = cmd!(%"xxd -ps -u", input);
+///   hex
+/// }
+///
+/// // Works for slices:
+/// let hex = to_hex(Stdin(&[14, 15, 16]));
+/// assert_eq!(hex, "0E0F10");
+/// // Also works for vectors:
+/// let hex = to_hex(Stdin(vec![14, 15, 16]));
+/// assert_eq!(hex, "0E0F10");
+/// // Also works for multiple arguments using tuples:
+/// let hex = to_hex((Stdin(&[14, 15, 16]), Stdin(&[17, 18, 19])));
+/// assert_eq!(hex, "0E0F10111213");
+/// ```
 pub trait Input {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
@@ -278,12 +323,12 @@ where
 }
 
 impl Input for () {
+    #[doc(hidden)]
     fn configure(self, _: &mut Config) {}
 }
 
 macro_rules! tuple_impl {
     ($($index:tt, $generics:ident,)+) => {
-        /// todo: put docs somewhere
         impl<$($generics),+> Input for ($($generics,)+)
         where
             $($generics: Input,)+
@@ -296,6 +341,7 @@ macro_rules! tuple_impl {
     };
 }
 
+tuple_impl!(0, A,);
 tuple_impl!(0, A, 1, B,);
 tuple_impl!(0, A, 1, B, 2, C,);
 tuple_impl!(0, A, 1, B, 2, C, 3, D,);
