@@ -9,7 +9,7 @@ use std::{
 /// [`cmd_result!`] have to implement this trait.
 /// This makes `cradle` very flexible.
 /// For example passing in an executable can be done as a String,
-/// and passing in a couple of arguments can be done in a [`Vec`]:
+/// and passing in a variable number of arguments can be done in a [`Vec`]:
 ///
 /// ```
 /// use cradle::*;
