@@ -6,7 +6,7 @@ use std::{
 };
 
 /// All types that are possible arguments to [`cmd!`], [`cmd_unit!`] or
-/// [`cmd_result!`] have to implement this trait.
+/// [`cmd_result!`] must implement this trait.
 /// This makes `cradle` very flexible.
 /// For example passing in an executable can be done as a String,
 /// and passing in a variable number of arguments can be done in a [`Vec`]:
