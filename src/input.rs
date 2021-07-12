@@ -46,7 +46,7 @@ use std::{
 ///
 /// ## Tuples
 ///
-/// `cradle` also provides implementations for [`Input`] for tuples of different lengths.
+/// `cradle` also implements [`Input`] for tuples of types that themselves implement [`Input`].
 /// So instead of passing in different arguments into [`cmd!`] seperately,
 /// you could put them into a tuple:
 ///
