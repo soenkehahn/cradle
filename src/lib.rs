@@ -984,6 +984,35 @@ mod tests {
         }
     }
 
+    mod tuple_inputs {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn two_tuple() {
+            let StdoutTrimmed(output) = cmd!(("echo", "foo"));
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn three_tuples() {
+            let StdoutTrimmed(output) = cmd!(("echo", "foo", "bar"));
+            assert_eq!(output, "foo bar");
+        }
+
+        #[test]
+        fn nested_tuples() {
+            let StdoutTrimmed(output) = cmd!(("echo", ("foo", "bar")));
+            assert_eq!(output, "foo bar");
+        }
+
+        #[test]
+        fn unit_input() {
+            let StdoutTrimmed(output) = cmd!(("echo", ()));
+            assert_eq!(output, "");
+        }
+    }
+
     mod tuple_outputs {
         use super::*;
 

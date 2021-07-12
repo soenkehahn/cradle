@@ -43,6 +43,52 @@ use std::{
 /// [`CurrentDir`]: trait.Input.html#impl-Input-1
 /// [`StdIn`]: trait.Input.html#impl-Input-2
 /// [`LogCommand`]: trait.Input.html#impl-Input
+///
+/// ## Tuples
+///
+/// `cradle` also implements [`Input`] for tuples of types that themselves implement [`Input`].
+/// Instead of passing multiple arguments to [`cmd!`], they can be passed in a single tuple:
+///
+/// ```
+/// use cradle::*;
+///
+/// let args = ("echo", "foo");
+/// let StdoutTrimmed(output) = cmd!(args);
+/// assert_eq!(output, "foo");
+/// ```
+///
+/// This can be used to group arguments:
+///
+/// ```
+/// use cradle::*;
+///
+/// let to_hex_command = ("xxd", "-ps", "-u", LogCommand);
+/// let StdoutTrimmed(output) = cmd!(to_hex_command, Stdin(&[14, 15, 16]));
+/// assert_eq!(output, "0E0F10");
+/// ```
+///
+/// Also, tuples make it possible to write wrappers around [`cmd!`] without requiring the use of macros:
+///
+/// ```
+/// use cradle::*;
+///
+/// fn to_hex<I: Input>(input: I) -> String {
+///   let StdoutTrimmed(hex) = cmd!(%"xxd -ps -u", input);
+///   hex
+/// }
+///
+/// // It works for slices:
+/// let hex = to_hex(Stdin(&[14, 15, 16]));
+/// assert_eq!(hex, "0E0F10");
+///
+/// // Vectors:
+/// let hex = to_hex(Stdin(vec![14, 15, 16]));
+/// assert_eq!(hex, "0E0F10");
+///
+/// // And multiple arguments using tuples:
+/// let hex = to_hex((Stdin(&[14, 15, 16]), Stdin(&[17, 18, 19])));
+/// assert_eq!(hex, "0E0F10111213");
+/// ```
 pub trait Input {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
@@ -276,6 +322,33 @@ where
         self.to_vec().configure(config);
     }
 }
+
+impl Input for () {
+    #[doc(hidden)]
+    fn configure(self, _: &mut Config) {}
+}
+
+macro_rules! tuple_impl {
+    ($($index:tt, $generics:ident,)+) => {
+        impl<$($generics),+> Input for ($($generics,)+)
+        where
+            $($generics: Input,)+
+        {
+            #[doc(hidden)]
+            fn configure(self, config: &mut Config) {
+                $(<$generics as Input>::configure(self.$index, config);)+
+            }
+        }
+    };
+}
+
+tuple_impl!(0, A,);
+tuple_impl!(0, A, 1, B,);
+tuple_impl!(0, A, 1, B, 2, C,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G,);
 
 /// See the [`Input`] implementation for [`LogCommand`] below.
 #[derive(Clone, Debug)]
