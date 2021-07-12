@@ -80,7 +80,8 @@ use std::{
 /// // Works for slices:
 /// let hex = to_hex(Stdin(&[14, 15, 16]));
 /// assert_eq!(hex, "0E0F10");
-/// // Also works for vectors:
+///
+/// // Vectors:
 /// let hex = to_hex(Stdin(vec![14, 15, 16]));
 /// assert_eq!(hex, "0E0F10");
 /// // Also works for multiple arguments using tuples:
