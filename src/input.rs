@@ -84,7 +84,8 @@ use std::{
 /// // Vectors:
 /// let hex = to_hex(Stdin(vec![14, 15, 16]));
 /// assert_eq!(hex, "0E0F10");
-/// // Also works for multiple arguments using tuples:
+///
+/// // And multiple arguments using tuples:
 /// let hex = to_hex((Stdin(&[14, 15, 16]), Stdin(&[17, 18, 19])));
 /// assert_eq!(hex, "0E0F10111213");
 /// ```
