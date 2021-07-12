@@ -77,7 +77,7 @@ use std::{
 ///   hex
 /// }
 ///
-/// // Works for slices:
+/// // It works for slices:
 /// let hex = to_hex(Stdin(&[14, 15, 16]));
 /// assert_eq!(hex, "0E0F10");
 ///
