@@ -144,13 +144,13 @@ macro_rules! tuple_impl {
         {
             #[doc(hidden)]
             fn configure(config: &mut Config) {
-                $($generics::configure(config);)+
+                $(<$generics as Output>::configure(config);)+
             }
 
             #[doc(hidden)]
             fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
                 Ok((
-                    $($generics::from_run_result(config, result.clone())?,)+
+                    $(<$generics as Output>::from_run_result(config, result.clone())?,)+
                 ))
             }
         }
