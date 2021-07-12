@@ -14,7 +14,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// assert_eq!(output, "foo\n");
 /// ```
 ///
-/// But if instead you want to capture the commands [`ExitStatus`],
+/// But if instead you want to capture the command's [`ExitStatus`],
 /// you can use [`Exit`]:
 ///
 /// ```
