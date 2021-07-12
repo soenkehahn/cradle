@@ -34,8 +34,8 @@ use std::{process::ExitStatus, sync::Arc};
 ///
 /// Also, [`Output`] is implemented for tuples.
 /// You can use this to combine multiple return types that implement [`Output`].
-/// The following code for example retrieves the [`ExitStatus`]
-/// **and** what's written to `stdout`:
+/// The following code for example retrieves the command's [`ExitStatus`]
+/// **and** what it writes to `stdout`:
 ///
 /// ```
 /// use cradle::*;
