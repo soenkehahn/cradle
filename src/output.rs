@@ -33,7 +33,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// - [`Exit`]: To capture the command's [`ExitStatus`].
 ///
 /// Also, [`Output`] is implemented for tuples.
-/// You can use this to combine other return types that implement [`Output`].
+/// You can use this to combine multiple return types that implement [`Output`].
 /// The following code for example retrieves the [`ExitStatus`]
 /// **and** what's written to `stdout`:
 ///
