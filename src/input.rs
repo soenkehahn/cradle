@@ -47,8 +47,7 @@ use std::{
 /// ## Tuples
 ///
 /// `cradle` also implements [`Input`] for tuples of types that themselves implement [`Input`].
-/// So instead of passing in different arguments into [`cmd!`] seperately,
-/// you could put them into a tuple:
+/// Instead of passing multiple arguments to [`cmd!`], they can be passed in a single tuple:
 ///
 /// ```
 /// use cradle::*;
