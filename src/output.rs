@@ -30,7 +30,7 @@ use std::{process::ExitStatus, sync::Arc};
 ///
 /// - `()`: In case you don't want to capture anything. See also [`cmd_unit`].
 /// - [`StdoutUntrimmed`], [`StdoutTrimmed`] and [`Stderr`]: To capture `stdout`, `stdout` trimmed of whitespace, and `stderr`.
-/// - [`Exit`]: To capture the commands [`ExitStatus`].
+/// - [`Exit`]: To capture the command's [`ExitStatus`].
 ///
 /// Alse, [`Output`] is implemented for a number of tuples of different lengths.
 /// You can use this to combine other return types that implement [`Output`].
