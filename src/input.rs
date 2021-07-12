@@ -1,4 +1,5 @@
 use crate::config::Config;
+use crate::prelude::*;
 use std::{
     ffi::{OsStr, OsString},
     path::{Path, PathBuf},
@@ -12,7 +13,7 @@ use std::{
 /// and a variable number of arguments as a [`Vec`]:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let executable = "echo";
 /// let arguments = vec!["foo", "bar"];
@@ -63,7 +64,7 @@ where
 /// as arguments.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// cmd_unit!("ls", std::env::var_os("HOME").unwrap());
 /// ```
@@ -78,7 +79,7 @@ impl Input for OsString {
 /// as arguments.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// cmd_unit!("echo", std::env::current_dir().unwrap().file_name().unwrap());
 /// ```
@@ -95,7 +96,7 @@ impl Input for &OsStr {
 /// This is especially useful because it allows you to use string literals:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!("echo", "foo");
 /// assert_eq!(output, "foo");
@@ -111,7 +112,7 @@ impl Input for &str {
 /// as arguments. Executables can also be passed as [`String`]s:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let executable: String = "echo".to_string();
 /// let argument: String = "foo".to_string();
@@ -132,7 +133,7 @@ pub struct Split<T: AsRef<str>>(pub T);
 /// and uses the resulting words as separate arguments.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!(Split("echo foo"));
 /// assert_eq!(output, "foo");
@@ -145,7 +146,7 @@ pub struct Split<T: AsRef<str>>(pub T);
 /// for [`Split`], the `%` symbol:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!(%"echo foo");
 /// assert_eq!(output, "foo");
@@ -164,7 +165,7 @@ impl<T: AsRef<str>> Input for Split<T> {
 /// Allows to use [`split`] to split your argument into words:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!("echo foo".split(' '));
 /// assert_eq!(output, "foo");
@@ -185,7 +186,7 @@ impl<'a> Input for std::str::Split<'a, char> {
 /// Allows to use [`split_whitespace`] to split your argument into words:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!("echo foo".split_whitespace());
 /// assert_eq!(output, "foo");
@@ -204,7 +205,7 @@ impl<'a> Input for std::str::SplitWhitespace<'a> {
 /// Allows to use [`split_ascii_whitespace`] to split your argument into words:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!("echo foo".split_ascii_whitespace());
 /// assert_eq!(output, "foo");
@@ -224,7 +225,7 @@ impl<'a> Input for std::str::SplitAsciiWhitespace<'a> {
 /// Same as passing in the elements separately.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!(vec!["echo", "foo"]);
 /// assert_eq!(output, "foo");
@@ -245,7 +246,7 @@ where
 /// All elements of the array will be used as arguments.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!(["echo", "foo"]);
 /// assert_eq!(output, "foo");
@@ -286,7 +287,7 @@ pub struct LogCommand;
 /// (This is similar `bash`'s `-x` option.)
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// cmd_unit!(LogCommand, %"echo foo");
 /// // writes '+ echo foo' to stderr
@@ -305,7 +306,7 @@ pub struct CurrentDir<T: AsRef<Path>>(pub T);
 /// parent. You can override this with [`CurrentDir`]:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// # #[cfg(linux)]
 /// # {
@@ -329,7 +330,7 @@ where
 /// as arguments.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 /// use std::path::PathBuf;
 ///
 /// let current_dir: PathBuf = std::env::current_dir().unwrap();
@@ -346,7 +347,7 @@ impl Input for PathBuf {
 /// as arguments.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 /// use std::path::Path;
 ///
 /// let file: &Path = Path::new("./foo");
@@ -367,7 +368,7 @@ pub struct Stdin<T: AsRef<[u8]>>(pub T);
 /// Writes the given byte slice to the child's standard input.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// # #[cfg(linux)]
 /// # {

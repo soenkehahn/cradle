@@ -1,7 +1,7 @@
 fn main() {
     #[cfg(unix)]
     {
-        use cradle::*;
+        use cradle::prelude::*;
         use executable_path::executable_path;
         use gag::BufferRedirect;
         use std::io::{self, Read};

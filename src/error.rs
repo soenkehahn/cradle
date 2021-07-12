@@ -81,7 +81,7 @@ impl std::error::Error for Error {
 
 #[cfg(test)]
 mod tests {
-    use crate::{cmd_result, Stderr, StdoutUntrimmed};
+    use crate::prelude::{cmd_result, Stderr, StdoutUntrimmed};
     use executable_path::executable_path;
     use std::error::Error;
 

@@ -6,7 +6,7 @@
 //! it easy to run child processes from rust programs.
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(stdout) = cmd!(%"echo foo");
 //! assert_eq!(stdout, "foo");
@@ -19,7 +19,7 @@
 //! trait:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(stdout) = cmd!("echo", "foo", "bar");
 //! assert_eq!(stdout, "foo bar");
@@ -33,7 +33,7 @@
 //! So for example this code fails:
 //!
 //! ``` should_panic
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(_) = cmd!("echo foo");
 //! ```
@@ -44,7 +44,7 @@
 //! `cradle` provides a new-type wrapper [`Split`] to help with that:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(output) = cmd!(Split("echo foo"));
 //! assert_eq!(output, "foo");
@@ -58,7 +58,7 @@
 //! for [`Split`], the `%` symbol:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(output) = cmd!(%"echo foo");
 //! assert_eq!(output, "foo");
@@ -73,7 +73,7 @@
 //! trimmed of leading and trailing whitespace:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(output) = cmd!(%"echo foo");
 //! assert_eq!(output, "foo");
@@ -86,7 +86,7 @@
 //! as the return value:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let () = cmd!(%"touch foo");
 //! ```
@@ -96,7 +96,7 @@
 //! type down to `()`:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! cmd_unit!(%"touch foo");
 //! ```
@@ -114,7 +114,7 @@
 //! For example:
 //!
 //! ``` should_panic
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! // panics with "false:\n  exited with exit code: 1"
 //! cmd_unit!("false");
@@ -124,7 +124,7 @@
 //! [`Exit`] type as a return type of [`cmd!`]:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let Exit(exit_status) = cmd!("false");
 //! assert_eq!(exit_status.code(), Some(1));
@@ -132,14 +132,14 @@
 //!
 //! You can also turn **all** panics into [`std::result::Result::Err`]s
 //! by using [`cmd_result!`]. This will return a value of type
-//! [`Result<T, cradle::Error>`], where
+//! [`Result<T, cradle::prelude::Error>`], where
 //! `T` is any type that implements [`Output`].
 //! Here's some examples:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
-//! let result: Result<(), cradle::Error> = cmd_result!("false");
+//! let result: Result<(), cradle::prelude::Error> = cmd_result!("false");
 //! let error_message = format!("{}", result.unwrap_err());
 //! assert_eq!(
 //!     error_message,
@@ -155,7 +155,7 @@
 //! idiomatic way, for example:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! fn build() -> Result<(), Error> {
 //!     cmd_result!(%"which make")?;
@@ -179,47 +179,20 @@ mod context;
 mod error;
 mod input;
 mod output;
+pub mod prelude;
 
 use crate::collected_output::Waiter;
+use crate::prelude::*;
+// pub use crate::error::panic_on_error;
+use crate::error::Error;
 #[doc(hidden)]
+use crate::output::Output;
 pub use crate::{config::Config, context::Context};
-pub use crate::{
-    error::{panic_on_error, Error},
-    input::{CurrentDir, Input, LogCommand, Split, Stdin},
-    output::{Exit, Output, Stderr, StdoutTrimmed, StdoutUntrimmed},
-};
 use std::{
     ffi::OsString,
     io::Write,
     process::{Command, ExitStatus, Stdio},
 };
-
-/// Execute child processes. See the module documentation on how to use it.
-#[macro_export]
-macro_rules! cmd {
-    ($($args:tt)*) => {{
-        let context = $crate::Context::production();
-        $crate::panic_on_error($crate::cmd_result_with_context!(context, $($args)*))
-    }}
-}
-
-/// Like [`cmd!`], but fixes the return type to `()`.
-#[macro_export]
-macro_rules! cmd_unit {
-    ($($args:tt)*) => {{
-        let () = $crate::cmd!($($args)*);
-    }}
-}
-
-/// Like [`cmd!`], but fixes the return type to [`Result<T, Error>`],
-/// where `T` is any type that implements [`Output`].
-#[macro_export]
-macro_rules! cmd_result {
-    ($($args:tt)*) => {{
-        let context = $crate::Context::production();
-        $crate::cmd_result_with_context!(context, $($args)*)
-    }}
-}
 
 #[doc(hidden)]
 #[macro_export]
@@ -235,17 +208,17 @@ macro_rules! cmd_result_with_context {
 #[macro_export]
 macro_rules! configure {
     (config: $config:ident, args: % $head:expr $(,)?) => {
-        $crate::Input::configure($crate::Split($head), &mut $config);
+        $crate::prelude::Input::configure($crate::prelude::Split($head), &mut $config);
     };
     (config: $config:ident, args: $head:expr $(,)?) => {
-        $crate::Input::configure($head, &mut $config);
+        $crate::prelude::Input::configure($head, &mut $config);
     };
     (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
-        $crate::Input::configure($crate::Split($head), &mut $config);
+        $crate::prelude::Input::configure($crate::prelude::Split($head), &mut $config);
         $crate::configure!(config: $config, args: $($tail)*);
     };
     (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
-        $crate::Input::configure($head, &mut $config);
+        $crate::prelude::Input::configure($head, &mut $config);
         $crate::configure!(config: $config, args: $($tail)*);
     };
 }
@@ -348,7 +321,8 @@ fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Err
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::prelude::*;
+    use crate::*;
     use executable_path::executable_path;
     use std::{
         env::{current_dir, set_current_dir},
@@ -374,7 +348,7 @@ mod tests {
     macro_rules! cmd_result_with_context_unit {
         ($context:expr, $($args:tt)*) => {{
             let result: std::result::Result<(), $crate::Error> =
-              $crate::cmd_result_with_context!($context, $($args)*);
+                $crate::cmd_result_with_context!($context, $($args)*);
             result
         }}
     }

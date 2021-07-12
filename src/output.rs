@@ -1,4 +1,5 @@
-use crate::{Config, Error, RunResult};
+use crate::prelude::*;
+use crate::{Config, RunResult};
 use std::{process::ExitStatus, sync::Arc};
 
 /// All possible return types of [`cmd!`], [`cmd_unit!`] or
@@ -8,7 +9,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// to `stdout` you can do that using [`StdoutUntrimmed`]:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutUntrimmed(output) = cmd!(%"echo foo");
 /// assert_eq!(output, "foo\n");
@@ -18,7 +19,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// you can use [`Exit`]:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let Exit(status) = cmd!("false");
 /// assert_eq!(status.code(), Some(1));
@@ -38,7 +39,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// **and** what it writes to `stdout`:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let (Exit(status), StdoutUntrimmed(stdout)) = cmd!(%"echo foo");
 /// assert!(status.success());
@@ -85,7 +86,7 @@ pub struct StdoutTrimmed(pub String);
 ///
 /// ```
 /// use std::path::Path;
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// # #[cfg(unix)]
 /// # {
@@ -113,7 +114,7 @@ pub struct StdoutUntrimmed(pub String);
 /// Same as [`StdoutTrimmed`], but does not trim whitespace from the output:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutUntrimmed(output) = cmd!(%"echo foo");
 /// assert_eq!(output, "foo\n");
@@ -171,7 +172,7 @@ pub struct Exit(pub ExitStatus);
 /// retrieve the [`ExitStatus`] of the child process:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let Exit(status) = cmd!(%"echo foo");
 /// assert!(status.success());
@@ -181,11 +182,11 @@ pub struct Exit(pub ExitStatus);
 /// result in neither a panic nor a [`std::result::Result::Err`]:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let Exit(status) = cmd!("false");
 /// assert_eq!(status.code(), Some(1));
-/// let result: Result<Exit, cradle::Error> = cmd_result!("false");
+/// let result: Result<Exit, cradle::prelude::Error> = cmd_result!("false");
 /// assert!(result.is_ok());
 /// assert_eq!(result.unwrap().0.code(), Some(1));
 /// ```
@@ -212,7 +213,7 @@ pub struct Stderr(pub String);
 /// [`Stderr`] allows to capture the `stderr` of a child process:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// // (`Exit` is used here to suppress panics caused by `ls`
 /// // terminating with a non-zero exit code.)
