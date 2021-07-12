@@ -67,7 +67,7 @@ use std::{
 /// assert_eq!(output, "0E0F10");
 /// ```
 ///
-/// Also, tuples allow to write flexible wrappers around [`cmd!`] without using macros:
+/// Also, tuples make it possible to write wrappers around [`cmd!`] without requiring the use of macros:
 ///
 /// ```
 /// use cradle::*;
