@@ -4,8 +4,8 @@ use std::{process::ExitStatus, sync::Arc};
 /// All possible return types of [`cmd!`], [`cmd_unit!`] or
 /// [`cmd_result!`] must implement this trait.
 /// This return-type polymorphism makes cradle very flexible.
-/// For example if you want to capture what a command writes
-/// to its `stdout` you can do that using [`StdoutUntrimmed`]:
+/// For example, if you want to capture what a command writes
+/// to `stdout` you can do that using [`StdoutUntrimmed`]:
 ///
 /// ```
 /// use cradle::*;
