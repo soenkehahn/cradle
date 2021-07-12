@@ -57,7 +57,7 @@ use std::{
 /// assert_eq!(output, "foo");
 /// ```
 ///
-/// This is useful to allow to bundle up arguments for convenience:
+/// This can be used to group arguments:
 ///
 /// ```
 /// use cradle::*;
