@@ -91,14 +91,14 @@
 //! let () = cmd!(%"touch foo");
 //! ```
 //!
-//! Since that's a very common case, `cradle` provides the [`cmd_unit!`]
+//! Since that's a very common case, `cradle` provides the [`cmd_void!`]
 //! shortcut, that behaves exactly like [`cmd!`], but pins the return
 //! type down to `()`:
 //!
 //! ```
 //! use cradle::*;
 //!
-//! cmd_unit!(%"touch foo");
+//! cmd_void!(%"touch foo");
 //! ```
 //!
 //! See the implementations for [`Output`] for all the supported types.
@@ -117,7 +117,7 @@
 //! use cradle::*;
 //!
 //! // panics with "false:\n  exited with exit code: 1"
-//! cmd_unit!("false");
+//! cmd_void!("false");
 //! ```
 //!
 //! You can suppress panics caused by non-zero exit codes by using the
@@ -205,7 +205,7 @@ macro_rules! cmd {
 
 /// Like [`cmd!`], but fixes the return type to `()`.
 #[macro_export]
-macro_rules! cmd_unit {
+macro_rules! cmd_void {
     ($($args:tt)*) => {{
         let () = $crate::cmd!($($args)*);
     }}
@@ -371,7 +371,7 @@ mod tests {
         result.unwrap();
     }
 
-    macro_rules! cmd_result_with_context_unit {
+    macro_rules! cmd_result_with_context_void {
         ($context:expr, $($args:tt)*) => {{
             let result: std::result::Result<(), $crate::Error> =
               $crate::cmd_result_with_context!($context, $($args)*);
@@ -382,7 +382,7 @@ mod tests {
     #[test]
     fn allows_to_execute_a_command() {
         in_temporary_directory(|| {
-            cmd_unit!(%"touch foo");
+            cmd_void!(%"touch foo");
             assert!(PathBuf::from("foo").exists());
         })
     }
@@ -396,7 +396,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "cmd!: false:\n  exited with exit code: 1")]
             fn non_zero_exit_codes() {
-                cmd_unit!("false");
+                cmd_void!("false");
             }
 
             #[test]
@@ -408,13 +408,13 @@ mod tests {
             #[test]
             #[should_panic(expected = "cmd!: false foo bar:\n  exited with exit code: 1")]
             fn includes_full_command_on_non_zero_exit_codes() {
-                cmd_unit!(%"false foo bar");
+                cmd_void!(%"false foo bar");
             }
 
             #[test]
             #[should_panic(expected = "exited with exit code: 42")]
             fn other_exit_codes() {
-                cmd_unit!(executable_path("cradle_test_helper"), "exit code 42");
+                cmd_void!(executable_path("cradle_test_helper"), "exit code 42");
             }
 
             #[test]
@@ -431,7 +431,7 @@ mod tests {
                 )
             )]
             fn executable_cannot_be_found() {
-                cmd_unit!("does-not-exist");
+                cmd_void!("does-not-exist");
             }
 
             #[test]
@@ -448,14 +448,14 @@ mod tests {
                 )
             )]
             fn includes_full_command_on_missing_executables() {
-                cmd_unit!(%"does-not-exist foo bar");
+                cmd_void!(%"does-not-exist foo bar");
             }
 
             #[test]
             #[should_panic(expected = "cmd!: no arguments given")]
             fn no_executable() {
                 let vector: Vec<String> = Vec::new();
-                cmd_unit!(vector);
+                cmd_void!(vector);
             }
 
             #[test]
@@ -469,7 +469,7 @@ mod tests {
 
             #[test]
             fn invalid_utf8_to_stdout_is_allowed_when_not_captured() {
-                cmd_unit!(
+                cmd_void!(
                     executable_path("cradle_test_helper"),
                     "invalid utf-8 stdout"
                 );
@@ -649,7 +649,7 @@ mod tests {
         fn elements_in_arrays_are_not_split_by_whitespace() {
             in_temporary_directory(|| {
                 let args: [&str; 1] = ["foo bar"];
-                cmd_unit!("touch", args);
+                cmd_void!("touch", args);
                 assert!(PathBuf::from("foo bar").exists());
             });
         }
@@ -667,7 +667,7 @@ mod tests {
         fn elements_in_array_refs_are_not_split_by_whitespace() {
             in_temporary_directory(|| {
                 let args: &[&str; 1] = &["foo bar"];
-                cmd_unit!("touch", args);
+                cmd_void!("touch", args);
                 assert!(PathBuf::from("foo bar").exists());
             });
         }
@@ -693,7 +693,7 @@ mod tests {
         fn elements_in_slices_are_not_split_by_whitespace() {
             in_temporary_directory(|| {
                 let args: &[&str] = &["foo bar"];
-                cmd_unit!("touch", args);
+                cmd_void!("touch", args);
                 assert!(PathBuf::from("foo bar").exists());
             });
         }
@@ -711,7 +711,7 @@ mod tests {
         #[test]
         fn works_for_string() {
             let command: String = "true".to_string();
-            cmd_unit!(command);
+            cmd_void!(command);
         }
 
         #[test]
@@ -733,7 +733,7 @@ mod tests {
         fn does_not_split_strings_in_vectors() {
             in_temporary_directory(|| {
                 let argument: Vec<String> = vec!["filename with spaces".to_string()];
-                cmd_unit!("touch", argument);
+                cmd_void!("touch", argument);
                 assert!(PathBuf::from("filename with spaces").exists());
             });
         }
@@ -744,12 +744,12 @@ mod tests {
 
         #[test]
         fn works_for_os_string() {
-            cmd_unit!(OsString::from("true"));
+            cmd_void!(OsString::from("true"));
         }
 
         #[test]
         fn works_for_os_str() {
-            cmd_unit!(OsStr::new("true"));
+            cmd_void!(OsStr::new("true"));
         }
     }
 
@@ -760,7 +760,7 @@ mod tests {
         #[test]
         fn relays_stdout_by_default() {
             let context = Context::test();
-            cmd_result_with_context_unit!(context.clone(), %"echo foo").unwrap();
+            cmd_result_with_context_void!(context.clone(), %"echo foo").unwrap();
             assert_eq!(context.stdout(), "foo\n");
         }
 
@@ -781,7 +781,7 @@ mod tests {
                 let context = Context::test();
                 let context_clone = context.clone();
                 let thread = thread::spawn(|| {
-                    cmd_result_with_context_unit!(
+                    cmd_result_with_context_void!(
                         context_clone,
                         executable_path("cradle_test_helper"),
                         "stream chunk then wait for file"
@@ -791,7 +791,7 @@ mod tests {
                 while (context.stdout()) != "foo\n" {
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
-                cmd_unit!(%"touch file");
+                cmd_void!(%"touch file");
                 thread.join().unwrap();
             });
         }
@@ -820,7 +820,7 @@ mod tests {
         #[test]
         fn relays_stderr_by_default() {
             let context = Context::test();
-            cmd_result_with_context_unit!(
+            cmd_result_with_context_void!(
                 context.clone(),
                 executable_path("cradle_test_helper"),
                 "write to stderr"
@@ -846,7 +846,7 @@ mod tests {
                 let context = Context::test();
                 let context_clone = context.clone();
                 let thread = thread::spawn(|| {
-                    cmd_result_with_context_unit!(
+                    cmd_result_with_context_void!(
                         context_clone,
                         executable_path("cradle_test_helper"),
                         "stream chunk to stderr then wait for file"
@@ -867,7 +867,7 @@ mod tests {
                     );
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
-                cmd_unit!(%"touch file");
+                cmd_void!(%"touch file");
                 thread.join().unwrap();
             });
         }
@@ -893,7 +893,7 @@ mod tests {
 
         #[test]
         fn does_allow_invalid_utf_8_to_stderr_when_not_capturing() {
-            cmd_unit!(
+            cmd_void!(
                 executable_path("cradle_test_helper"),
                 "invalid utf-8 stderr"
             );
@@ -918,21 +918,21 @@ mod tests {
         #[test]
         fn logs_simple_commands() {
             let context = Context::test();
-            cmd_result_with_context_unit!(context.clone(), LogCommand, "true").unwrap();
+            cmd_result_with_context_void!(context.clone(), LogCommand, "true").unwrap();
             assert_eq!(context.stderr(), "+ true\n");
         }
 
         #[test]
         fn logs_commands_with_arguments() {
             let context = Context::test();
-            cmd_result_with_context_unit!(context.clone(), LogCommand, %"echo foo").unwrap();
+            cmd_result_with_context_void!(context.clone(), LogCommand, %"echo foo").unwrap();
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
 
         #[test]
         fn quotes_arguments_with_spaces() {
             let context = Context::test();
-            cmd_result_with_context_unit!(context.clone(), LogCommand, "echo", "foo bar").unwrap();
+            cmd_result_with_context_void!(context.clone(), LogCommand, "echo", "foo bar").unwrap();
             assert_eq!(context.stderr(), "+ echo 'foo bar'\n");
         }
 
@@ -944,7 +944,7 @@ mod tests {
             let argument_with_invalid_utf8: &OsStr =
                 OsStrExt::from_bytes(&[102, 111, 111, 0x80, 98, 97, 114]);
             let argument_with_invalid_utf8: &Path = argument_with_invalid_utf8.as_ref();
-            cmd_result_with_context_unit!(
+            cmd_result_with_context_void!(
                 context.clone(),
                 LogCommand,
                 "echo",
@@ -1007,7 +1007,7 @@ mod tests {
         }
 
         #[test]
-        fn unit_input() {
+        fn empty_tuple_input() {
             let StdoutTrimmed(output) = cmd!(("echo", ()));
             assert_eq!(output, "");
         }
@@ -1099,11 +1099,11 @@ mod tests {
             in_temporary_directory(|| {
                 fs::create_dir("dir").unwrap();
                 let dir: String = "dir".to_string();
-                cmd_unit!("true", CurrentDir(dir));
+                cmd_void!("true", CurrentDir(dir));
                 let dir: PathBuf = PathBuf::from("dir");
-                cmd_unit!("true", CurrentDir(dir));
+                cmd_void!("true", CurrentDir(dir));
                 let dir: &Path = Path::new("dir");
-                cmd_unit!("true", CurrentDir(dir));
+                cmd_void!("true", CurrentDir(dir));
             });
         }
     }
@@ -1234,8 +1234,8 @@ mod tests {
             }
 
             #[test]
-            fn in_cmd_unit() {
-                cmd_unit!(%"echo foo");
+            fn in_cmd_void() {
+                cmd_void!(%"echo foo");
             }
 
             #[test]
@@ -1277,7 +1277,7 @@ mod tests {
                 let file = PathBuf::from("./test-script");
                 let script = "#!/usr/bin/env bash\necho test-output\n";
                 std::fs::write(&file, script).unwrap();
-                cmd_unit!(%"chmod +x test-script");
+                cmd_void!(%"chmod +x test-script");
                 file
             } else {
                 let file = PathBuf::from("./test-script.bat");
@@ -1403,14 +1403,14 @@ mod tests {
 
         #[test]
         fn trailing_comma_is_accepted_after_normal_argument() {
-            cmd_unit!("echo", "foo",);
+            cmd_void!("echo", "foo",);
             let StdoutUntrimmed(_) = cmd!("echo", "foo",);
             let _result: Result<(), Error> = cmd_result!("echo", "foo",);
         }
 
         #[test]
         fn trailing_comma_is_accepted_after_split_argument() {
-            cmd_unit!("echo", %"foo",);
+            cmd_void!("echo", %"foo",);
             let StdoutUntrimmed(_) = cmd!("echo", %"foo",);
             let _result: Result<(), Error> = cmd_result!("echo", %"foo",);
         }

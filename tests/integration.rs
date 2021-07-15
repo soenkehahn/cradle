@@ -18,7 +18,7 @@ fn capturing_stdout() {
 fn panics_on_non_zero_exit_codes() {
     use cradle::*;
 
-    cmd_unit!("false");
+    cmd_void!("false");
 }
 
 #[test]

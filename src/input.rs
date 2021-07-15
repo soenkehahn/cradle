@@ -5,7 +5,7 @@ use std::{
     sync::Arc,
 };
 
-/// All types that are possible arguments to [`cmd!`], [`cmd_unit!`] or
+/// All types that are possible arguments to [`cmd!`], [`cmd_void!`] or
 /// [`cmd_result!`] must implement this trait.
 /// This makes `cradle` very flexible.
 /// For example you can pass in an executable as a String,
@@ -111,7 +111,7 @@ where
 /// ```
 /// use cradle::*;
 ///
-/// cmd_unit!("ls", std::env::var_os("HOME").unwrap());
+/// cmd_void!("ls", std::env::var_os("HOME").unwrap());
 /// ```
 impl Input for OsString {
     #[doc(hidden)]
@@ -126,7 +126,7 @@ impl Input for OsString {
 /// ```
 /// use cradle::*;
 ///
-/// cmd_unit!("echo", std::env::current_dir().unwrap().file_name().unwrap());
+/// cmd_void!("echo", std::env::current_dir().unwrap().file_name().unwrap());
 /// ```
 ///
 /// [`&OsStr`]: std::ffi::OsStr
@@ -361,7 +361,7 @@ pub struct LogCommand;
 /// ```
 /// use cradle::*;
 ///
-/// cmd_unit!(LogCommand, %"echo foo");
+/// cmd_void!(LogCommand, %"echo foo");
 /// // writes '+ echo foo' to stderr
 /// ```
 impl Input for LogCommand {
@@ -406,7 +406,7 @@ where
 /// use std::path::PathBuf;
 ///
 /// let current_dir: PathBuf = std::env::current_dir().unwrap();
-/// cmd_unit!("ls", current_dir);
+/// cmd_void!("ls", current_dir);
 /// ```
 impl Input for PathBuf {
     #[doc(hidden)]
@@ -423,7 +423,7 @@ impl Input for PathBuf {
 /// use std::path::Path;
 ///
 /// let file: &Path = Path::new("./foo");
-/// cmd_unit!("touch", file);
+/// cmd_void!("touch", file);
 /// ```
 ///
 /// [`&Path`]: std::path::Path

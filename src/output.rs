@@ -1,7 +1,7 @@
 use crate::{Config, Error, RunResult};
 use std::{process::ExitStatus, sync::Arc};
 
-/// All possible return types of [`cmd!`], [`cmd_unit!`] or
+/// All possible return types of [`cmd!`], [`cmd_void!`] or
 /// [`cmd_result!`] must implement this trait.
 /// This return-type polymorphism makes cradle very flexible.
 /// For example, if you want to capture what a command writes
@@ -28,7 +28,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// see the documentation for the individual impls of [`Output`].
 /// Here's a non-exhaustive list of the more commonly used return types to get you started:
 ///
-/// - `()`: In case you don't want to capture anything. See also [`cmd_unit`].
+/// - `()`: In case you don't want to capture anything. See also [`cmd_void`].
 /// - [`StdoutUntrimmed`], [`StdoutTrimmed`] and [`Stderr`]: To capture `stdout`, `stdout` trimmed of whitespace, and `stderr`.
 /// - [`Exit`]: To capture the command's [`ExitStatus`].
 ///
