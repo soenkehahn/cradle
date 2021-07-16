@@ -937,6 +937,13 @@ mod tests {
         }
 
         #[test]
+        fn quotes_empty_arguments() {
+            let context = Context::test();
+            cmd_result_with_context_unit!(context.clone(), LogCommand, "echo", "").unwrap();
+            assert_eq!(context.stderr(), "+ echo ''\n");
+        }
+
+        #[test]
         #[cfg(unix)]
         fn arguments_with_invalid_utf8_will_be_logged_with_lossy_conversion() {
             use std::{ffi::OsStr, os::unix::prelude::OsStrExt, path::Path};

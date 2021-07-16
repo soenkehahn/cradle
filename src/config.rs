@@ -20,7 +20,7 @@ impl Config {
             if !result.is_empty() {
                 result.push(' ');
             }
-            let needs_quotes = argument.contains(' ');
+            let needs_quotes = argument.is_empty() || argument.contains(' ');
             if needs_quotes {
                 result.push('\'');
             }
