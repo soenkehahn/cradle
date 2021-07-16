@@ -20,8 +20,8 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 /// use cradle::*;
 ///
-/// let Status(status) = cmd!("false");
-/// assert_eq!(status.code(), Some(1));
+/// let Status(exit_status) = cmd!("false");
+/// assert_eq!(exit_status.code(), Some(1));
 /// ```
 ///
 /// For documentation on what all the possible return types do,
@@ -40,8 +40,8 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 /// use cradle::*;
 ///
-/// let (Status(status), StdoutUntrimmed(stdout)) = cmd!(%"echo foo");
-/// assert!(status.success());
+/// let (Status(exit_status), StdoutUntrimmed(stdout)) = cmd!(%"echo foo");
+/// assert!(exit_status.success());
 /// assert_eq!(stdout, "foo\n");
 /// ```
 ///
@@ -173,8 +173,8 @@ pub struct Status(pub ExitStatus);
 /// ```
 /// use cradle::*;
 ///
-/// let Status(status) = cmd!(%"echo foo");
-/// assert!(status.success());
+/// let Status(exit_status) = cmd!(%"echo foo");
+/// assert!(exit_status.success());
 /// ```
 ///
 /// Also, when using [`Status`], non-zero exit codes won't
@@ -183,8 +183,8 @@ pub struct Status(pub ExitStatus);
 /// ```
 /// use cradle::*;
 ///
-/// let Status(status) = cmd!("false");
-/// assert_eq!(status.code(), Some(1));
+/// let Status(exit_status) = cmd!("false");
+/// assert_eq!(exit_status.code(), Some(1));
 /// let result: Result<Status, cradle::Error> = cmd_result!("false");
 /// assert!(result.is_ok());
 /// assert_eq!(result.unwrap().0.code(), Some(1));

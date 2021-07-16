@@ -986,8 +986,8 @@ mod tests {
 
         #[test]
         fn failing_commands_return_oks_when_exit_status_is_captured() {
-            let Status(status) = cmd_result!("false").unwrap();
-            assert!(!status.success());
+            let Status(exit_status) = cmd_result!("false").unwrap();
+            assert!(!exit_status.success());
         }
     }
 
@@ -1025,63 +1025,63 @@ mod tests {
 
         #[test]
         fn two_tuple_1() {
-            let (StdoutTrimmed(output), Status(status)) = cmd!(
+            let (StdoutTrimmed(output), Status(exit_status)) = cmd!(
                 executable_path("cradle_test_helper"),
                 "output foo and exit with 42"
             );
             assert_eq!(output, "foo");
-            assert_eq!(status.code(), Some(42));
+            assert_eq!(exit_status.code(), Some(42));
         }
 
         #[test]
         fn two_tuple_2() {
-            let (Status(status), StdoutTrimmed(output)) = cmd!(
+            let (Status(exit_status), StdoutTrimmed(output)) = cmd!(
                 executable_path("cradle_test_helper"),
                 "output foo and exit with 42"
             );
             assert_eq!(output, "foo");
-            assert_eq!(status.code(), Some(42));
+            assert_eq!(exit_status.code(), Some(42));
         }
 
         #[test]
         fn result_of_tuple() {
-            let (StdoutTrimmed(output), Status(status)) = cmd_result!(%"echo foo").unwrap();
+            let (StdoutTrimmed(output), Status(exit_status)) = cmd_result!(%"echo foo").unwrap();
             assert_eq!(output, "foo");
-            assert!(status.success());
+            assert!(exit_status.success());
         }
 
         #[test]
         fn result_of_tuple_when_erroring() {
-            let (StdoutTrimmed(output), Status(status)) = cmd_result!("false").unwrap();
+            let (StdoutTrimmed(output), Status(exit_status)) = cmd_result!("false").unwrap();
             assert_eq!(output, "");
-            assert_eq!(status.code(), Some(1));
+            assert_eq!(exit_status.code(), Some(1));
         }
 
         #[test]
         fn three_tuples() {
-            let (Stderr(stderr), StdoutTrimmed(stdout), Status(status)) = cmd!(%"echo foo");
+            let (Stderr(stderr), StdoutTrimmed(stdout), Status(exit_status)) = cmd!(%"echo foo");
             assert_eq!(stderr, "");
             assert_eq!(stdout, "foo");
-            assert_eq!(status.code(), Some(0));
+            assert_eq!(exit_status.code(), Some(0));
         }
 
         #[test]
         fn capturing_stdout_on_errors() {
-            let (StdoutTrimmed(output), Status(status)) = cmd!(
+            let (StdoutTrimmed(output), Status(exit_status)) = cmd!(
                 executable_path("cradle_test_helper"),
                 "output foo and exit with 42"
             );
-            assert!(!status.success());
+            assert!(!exit_status.success());
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn capturing_stderr_on_errors() {
-            let (Stderr(output), Status(status)) = cmd!(
+            let (Stderr(output), Status(exit_status)) = cmd!(
                 executable_path("cradle_test_helper"),
                 "write to stderr and exit with 42"
             );
-            assert!(!status.success());
+            assert!(!exit_status.success());
             assert_eq!(output, "foo\n");
         }
     }
