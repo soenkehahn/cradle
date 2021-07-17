@@ -8,6 +8,7 @@ edition = "2018"
 repository = "https://github.com/soenkehahn/cradle"
 homepage = "https://github.com/soenkehahn/cradle"
 keywords = ["child", "child-process", "command", "process", "shell"]
+categories = ["filesystem", "os"]
 
 [dependencies]
 rustversion = "1.0.4"
