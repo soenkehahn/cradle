@@ -15,13 +15,13 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 ///
 /// But if instead you want to capture the command's [`ExitStatus`],
-/// you can use [`Exit`]:
+/// you can use [`Status`]:
 ///
 /// ```
 /// use cradle::*;
 ///
-/// let Exit(status) = cmd!("false");
-/// assert_eq!(status.code(), Some(1));
+/// let Status(exit_status) = cmd!("false");
+/// assert_eq!(exit_status.code(), Some(1));
 /// ```
 ///
 /// For documentation on what all the possible return types do,
@@ -30,7 +30,7 @@ use std::{process::ExitStatus, sync::Arc};
 ///
 /// - `()`: In case you don't want to capture anything. See also [`cmd_unit`].
 /// - [`StdoutUntrimmed`], [`StdoutTrimmed`] and [`Stderr`]: To capture `stdout`, `stdout` trimmed of whitespace, and `stderr`.
-/// - [`Exit`]: To capture the command's [`ExitStatus`].
+/// - [`Status`]: To capture the command's [`ExitStatus`].
 ///
 /// Also, [`Output`] is implemented for tuples.
 /// You can use this to combine multiple return types that implement [`Output`].
@@ -40,15 +40,15 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 /// use cradle::*;
 ///
-/// let (Exit(status), StdoutUntrimmed(stdout)) = cmd!(%"echo foo");
-/// assert!(status.success());
+/// let (Status(exit_status), StdoutUntrimmed(stdout)) = cmd!(%"echo foo");
+/// assert!(exit_status.success());
 /// assert_eq!(stdout, "foo\n");
 /// ```
 ///
 /// [`StdoutUntrimmed`]: trait.Output.html#impl-Output-3
 /// [`StdoutTrimmed`]: trait.Output.html#impl-Output-2
 /// [`Stderr`]: trait.Output.html#impl-Output-1
-/// [`Exit`]: trait.Output.html#impl-Output
+/// [`Status`]: trait.Output.html#impl-Output
 pub trait Output: Sized {
     #[doc(hidden)]
     fn configure(config: &mut Config);
@@ -164,28 +164,28 @@ tuple_impl!(A, B, C, D,);
 tuple_impl!(A, B, C, D, E,);
 tuple_impl!(A, B, C, D, E, F,);
 
-/// See the [`Output`] implementation for [`Exit`] below.
-pub struct Exit(pub ExitStatus);
+/// See the [`Output`] implementation for [`Status`] below.
+pub struct Status(pub ExitStatus);
 
-/// Using [`Exit`] as the return type for [`cmd!`] allows to
+/// Using [`Status`] as the return type for [`cmd!`] allows to
 /// retrieve the [`ExitStatus`] of the child process:
 ///
 /// ```
 /// use cradle::*;
 ///
-/// let Exit(status) = cmd!(%"echo foo");
-/// assert!(status.success());
+/// let Status(exit_status) = cmd!(%"echo foo");
+/// assert!(exit_status.success());
 /// ```
 ///
-/// Also, when using [`Exit`], non-zero exit codes won't
+/// Also, when using [`Status`], non-zero exit codes won't
 /// result in neither a panic nor a [`std::result::Result::Err`]:
 ///
 /// ```
 /// use cradle::*;
 ///
-/// let Exit(status) = cmd!("false");
-/// assert_eq!(status.code(), Some(1));
-/// let result: Result<Exit, cradle::Error> = cmd_result!("false");
+/// let Status(exit_status) = cmd!("false");
+/// assert_eq!(exit_status.code(), Some(1));
+/// let result: Result<Status, cradle::Error> = cmd_result!("false");
 /// assert!(result.is_ok());
 /// assert_eq!(result.unwrap().0.code(), Some(1));
 /// ```
@@ -193,7 +193,7 @@ pub struct Exit(pub ExitStatus);
 /// Also see the
 /// [section about error handling](index.html#error-handling) in
 /// the module documentation.
-impl Output for Exit {
+impl Output for Status {
     #[doc(hidden)]
     fn configure(config: &mut Config) {
         config.error_on_non_zero_exit_code = false;
@@ -201,7 +201,7 @@ impl Output for Exit {
 
     #[doc(hidden)]
     fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-        Ok(Exit(result?.exit_status))
+        Ok(Status(result?.exit_status))
     }
 }
 
@@ -214,9 +214,9 @@ pub struct Stderr(pub String);
 /// ```
 /// use cradle::*;
 ///
-/// // (`Exit` is used here to suppress panics caused by `ls`
+/// // (`Status` is used here to suppress panics caused by `ls`
 /// // terminating with a non-zero exit code.)
-/// let (Stderr(stderr), Exit(_)) = cmd!(%"ls does-not-exist");
+/// let (Stderr(stderr), Status(_)) = cmd!(%"ls does-not-exist");
 /// assert!(stderr.contains("No such file or directory"));
 /// ```
 ///
