@@ -121,12 +121,12 @@
 //! ```
 //!
 //! You can suppress panics caused by non-zero exit codes by using the
-//! [`Exit`] type as a return type of [`cmd!`]:
+//! [`Status`] type as a return type of [`cmd!`]:
 //!
 //! ```
 //! use cradle::*;
 //!
-//! let Exit(exit_status) = cmd!("false");
+//! let Status(exit_status) = cmd!("false");
 //! assert_eq!(exit_status.code(), Some(1));
 //! ```
 //!
@@ -186,7 +186,7 @@ pub use crate::{config::Config, context::Context};
 pub use crate::{
     error::{panic_on_error, Error},
     input::{CurrentDir, Input, LogCommand, Split, Stdin},
-    output::{Exit, Output, Stderr, StdoutTrimmed, StdoutUntrimmed},
+    output::{Output, Status, Stderr, StdoutTrimmed, StdoutUntrimmed},
 };
 use std::{
     ffi::OsString,
@@ -968,27 +968,27 @@ mod tests {
 
         #[test]
         fn zero() {
-            let Exit(exit_status) = cmd!("true");
+            let Status(exit_status) = cmd!("true");
             assert!(exit_status.success());
         }
 
         #[test]
         fn one() {
-            let Exit(exit_status) = cmd!("false");
+            let Status(exit_status) = cmd!("false");
             assert!(!exit_status.success());
         }
 
         #[test]
         fn forty_two() {
-            let Exit(exit_status) = cmd!(executable_path("cradle_test_helper"), "exit code 42");
+            let Status(exit_status) = cmd!(executable_path("cradle_test_helper"), "exit code 42");
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
         }
 
         #[test]
         fn failing_commands_return_oks_when_exit_status_is_captured() {
-            let Exit(status) = cmd_result!("false").unwrap();
-            assert!(!status.success());
+            let Status(exit_status) = cmd_result!("false").unwrap();
+            assert!(!exit_status.success());
         }
     }
 
@@ -1026,63 +1026,63 @@ mod tests {
 
         #[test]
         fn two_tuple_1() {
-            let (StdoutTrimmed(output), Exit(status)) = cmd!(
+            let (StdoutTrimmed(output), Status(exit_status)) = cmd!(
                 executable_path("cradle_test_helper"),
                 "output foo and exit with 42"
             );
             assert_eq!(output, "foo");
-            assert_eq!(status.code(), Some(42));
+            assert_eq!(exit_status.code(), Some(42));
         }
 
         #[test]
         fn two_tuple_2() {
-            let (Exit(status), StdoutTrimmed(output)) = cmd!(
+            let (Status(exit_status), StdoutTrimmed(output)) = cmd!(
                 executable_path("cradle_test_helper"),
                 "output foo and exit with 42"
             );
             assert_eq!(output, "foo");
-            assert_eq!(status.code(), Some(42));
+            assert_eq!(exit_status.code(), Some(42));
         }
 
         #[test]
         fn result_of_tuple() {
-            let (StdoutTrimmed(output), Exit(status)) = cmd_result!(%"echo foo").unwrap();
+            let (StdoutTrimmed(output), Status(exit_status)) = cmd_result!(%"echo foo").unwrap();
             assert_eq!(output, "foo");
-            assert!(status.success());
+            assert!(exit_status.success());
         }
 
         #[test]
         fn result_of_tuple_when_erroring() {
-            let (StdoutTrimmed(output), Exit(status)) = cmd_result!("false").unwrap();
+            let (StdoutTrimmed(output), Status(exit_status)) = cmd_result!("false").unwrap();
             assert_eq!(output, "");
-            assert_eq!(status.code(), Some(1));
+            assert_eq!(exit_status.code(), Some(1));
         }
 
         #[test]
         fn three_tuples() {
-            let (Stderr(stderr), StdoutTrimmed(stdout), Exit(status)) = cmd!(%"echo foo");
+            let (Stderr(stderr), StdoutTrimmed(stdout), Status(exit_status)) = cmd!(%"echo foo");
             assert_eq!(stderr, "");
             assert_eq!(stdout, "foo");
-            assert_eq!(status.code(), Some(0));
+            assert_eq!(exit_status.code(), Some(0));
         }
 
         #[test]
         fn capturing_stdout_on_errors() {
-            let (StdoutTrimmed(output), Exit(status)) = cmd!(
+            let (StdoutTrimmed(output), Status(exit_status)) = cmd!(
                 executable_path("cradle_test_helper"),
                 "output foo and exit with 42"
             );
-            assert!(!status.success());
+            assert!(!exit_status.success());
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn capturing_stderr_on_errors() {
-            let (Stderr(output), Exit(status)) = cmd!(
+            let (Stderr(output), Status(exit_status)) = cmd!(
                 executable_path("cradle_test_helper"),
                 "write to stderr and exit with 42"
             );
-            assert!(!status.success());
+            assert!(!exit_status.success());
             assert_eq!(output, "foo\n");
         }
     }
