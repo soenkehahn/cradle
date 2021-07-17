@@ -93,8 +93,7 @@
 //!
 //! Since that's a very common case, `cradle` provides the [`cmd_unit!`] shortcut.
 //! It's named after [the unit type `()`](https://doc.rust-lang.org/std/primitive.unit.html).
-//! It behaves exactly like [`cmd!`], but pins the return
-//! type down to `()`:
+//! It behaves exactly like [`cmd!`] but always returns `()`.
 //!
 //! ```
 //! use cradle::*;
