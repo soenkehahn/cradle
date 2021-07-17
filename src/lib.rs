@@ -91,9 +91,9 @@
 //! let () = cmd!(%"touch foo");
 //! ```
 //!
-//! Since that's a very common case, `cradle` provides the [`cmd_unit!`]
-//! shortcut, that behaves exactly like [`cmd!`], but pins the return
-//! type down to `()`:
+//! Since that's a very common case, `cradle` provides the [`cmd_unit!`] shortcut.
+//! It's named after [the unit type `()`](https://doc.rust-lang.org/std/primitive.unit.html).
+//! It behaves exactly like [`cmd!`] but always returns `()`.
 //!
 //! ```
 //! use cradle::*;
@@ -204,6 +204,7 @@ macro_rules! cmd {
 }
 
 /// Like [`cmd!`], but fixes the return type to `()`.
+/// It's named after [the unit type `()`](https://doc.rust-lang.org/std/primitive.unit.html).
 #[macro_export]
 macro_rules! cmd_unit {
     ($($args:tt)*) => {{
