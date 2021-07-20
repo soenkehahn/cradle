@@ -28,7 +28,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// see the documentation for the individual impls of [`Output`].
 /// Here's a non-exhaustive list of the more commonly used return types to get you started:
 ///
-/// - `()`: In case you don't want to capture anything. See also [`cmd_unit`].
+/// - [`()`]: In case you don't want to capture anything. See also [`cmd_unit`].
 /// - To capture output streams:
 ///   - [`StdoutTrimmed`]: To capture `stdout`, trimmed of whitespace.
 ///   - [`StdoutUntrimmed`]: To capture `stdout` untrimmed.
@@ -47,6 +47,8 @@ use std::{process::ExitStatus, sync::Arc};
 /// assert!(exit_status.success());
 /// assert_eq!(stdout, "foo\n");
 /// ```
+///
+/// [`()`]: trait.Output.html#impl-Output-for-()
 pub trait Output: Sized {
     #[doc(hidden)]
     fn configure(config: &mut Config);
@@ -56,6 +58,19 @@ pub trait Output: Sized {
 }
 
 /// Use this when you don't need any result from the child process.
+///
+/// ```
+/// use cradle::*;
+///
+/// let () = cmd!(%"touch ./foo");
+/// ```
+///
+/// Since [`cmd!`] (and [`cmd_result`]) use return type polymorphism,
+/// you have to make sure the compiler can figure out which return type you want to use.
+/// In this example that happens through the `let () =`.
+/// So you can't just omit that.
+///
+/// See also [`cmd_unit!`] for a more convenient way to use `()` as the return type.
 impl Output for () {
     #[doc(hidden)]
     fn configure(_config: &mut Config) {}
