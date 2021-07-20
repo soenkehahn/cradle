@@ -198,7 +198,7 @@ pub struct Split<T: AsRef<str>>(pub T);
 /// ```
 ///
 /// [`split_whitespace`]: str::split_whitespace
-impl<T: AsRef<str>> Input for Split<T> {
+impl<T: AsRef<str>> Input for crate::input::Split<T> {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
         for argument in self.0.as_ref().split_whitespace() {
@@ -266,6 +266,33 @@ impl<'a> Input for std::str::SplitAsciiWhitespace<'a> {
     }
 }
 
+impl Input for () {
+    #[doc(hidden)]
+    fn configure(self, _: &mut Config) {}
+}
+
+macro_rules! tuple_impl {
+    ($($index:tt, $generics:ident,)+) => {
+        impl<$($generics),+> Input for ($($generics,)+)
+        where
+            $($generics: Input,)+
+        {
+            #[doc(hidden)]
+            fn configure(self, config: &mut Config) {
+                $(<$generics as Input>::configure(self.$index, config);)+
+            }
+        }
+    };
+}
+
+tuple_impl!(0, A,);
+tuple_impl!(0, A, 1, B,);
+tuple_impl!(0, A, 1, B, 2, C,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G,);
+
 /// All elements of the given [`Vec`] are used as arguments to [`cmd!`].
 /// Same as passing in the elements separately.
 ///
@@ -322,33 +349,6 @@ where
         self.to_vec().configure(config);
     }
 }
-
-impl Input for () {
-    #[doc(hidden)]
-    fn configure(self, _: &mut Config) {}
-}
-
-macro_rules! tuple_impl {
-    ($($index:tt, $generics:ident,)+) => {
-        impl<$($generics),+> Input for ($($generics,)+)
-        where
-            $($generics: Input,)+
-        {
-            #[doc(hidden)]
-            fn configure(self, config: &mut Config) {
-                $(<$generics as Input>::configure(self.$index, config);)+
-            }
-        }
-    };
-}
-
-tuple_impl!(0, A,);
-tuple_impl!(0, A, 1, B,);
-tuple_impl!(0, A, 1, B, 2, C,);
-tuple_impl!(0, A, 1, B, 2, C, 3, D,);
-tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E,);
-tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F,);
-tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G,);
 
 /// See the [`Input`] implementation for [`LogCommand`] below.
 #[derive(Clone, Debug)]
