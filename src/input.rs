@@ -491,7 +491,8 @@ where
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
         let SetVar(key, value) = self;
-        config.environment_additions =
-            Some((key.as_ref().to_os_string(), value.as_ref().to_os_string()));
+        config
+            .environment_additions
+            .push((key.as_ref().to_os_string(), value.as_ref().to_os_string()));
     }
 }

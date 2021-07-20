@@ -291,7 +291,7 @@ where
     }
     let mut command = Command::new(&executable);
     command.args(arguments);
-    if let Some((key, value)) = &config.environment_additions {
+    for (key, value) in &config.environment_additions {
         command.env(key, value);
     }
     command
@@ -1429,8 +1429,13 @@ mod tests {
         }
 
         #[test]
-        #[ignore]
-        fn works_for_multiple_variables() {}
+        fn works_for_multiple_variables() {
+            with_script("echo $FOO-$BAR", || {
+                let StdoutTrimmed(output) =
+                    cmd!("./test-script", SetVar("FOO", "a"), SetVar("BAR", "b"));
+                assert_eq!(output, "a-b");
+            });
+        }
 
         #[test]
         #[ignore]
