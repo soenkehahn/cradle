@@ -47,11 +47,6 @@ use std::{process::ExitStatus, sync::Arc};
 /// assert!(exit_status.success());
 /// assert_eq!(stdout, "foo\n");
 /// ```
-///
-/// [`StdoutUntrimmed`]: trait.Output.html#impl-Output-3
-/// [`StdoutTrimmed`]: trait.Output.html#impl-Output-2
-/// [`Stderr`]: trait.Output.html#impl-Output-1
-/// [`Status`]: trait.Output.html#impl-Output
 pub trait Output: Sized {
     #[doc(hidden)]
     fn configure(config: &mut Config);
@@ -100,10 +95,6 @@ tuple_impl!(A, B, C, D,);
 tuple_impl!(A, B, C, D, E,);
 tuple_impl!(A, B, C, D, E, F,);
 
-/// See the [`Output`] implementation for [`StdoutTrimmed`] below.
-#[derive(Debug, PartialEq, Clone)]
-pub struct StdoutTrimmed(pub String);
-
 /// Returns what the child process writes to `stdout`, interpreted as utf-8,
 /// collected into a string, trimmed of leading and trailing whitespace.
 /// This also suppresses output of the child's `stdout`
@@ -124,6 +115,9 @@ pub struct StdoutTrimmed(pub String);
 /// assert!(Path::new(&output).exists());
 /// # }
 /// ```
+#[derive(Debug, PartialEq, Clone)]
+pub struct StdoutTrimmed(pub String);
+
 impl Output for StdoutTrimmed {
     #[doc(hidden)]
     fn configure(config: &mut Config) {
@@ -137,10 +131,6 @@ impl Output for StdoutTrimmed {
     }
 }
 
-/// See the [`Output`] implementation for [`StdoutUntrimmed`] below.
-#[derive(Debug, PartialEq, Clone)]
-pub struct StdoutUntrimmed(pub String);
-
 /// Same as [`StdoutTrimmed`], but does not trim whitespace from the output:
 ///
 /// ```
@@ -149,6 +139,9 @@ pub struct StdoutUntrimmed(pub String);
 /// let StdoutUntrimmed(output) = cmd!(%"echo foo");
 /// assert_eq!(output, "foo\n");
 /// ```
+#[derive(Debug, PartialEq, Clone)]
+pub struct StdoutUntrimmed(pub String);
+
 impl Output for StdoutUntrimmed {
     #[doc(hidden)]
     fn configure(config: &mut Config) {
@@ -167,10 +160,6 @@ impl Output for StdoutUntrimmed {
     }
 }
 
-/// See the [`Output`] implementation for [`Stderr`] below.
-#[derive(Debug)]
-pub struct Stderr(pub String);
-
 /// [`Stderr`] allows to capture the `stderr` of a child process:
 ///
 /// ```
@@ -188,6 +177,9 @@ pub struct Stderr(pub String);
 /// By default, what is written to `stderr` by the child process
 /// is relayed to the parent's `stderr`. However, when [`Stderr`]
 /// is used, this is switched off.
+#[derive(Debug)]
+pub struct Stderr(pub String);
+
 impl Output for Stderr {
     #[doc(hidden)]
     fn configure(config: &mut Config) {
@@ -204,9 +196,6 @@ impl Output for Stderr {
         )?))
     }
 }
-
-/// See the [`Output`] implementation for [`Status`] below.
-pub struct Status(pub ExitStatus);
 
 /// Using [`Status`] as the return type for [`cmd!`] allows to
 /// retrieve the [`ExitStatus`] of the child process:
@@ -234,6 +223,8 @@ pub struct Status(pub ExitStatus);
 /// Also see the
 /// [section about error handling](index.html#error-handling) in
 /// the module documentation.
+pub struct Status(pub ExitStatus);
+
 impl Output for Status {
     #[doc(hidden)]
     fn configure(config: &mut Config) {
