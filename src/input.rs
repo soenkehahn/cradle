@@ -29,20 +29,16 @@ use std::{
 /// - [`PathBuf`] and [`&Path`],
 /// - multiple sequence types, like [`vectors`], [`slices`] and (since version 1.51) [`arrays`],
 /// - [`CurrentDir`],
-/// - [`StdIn`], and
+/// - [`Stdin`], and
 /// - [`LogCommand`].
 ///
 /// [`String`]: trait.Input.html#impl-Input-for-String
 /// [`&str`]: trait.Input.html#impl-Input-for-%26str
-/// [`Split`]: trait.Input.html#impl-Input-3
 /// [`PathBuf`]: trait.Input.html#impl-Input-for-PathBuf
 /// [`&Path`]: trait.Input.html#impl-Input-for-%26Path
 /// [`vectors`]: trait.Input.html#impl-Input-for-Vec<T>
 /// [`slices`]: trait.Input.html#impl-Input-for-%26[T]
 /// [`arrays`]: trait.Input.html#impl-Input-for-[T%3B%20N]
-/// [`CurrentDir`]: trait.Input.html#impl-Input-1
-/// [`StdIn`]: trait.Input.html#impl-Input-2
-/// [`LogCommand`]: trait.Input.html#impl-Input
 ///
 /// ## Tuples
 ///
@@ -171,9 +167,6 @@ impl Input for String {
     }
 }
 
-/// See the [`Input`] implementation for [`Split`] below.
-pub struct Split<T: AsRef<str>>(pub T);
-
 /// Splits the contained string by whitespace (using [`split_whitespace`])
 /// and uses the resulting words as separate arguments.
 ///
@@ -198,6 +191,8 @@ pub struct Split<T: AsRef<str>>(pub T);
 /// ```
 ///
 /// [`split_whitespace`]: str::split_whitespace
+pub struct Split<T: AsRef<str>>(pub T);
+
 impl<T: AsRef<str>> Input for crate::input::Split<T> {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
@@ -350,10 +345,6 @@ where
     }
 }
 
-/// See the [`Input`] implementation for [`LogCommand`] below.
-#[derive(Clone, Debug)]
-pub struct LogCommand;
-
 /// Passing in [`LogCommand`] as an argument to [`cmd!`] will cause it
 /// to log the commands (including all arguments) to `stderr`.
 /// (This is similar `bash`'s `-x` option.)
@@ -364,15 +355,15 @@ pub struct LogCommand;
 /// cmd_unit!(LogCommand, %"echo foo");
 /// // writes '+ echo foo' to stderr
 /// ```
+#[derive(Clone, Debug)]
+pub struct LogCommand;
+
 impl Input for LogCommand {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
         config.log_command = true;
     }
 }
-
-/// See the [`Input`] implementation for [`CurrentDir`] below.
-pub struct CurrentDir<T: AsRef<Path>>(pub T);
 
 /// By default child processes inherit the current directory from their
 /// parent. You can override this with [`CurrentDir`]:
@@ -388,6 +379,8 @@ pub struct CurrentDir<T: AsRef<Path>>(pub T);
 /// ```
 ///
 /// Paths that are relative to the parent's current directory are allowed.
+pub struct CurrentDir<T: AsRef<Path>>(pub T);
+
 impl<T> Input for CurrentDir<T>
 where
     T: AsRef<Path>,
@@ -434,9 +427,6 @@ impl Input for &Path {
     }
 }
 
-/// See the [`Input`] implementation for [`Stdin`] below.
-pub struct Stdin<T: AsRef<[u8]>>(pub T);
-
 /// Writes the given byte slice to the child's standard input.
 ///
 /// ```
@@ -451,6 +441,8 @@ pub struct Stdin<T: AsRef<[u8]>>(pub T);
 ///
 /// If `Stdin` is used multiple times, all given bytes slices will be written
 /// to the child's standard input in order.
+pub struct Stdin<T: AsRef<[u8]>>(pub T);
+
 impl<T> Input for Stdin<T>
 where
     T: AsRef<[u8]>,
