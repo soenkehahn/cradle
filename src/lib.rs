@@ -1419,6 +1419,7 @@ mod tests {
     mod environment_variables {
         use super::*;
         use pretty_assertions::assert_eq;
+        use std::env;
 
         #[test]
         fn allows_to_add_variables() {
@@ -1437,20 +1438,52 @@ mod tests {
             });
         }
 
-        #[test]
-        #[ignore]
-        fn child_processes_inherit_the_environment() {}
+        fn find_unused_environment_variable() -> String {
+            let mut i = 0;
+            loop {
+                let key = format!("CRADLE_TEST_VARIABLE_{}", i);
+                if let None = env::var_os(&key) {
+                    break key;
+                }
+                i += 1;
+            }
+        }
 
         #[test]
-        #[ignore]
-        fn overwrites_existing_parent_variables() {}
+        fn child_processes_inherit_the_environment() {
+            let unused_key = find_unused_environment_variable();
+            env::set_var(&unused_key, "foo");
+            with_script(&format!("echo ${}", &unused_key), || {
+                let StdoutTrimmed(output) = cmd!("./test-script");
+                assert_eq!(output, "foo");
+            });
+        }
 
         #[test]
-        #[ignore]
-        fn variables_are_overwritten_by_subsequent_variables_with_the_same_name() {}
+        fn overwrites_existing_parent_variables() {
+            let unused_key = find_unused_environment_variable();
+            env::set_var(&unused_key, "foo");
+            with_script(&format!("echo ${}", &unused_key), || {
+                let StdoutTrimmed(output) = cmd!("./test-script", SetVar(unused_key, "bar"));
+                assert_eq!(output, "bar");
+            });
+        }
 
         #[test]
-        #[ignore]
-        fn variables_can_be_set_to_the_empty_string() {}
+        fn variables_are_overwritten_by_subsequent_variables_with_the_same_name() {
+            with_script("echo $FOO", || {
+                let StdoutTrimmed(output) =
+                    cmd!("./test-script", SetVar("FOO", "a"), SetVar("FOO", "b"));
+                assert_eq!(output, "b");
+            });
+        }
+
+        #[test]
+        fn variables_can_be_set_to_the_empty_string() {
+            with_script("echo ${FOO+x}", || {
+                let StdoutTrimmed(output) = cmd!("./test-script", SetVar("FOO", ""));
+                assert_eq!(output, "x");
+            });
+        }
     }
 }
