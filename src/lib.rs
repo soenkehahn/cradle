@@ -179,13 +179,15 @@ mod context;
 mod error;
 mod input;
 mod output;
+#[cfg(test)]
+mod test_utils;
 
 use crate::collected_output::Waiter;
 #[doc(hidden)]
 pub use crate::{config::Config, context::Context};
 pub use crate::{
     error::{panic_on_error, Error},
-    input::{CurrentDir, Input, LogCommand, Split, Stdin},
+    input::{CurrentDir, Input, LogCommand, SetVar, Split, Stdin},
     output::{Output, Status, Stderr, StdoutTrimmed, StdoutUntrimmed},
 };
 use std::{
@@ -288,8 +290,11 @@ where
             .map_err(|error| Error::command_io_error(&config, error))?;
     }
     let mut command = Command::new(&executable);
+    command.args(arguments);
+    if let Some((key, value)) = &config.environment_additions {
+        command.env(key, value);
+    }
     command
-        .args(arguments)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
@@ -350,6 +355,7 @@ fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Err
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{in_temporary_directory, with_script};
     use executable_path::executable_path;
     use std::{
         env::{current_dir, set_current_dir},
@@ -357,20 +363,6 @@ mod tests {
         path::PathBuf,
     };
     use tempfile::TempDir;
-
-    fn in_temporary_directory<F>(f: F)
-    where
-        F: FnOnce() + std::panic::UnwindSafe,
-    {
-        let temp_dir = TempDir::new().unwrap();
-        let original_working_directory = current_dir().unwrap();
-        set_current_dir(&temp_dir).unwrap();
-        let result = std::panic::catch_unwind(|| {
-            f();
-        });
-        set_current_dir(original_working_directory).unwrap();
-        result.unwrap();
-    }
 
     macro_rules! cmd_result_with_context_unit {
         ($context:expr, $($args:tt)*) => {{
@@ -1422,5 +1414,38 @@ mod tests {
             let StdoutUntrimmed(_) = cmd!("echo", %"foo",);
             let _result: Result<(), Error> = cmd_result!("echo", %"foo",);
         }
+    }
+
+    mod environment_variables {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn allows_to_add_variables() {
+            with_script("echo $FOO", || {
+                let StdoutTrimmed(output) = cmd!("./test-script", SetVar("FOO", "bar"));
+                assert_eq!(output, "bar");
+            });
+        }
+
+        #[test]
+        #[ignore]
+        fn works_for_multiple_variables() {}
+
+        #[test]
+        #[ignore]
+        fn child_processes_inherit_the_environment() {}
+
+        #[test]
+        #[ignore]
+        fn overwrites_existing_parent_variables() {}
+
+        #[test]
+        #[ignore]
+        fn variables_are_overwritten_by_subsequent_variables_with_the_same_name() {}
+
+        #[test]
+        #[ignore]
+        fn variables_can_be_set_to_the_empty_string() {}
     }
 }

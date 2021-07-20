@@ -25,10 +25,11 @@ use std::{
 /// Here's a non-exhaustive list of the most commonly used types to get you started:
 ///
 /// - [`String`] and [`&str`],
-/// - [`Split`] (and its shortcut `%`),
+/// - [`Split`] (and its shortcut `%`) to split commands by whitespace,
 /// - [`PathBuf`] and [`&Path`],
 /// - multiple sequence types, like [`vectors`], [`slices`] and (since version 1.51) [`arrays`],
 /// - [`CurrentDir`],
+/// - [`SetVar`] for setting environment variables,
 /// - [`StdIn`], and
 /// - [`LogCommand`].
 ///
@@ -41,6 +42,8 @@ use std::{
 /// [`slices`]: trait.Input.html#impl-Input-for-%26[T]
 /// [`arrays`]: trait.Input.html#impl-Input-for-[T%3B%20N]
 /// [`CurrentDir`]: trait.Input.html#impl-Input-1
+/// [`SetVar`]: trait.Input.html#impl-Input-1
+/// todo: figure out links
 /// [`StdIn`]: trait.Input.html#impl-Input-2
 /// [`LogCommand`]: trait.Input.html#impl-Input
 ///
@@ -458,5 +461,37 @@ where
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
         Arc::make_mut(&mut config.stdin).extend_from_slice(self.0.as_ref());
+    }
+}
+
+/// See the [`Input`] implementation for [`SetVar`] below.
+pub struct SetVar<Key, Value>(pub Key, pub Value)
+where
+    Key: AsRef<OsStr>,
+    Value: AsRef<OsStr>;
+
+/// Adds an environment variable to the environment of the child process.
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutUntrimmed(output) = cmd!("env", SetVar("FOO", "bar"));
+/// assert!(output.contains("FOO=bar\n"));
+/// ```
+///
+/// Child processes inherit the environment of the parent process.
+/// [`SetVar`] only adds environment variables to that inherited environment.
+/// If the environment variable is also set in the parent process,
+/// it is overwritten by [`SetVar`].
+impl<Key, Value> Input for SetVar<Key, Value>
+where
+    Key: AsRef<OsStr>,
+    Value: AsRef<OsStr>,
+{
+    #[doc(hidden)]
+    fn configure(self, config: &mut Config) {
+        let SetVar(key, value) = self;
+        config.environment_additions =
+            Some((key.as_ref().to_os_string(), value.as_ref().to_os_string()));
     }
 }
