@@ -1437,7 +1437,7 @@ mod tests {
             let mut i = 0;
             loop {
                 let key = format!("CRADLE_TEST_VARIABLE_{}", i);
-                if let None = env::var_os(&key) {
+                if env::var_os(&key).is_none() {
                     break key;
                 }
                 i += 1;
