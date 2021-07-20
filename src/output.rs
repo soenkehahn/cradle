@@ -29,7 +29,10 @@ use std::{process::ExitStatus, sync::Arc};
 /// Here's a non-exhaustive list of the more commonly used return types to get you started:
 ///
 /// - `()`: In case you don't want to capture anything. See also [`cmd_unit`].
-/// - [`StdoutUntrimmed`], [`StdoutTrimmed`] and [`Stderr`]: To capture `stdout`, `stdout` trimmed of whitespace, and `stderr`.
+/// - To capture output streams:
+///   - [`StdoutTrimmed`]: To capture `stdout`, trimmed of whitespace.
+///   - [`StdoutUntrimmed`]: To capture `stdout` untrimmed.
+///   - [`Stderr`]: To capture `stderr`.
 /// - [`Status`]: To capture the command's [`ExitStatus`].
 ///
 /// Also, [`Output`] is implemented for tuples.
