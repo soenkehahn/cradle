@@ -35,16 +35,15 @@ use std::{
 ///
 /// [`String`]: trait.Input.html#impl-Input-for-String
 /// [`&str`]: trait.Input.html#impl-Input-for-%26str
-/// [`Split`]: trait.Input.html#impl-Input-3
+/// [`Split`]: trait.Input.html#impl-Input-4
 /// [`PathBuf`]: trait.Input.html#impl-Input-for-PathBuf
 /// [`&Path`]: trait.Input.html#impl-Input-for-%26Path
 /// [`vectors`]: trait.Input.html#impl-Input-for-Vec<T>
 /// [`slices`]: trait.Input.html#impl-Input-for-%26[T]
 /// [`arrays`]: trait.Input.html#impl-Input-for-[T%3B%20N]
-/// [`CurrentDir`]: trait.Input.html#impl-Input-1
+/// [`CurrentDir`]: trait.Input.html#impl-Input-2
 /// [`SetVar`]: trait.Input.html#impl-Input-1
-/// todo: figure out links
-/// [`StdIn`]: trait.Input.html#impl-Input-2
+/// [`StdIn`]: trait.Input.html#impl-Input-3
 /// [`LogCommand`]: trait.Input.html#impl-Input
 ///
 /// ## Tuples
