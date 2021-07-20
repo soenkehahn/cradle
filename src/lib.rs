@@ -357,12 +357,7 @@ mod tests {
     use super::*;
     use crate::test_utils::{in_temporary_directory, with_script};
     use executable_path::executable_path;
-    use std::{
-        env::{current_dir, set_current_dir},
-        ffi::OsStr,
-        path::PathBuf,
-    };
-    use tempfile::TempDir;
+    use std::{ffi::OsStr, path::PathBuf};
 
     macro_rules! cmd_result_with_context_unit {
         ($context:expr, $($args:tt)*) => {{
