@@ -69,6 +69,34 @@ impl Output for () {
     }
 }
 
+macro_rules! tuple_impl {
+    ($($generics:ident,)+) => {
+        impl<$($generics),+> Output for ($($generics,)+)
+        where
+            $($generics: Output,)+
+        {
+            #[doc(hidden)]
+            fn configure(config: &mut Config) {
+                $(<$generics as Output>::configure(config);)+
+            }
+
+            #[doc(hidden)]
+            fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+                Ok((
+                    $(<$generics as Output>::from_run_result(config, result.clone())?,)+
+                ))
+            }
+        }
+    };
+}
+
+tuple_impl!(A,);
+tuple_impl!(A, B,);
+tuple_impl!(A, B, C,);
+tuple_impl!(A, B, C, D,);
+tuple_impl!(A, B, C, D, E,);
+tuple_impl!(A, B, C, D, E, F,);
+
 /// See the [`Output`] implementation for [`StdoutTrimmed`] below.
 #[derive(Debug, PartialEq, Clone)]
 pub struct StdoutTrimmed(pub String);
@@ -136,33 +164,43 @@ impl Output for StdoutUntrimmed {
     }
 }
 
-macro_rules! tuple_impl {
-    ($($generics:ident,)+) => {
-        impl<$($generics),+> Output for ($($generics,)+)
-        where
-            $($generics: Output,)+
-        {
-            #[doc(hidden)]
-            fn configure(config: &mut Config) {
-                $(<$generics as Output>::configure(config);)+
-            }
+/// See the [`Output`] implementation for [`Stderr`] below.
+#[derive(Debug)]
+pub struct Stderr(pub String);
 
-            #[doc(hidden)]
-            fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-                Ok((
-                    $(<$generics as Output>::from_run_result(config, result.clone())?,)+
-                ))
-            }
-        }
-    };
+/// [`Stderr`] allows to capture the `stderr` of a child process:
+///
+/// ```
+/// use cradle::*;
+///
+/// // (`Status` is used here to suppress panics caused by `ls`
+/// // terminating with a non-zero exit code.)
+/// let (Stderr(stderr), Status(_)) = cmd!(%"ls does-not-exist");
+/// assert!(stderr.contains("No such file or directory"));
+/// ```
+///
+/// This assumes that the output written to `stderr` is encoded
+/// as utf-8, and will error otherwise.
+///
+/// By default, what is written to `stderr` by the child process
+/// is relayed to the parent's `stderr`. However, when [`Stderr`]
+/// is used, this is switched off.
+impl Output for Stderr {
+    #[doc(hidden)]
+    fn configure(config: &mut Config) {
+        config.relay_stderr = false;
+    }
+
+    #[doc(hidden)]
+    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+        Ok(Stderr(String::from_utf8(result?.stderr).map_err(
+            |source| Error::InvalidUtf8ToStderr {
+                full_command: config.full_command(),
+                source: Arc::new(source),
+            },
+        )?))
+    }
 }
-
-tuple_impl!(A,);
-tuple_impl!(A, B,);
-tuple_impl!(A, B, C,);
-tuple_impl!(A, B, C, D,);
-tuple_impl!(A, B, C, D, E,);
-tuple_impl!(A, B, C, D, E, F,);
 
 /// See the [`Output`] implementation for [`Status`] below.
 pub struct Status(pub ExitStatus);
@@ -202,43 +240,5 @@ impl Output for Status {
     #[doc(hidden)]
     fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
         Ok(Status(result?.exit_status))
-    }
-}
-
-/// See the [`Output`] implementation for [`Stderr`] below.
-#[derive(Debug)]
-pub struct Stderr(pub String);
-
-/// [`Stderr`] allows to capture the `stderr` of a child process:
-///
-/// ```
-/// use cradle::*;
-///
-/// // (`Status` is used here to suppress panics caused by `ls`
-/// // terminating with a non-zero exit code.)
-/// let (Stderr(stderr), Status(_)) = cmd!(%"ls does-not-exist");
-/// assert!(stderr.contains("No such file or directory"));
-/// ```
-///
-/// This assumes that the output written to `stderr` is encoded
-/// as utf-8, and will error otherwise.
-///
-/// By default, what is written to `stderr` by the child process
-/// is relayed to the parent's `stderr`. However, when [`Stderr`]
-/// is used, this is switched off.
-impl Output for Stderr {
-    #[doc(hidden)]
-    fn configure(config: &mut Config) {
-        config.relay_stderr = false;
-    }
-
-    #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-        Ok(Stderr(String::from_utf8(result?.stderr).map_err(
-            |source| Error::InvalidUtf8ToStderr {
-                full_command: config.full_command(),
-                source: Arc::new(source),
-            },
-        )?))
     }
 }
