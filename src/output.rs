@@ -258,8 +258,8 @@ impl Output for Status {
 /// ```
 /// use cradle::*;
 ///
-/// if !cmd!(%"echo foo") {
-///     panic!("echo should not fail!");
+/// if !cmd!(%"which cargo") {
+///     panic!("Cargo is not installed!");
 /// }
 /// ```
 ///
