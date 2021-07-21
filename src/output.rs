@@ -259,7 +259,7 @@ impl Output for Status {
 /// use cradle::*;
 ///
 /// if !cmd!(%"echo foo") {
-///     panic!("echo failed!");
+///     panic!("echo should not fail!");
 /// }
 /// ```
 ///
