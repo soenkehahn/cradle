@@ -207,6 +207,12 @@ macro_rules! cmd {
 
 /// Like [`cmd!`], but fixes the return type to `()`.
 /// It's named after [the unit type `()`](https://doc.rust-lang.org/std/primitive.unit.html).
+///
+/// ```
+/// use cradle::*;
+///
+/// cmd_unit!(%"touch ./foo");
+/// ```
 #[macro_export]
 macro_rules! cmd_unit {
     ($($args:tt)*) => {{
