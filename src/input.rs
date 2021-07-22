@@ -491,7 +491,7 @@ where
     fn configure(self, config: &mut Config) {
         let Self(key, value) = self;
         config
-            .environment_additions
+            .added_environment_variables
             .push((key.as_ref().to_os_string(), value.as_ref().to_os_string()));
     }
 }

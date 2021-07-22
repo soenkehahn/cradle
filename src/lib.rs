@@ -291,7 +291,7 @@ where
     }
     let mut command = Command::new(&executable);
     command.args(arguments);
-    for (key, value) in &config.environment_additions {
+    for (key, value) in &config.added_environment_variables {
         command.env(key, value);
     }
     command
