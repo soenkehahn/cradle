@@ -295,8 +295,6 @@ where
         command.env(key, value);
     }
     command
-        .args(arguments)
-        .envs(&config.environment_additions)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
