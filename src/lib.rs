@@ -1425,7 +1425,7 @@ mod tests {
         #[test]
         fn allows_to_add_variables() {
             with_script("echo $FOO", || {
-                let StdoutTrimmed(output) = cmd!("./test-script", Env("FOO", "bar"));
+                let StdoutTrimmed(output) = cmd!("./test-script.sh", Env("FOO", "bar"));
                 assert_eq!(output, "bar");
             });
         }
@@ -1433,7 +1433,8 @@ mod tests {
         #[test]
         fn works_for_multiple_variables() {
             with_script("echo $FOO-$BAR", || {
-                let StdoutTrimmed(output) = cmd!("./test-script", Env("FOO", "a"), Env("BAR", "b"));
+                let StdoutTrimmed(output) =
+                    cmd!("./test-script.sh", Env("FOO", "a"), Env("BAR", "b"));
                 assert_eq!(output, "a-b");
             });
         }
@@ -1454,7 +1455,7 @@ mod tests {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
             with_script(&format!("echo ${}", &unused_key), || {
-                let StdoutTrimmed(output) = cmd!("./test-script");
+                let StdoutTrimmed(output) = cmd!("./test-script.sh");
                 assert_eq!(output, "foo");
             });
         }
@@ -1464,7 +1465,7 @@ mod tests {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
             with_script(&format!("echo ${}", &unused_key), || {
-                let StdoutTrimmed(output) = cmd!("./test-script", Env(unused_key, "bar"));
+                let StdoutTrimmed(output) = cmd!("./test-script.sh", Env(unused_key, "bar"));
                 assert_eq!(output, "bar");
             });
         }
@@ -1472,7 +1473,8 @@ mod tests {
         #[test]
         fn variables_are_overwritten_by_subsequent_variables_with_the_same_name() {
             with_script("echo $FOO", || {
-                let StdoutTrimmed(output) = cmd!("./test-script", Env("FOO", "a"), Env("FOO", "b"));
+                let StdoutTrimmed(output) =
+                    cmd!("./test-script.sh", Env("FOO", "a"), Env("FOO", "b"));
                 assert_eq!(output, "b");
             });
         }
@@ -1480,7 +1482,7 @@ mod tests {
         #[test]
         fn variables_can_be_set_to_the_empty_string() {
             with_script("echo ${FOO+x}", || {
-                let StdoutTrimmed(output) = cmd!("./test-script", Env("FOO", ""));
+                let StdoutTrimmed(output) = cmd!("./test-script.sh", Env("FOO", ""));
                 assert_eq!(output, "x");
             });
         }

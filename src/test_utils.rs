@@ -24,9 +24,9 @@ where
 {
     in_temporary_directory(|| {
         let prefix = vec!["#!/usr/bin/env bash", "set -euo pipefail"].join("\n");
-        fs::write("test-script", format!("{}\n\n{}", prefix, script)).unwrap();
+        fs::write("test-script.sh", format!("{}\n\n{}", prefix, script)).unwrap();
         #[cfg(unix)]
-        crate::cmd_unit!(%"chmod +x test-script");
+        crate::cmd_unit!(%"chmod +x test-script.sh");
         test();
     });
 }
