@@ -29,7 +29,7 @@ use std::{
 /// - [`PathBuf`] and [`&Path`],
 /// - multiple sequence types, like [`vectors`], [`slices`] and (since version 1.51) [`arrays`],
 /// - [`CurrentDir`],
-/// - [`SetVar`] for setting environment variables,
+/// - [`Env`] for setting environment variables,
 /// - [`StdIn`], and
 /// - [`LogCommand`].
 ///
@@ -42,7 +42,7 @@ use std::{
 /// [`slices`]: trait.Input.html#impl-Input-for-%26[T]
 /// [`arrays`]: trait.Input.html#impl-Input-for-[T%3B%20N]
 /// [`CurrentDir`]: trait.Input.html#impl-Input-2
-/// [`SetVar`]: trait.Input.html#impl-Input-1
+/// [`Env`]: trait.Input.html#impl-Input-1
 /// [`StdIn`]: trait.Input.html#impl-Input-3
 /// [`LogCommand`]: trait.Input.html#impl-Input
 ///
@@ -463,8 +463,8 @@ where
     }
 }
 
-/// See the [`Input`] implementation for [`SetVar`] below.
-pub struct SetVar<Key, Value>(pub Key, pub Value)
+/// See the [`Input`] implementation for [`Env`] below.
+pub struct Env<Key, Value>(pub Key, pub Value)
 where
     Key: AsRef<OsStr>,
     Value: AsRef<OsStr>;
@@ -474,15 +474,15 @@ where
 /// ```
 /// use cradle::*;
 ///
-/// let StdoutUntrimmed(output) = cmd!("env", SetVar("FOO", "bar"));
+/// let StdoutUntrimmed(output) = cmd!("env", Env("FOO", "bar"));
 /// assert!(output.contains("FOO=bar\n"));
 /// ```
 ///
 /// Child processes inherit the environment of the parent process.
-/// [`SetVar`] only adds environment variables to that inherited environment.
+/// [`Env`] only adds environment variables to that inherited environment.
 /// If the environment variable is also set in the parent process,
-/// it is overwritten by [`SetVar`].
-impl<Key, Value> Input for SetVar<Key, Value>
+/// it is overwritten by [`Env`].
+impl<Key, Value> Input for Env<Key, Value>
 where
     Key: AsRef<OsStr>,
     Value: AsRef<OsStr>,
