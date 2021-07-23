@@ -998,6 +998,26 @@ mod tests {
         }
     }
 
+    mod bool_output {
+        use super::*;
+
+        #[test]
+        fn success_exit_status_is_true() {
+            assert!(cmd!("true"));
+        }
+
+        #[test]
+        fn failure_exit_status_is_false() {
+            assert!(!cmd!("false"));
+        }
+
+        #[test]
+        #[should_panic]
+        fn io_error_panics() {
+            assert!(cmd!("/"));
+        }
+    }
+
     mod tuple_inputs {
         use super::*;
         use pretty_assertions::assert_eq;
