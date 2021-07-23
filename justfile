@@ -1,4 +1,4 @@
-ci: test build doc clippy fmt context-integration-tests run-examples render-readme-check
+ci: test build doc clippy fmt context-integration-tests run-examples forbidden-words render-readme-check
 
 build:
   cargo build --all-targets --all-features
