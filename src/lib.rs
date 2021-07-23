@@ -1483,6 +1483,7 @@ mod tests {
         }
 
         #[test]
+        #[ignore]
         fn child_processes_inherit_the_environment() {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
