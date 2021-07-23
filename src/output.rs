@@ -212,8 +212,8 @@ impl Output for Stderr {
     }
 }
 
-/// Using [`Status`] as the return type for [`cmd!`] allows to
-/// retrieve the [`ExitStatus`] of the child process:
+/// Use [`Status`] as the return type for [`cmd!`] to retrieve the
+/// [`ExitStatus`] of the child process:
 ///
 /// ```
 /// use cradle::*;
@@ -249,5 +249,44 @@ impl Output for Status {
     #[doc(hidden)]
     fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
         Ok(Status(result?.exit_status))
+    }
+}
+
+/// Using [`bool`] as the return type for [`cmd!`] will return `true` if
+/// the command returned successfully, and `false` otherwise:
+///
+/// ```
+/// use cradle::*;
+///
+/// if !cmd!(%"which cargo") {
+///     panic!("Cargo is not installed!");
+/// }
+/// ```
+///
+/// Also, when using [`bool`], non-zero exit codes will not result in a panic
+/// or [`std::result::Result::Err`]:
+///
+/// ```
+/// use cradle::*;
+///
+/// let success: bool = cmd!("false");
+/// assert!(!success);
+/// let result: Result<bool, cradle::Error> = cmd_result!("false");
+/// assert!(result.is_ok());
+/// assert_eq!(result.unwrap(), false);
+/// ```
+///
+/// Also see the
+/// [section about error handling](index.html#error-handling) in
+/// the module documentation.
+impl Output for bool {
+    #[doc(hidden)]
+    fn configure(config: &mut Config) {
+        config.error_on_non_zero_exit_code = false;
+    }
+
+    #[doc(hidden)]
+    fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+        Ok(result?.exit_status.success())
     }
 }
