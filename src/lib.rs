@@ -367,7 +367,7 @@ mod tests {
     };
     use tempfile::TempDir;
 
-    pub(crate) fn in_temporary_directory<F>(f: F)
+    fn in_temporary_directory<F>(f: F)
     where
         F: FnOnce() + std::panic::UnwindSafe,
     {
