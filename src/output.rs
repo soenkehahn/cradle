@@ -272,7 +272,8 @@ impl Output for Status {
 /// let success: bool = cmd!("false");
 /// assert!(!success);
 /// let result: Result<bool, cradle::Error> = cmd_result!("false");
-/// assert!(matches!(result, Ok(false)));
+/// assert!(result.is_ok());
+/// assert_eq!(result.unwrap(), false);
 /// ```
 ///
 /// Also see the
