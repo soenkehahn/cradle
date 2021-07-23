@@ -1,7 +1,4 @@
-use std::{
-    env::{current_dir, set_current_dir},
-    fs,
-};
+use std::env::{current_dir, set_current_dir};
 use tempfile::TempDir;
 
 pub(crate) fn in_temporary_directory<F>(f: F)
