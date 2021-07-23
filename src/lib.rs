@@ -361,7 +361,7 @@ fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Err
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::{in_temporary_directory, with_script};
+    use crate::test_utils::in_temporary_directory;
     use executable_path::executable_path;
     use std::{ffi::OsStr, path::PathBuf};
 
@@ -1424,19 +1424,15 @@ mod tests {
 
         #[test]
         fn allows_to_add_variables() {
-            with_script("echo $FOO", || {
-                let StdoutTrimmed(output) = cmd!("./test-script.sh", Env("FOO", "bar"));
-                assert_eq!(output, "bar");
-            });
+            let StdoutTrimmed(output) = cmd!(%"bash -c", "echo $FOO", Env("FOO", "bar"));
+            assert_eq!(output, "bar");
         }
 
         #[test]
         fn works_for_multiple_variables() {
-            with_script("echo $FOO-$BAR", || {
-                let StdoutTrimmed(output) =
-                    cmd!("./test-script.sh", Env("FOO", "a"), Env("BAR", "b"));
-                assert_eq!(output, "a-b");
-            });
+            let StdoutTrimmed(output) =
+                cmd!(%"bash -c", "echo $FOO-$BAR", Env("FOO", "a"), Env("BAR", "b"));
+            assert_eq!(output, "a-b");
         }
 
         fn find_unused_environment_variable() -> String {
@@ -1454,37 +1450,30 @@ mod tests {
         fn child_processes_inherit_the_environment() {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
-            with_script(&format!("echo ${}", &unused_key), || {
-                let StdoutTrimmed(output) = cmd!("./test-script.sh");
-                assert_eq!(output, "foo");
-            });
+            let StdoutTrimmed(output) = cmd!(%"bash -c", format!("echo ${}", &unused_key));
+            assert_eq!(output, "foo");
         }
 
         #[test]
         fn overwrites_existing_parent_variables() {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
-            with_script(&format!("echo ${}", &unused_key), || {
-                let StdoutTrimmed(output) = cmd!("./test-script.sh", Env(unused_key, "bar"));
-                assert_eq!(output, "bar");
-            });
+            let StdoutTrimmed(output) =
+                cmd!(%"bash -c", format!("echo ${}", &unused_key), Env(unused_key, "bar"));
+            assert_eq!(output, "bar");
         }
 
         #[test]
         fn variables_are_overwritten_by_subsequent_variables_with_the_same_name() {
-            with_script("echo $FOO", || {
-                let StdoutTrimmed(output) =
-                    cmd!("./test-script.sh", Env("FOO", "a"), Env("FOO", "b"));
-                assert_eq!(output, "b");
-            });
+            let StdoutTrimmed(output) =
+                cmd!(%"bash -c", "echo $FOO", Env("FOO", "a"), Env("FOO", "b"));
+            assert_eq!(output, "b");
         }
 
         #[test]
         fn variables_can_be_set_to_the_empty_string() {
-            with_script("echo ${FOO+x}", || {
-                let StdoutTrimmed(output) = cmd!("./test-script.sh", Env("FOO", ""));
-                assert_eq!(output, "x");
-            });
+            let StdoutTrimmed(output) = cmd!(%"bash -c", "echo ${FOO+x}", Env("FOO", ""));
+            assert_eq!(output, "x");
         }
     }
 }

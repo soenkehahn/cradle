@@ -17,16 +17,3 @@ where
     set_current_dir(original_working_directory).unwrap();
     result.unwrap();
 }
-
-pub(crate) fn with_script<F>(script: &str, test: F)
-where
-    F: FnOnce() + std::panic::UnwindSafe,
-{
-    in_temporary_directory(|| {
-        let prefix = vec!["#!/usr/bin/env bash", "set -euo pipefail"].join("\n");
-        fs::write("test-script.sh", format!("{}\n\n{}", prefix, script)).unwrap();
-        #[cfg(unix)]
-        crate::cmd_unit!(%"chmod +x test-script.sh");
-        test();
-    });
-}
