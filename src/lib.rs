@@ -179,8 +179,6 @@ mod context;
 mod error;
 mod input;
 mod output;
-#[cfg(test)]
-mod test_utils;
 
 use crate::collected_output::Waiter;
 #[doc(hidden)]
@@ -361,9 +359,27 @@ fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Err
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::in_temporary_directory;
     use executable_path::executable_path;
-    use std::{ffi::OsStr, path::PathBuf};
+    use std::{
+        env::{current_dir, set_current_dir},
+        ffi::OsStr,
+        path::PathBuf,
+    };
+    use tempfile::TempDir;
+
+    pub(crate) fn in_temporary_directory<F>(f: F)
+    where
+        F: FnOnce() + std::panic::UnwindSafe,
+    {
+        let temp_dir = TempDir::new().unwrap();
+        let original_working_directory = current_dir().unwrap();
+        set_current_dir(&temp_dir).unwrap();
+        let result = std::panic::catch_unwind(|| {
+            f();
+        });
+        set_current_dir(original_working_directory).unwrap();
+        result.unwrap();
+    }
 
     macro_rules! cmd_result_with_context_unit {
         ($context:expr, $($args:tt)*) => {{
