@@ -72,11 +72,8 @@ jobs:
       - name: Install just
         run: |
           if ! which just; then
-            git clone https://github.com/casey/just
-            cd just
-            git checkout v0.9.3
-            echo '1.51.0' > rust-toolchain
-            cargo install --path .
+            curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | \
+              bash -s -- --to /usr/local/bin
           fi
 
       - name: Install clippy and rustfmt
