@@ -5,7 +5,6 @@ build:
 
 test +pattern="": build
   cargo test --all {{ pattern }}
-  rm -f 'filename with spaces' foo
 
 test-lib-fast +pattern="":
   cargo test --lib {{ pattern }}
