@@ -86,6 +86,8 @@
 //! as the return value:
 //!
 //! ```
+//! # let temp_dir = tempfile::TempDir::new().unwrap();
+//! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::*;
 //!
 //! let () = cmd!(%"touch foo");
@@ -96,6 +98,8 @@
 //! It behaves exactly like [`cmd!`] but always returns `()`.
 //!
 //! ```
+//! # let temp_dir = tempfile::TempDir::new().unwrap();
+//! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::*;
 //!
 //! cmd_unit!(%"touch foo");
@@ -207,6 +211,8 @@ macro_rules! cmd {
 /// It's named after [the unit type `()`](https://doc.rust-lang.org/std/primitive.unit.html).
 ///
 /// ```
+/// # let temp_dir = tempfile::TempDir::new().unwrap();
+/// # std::env::set_current_dir(&temp_dir).unwrap();
 /// use cradle::*;
 ///
 /// cmd_unit!(%"touch ./foo");
