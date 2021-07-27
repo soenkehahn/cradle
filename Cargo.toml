@@ -1,6 +1,6 @@
 [package]
 name = "cradle"
-version = "0.0.13"
+version = "0.0.14"
 description = "Execute child processes with ease"
 authors = ["Sönke Hahn <soenkehahn@gmail.com>"]
 license = "CC0-1.0"
@@ -21,6 +21,11 @@ tempfile = "3.2.0"
 [[bin]]
 name = "cradle_test_helper"
 path = "src/test_helper.rs"
+required-features = ["test_executables"]
+
+[[bin]]
+name = "cradle_panic"
+path = "src/cradle_panic.rs"
 required-features = ["test_executables"]
 
 [target.'cfg(unix)'.dependencies.gag]
