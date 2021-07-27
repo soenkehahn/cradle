@@ -454,12 +454,6 @@ where
     }
 }
 
-/// See the [`Input`] implementation for [`Env`] below.
-pub struct Env<Key, Value>(pub Key, pub Value)
-where
-    Key: AsRef<OsStr>,
-    Value: AsRef<OsStr>;
-
 /// Adds an environment variable to the environment of the child process.
 ///
 /// ```
@@ -473,6 +467,11 @@ where
 /// [`Env`] only adds environment variables to that inherited environment.
 /// If the environment variable is also set in the parent process,
 /// it is overwritten by [`Env`].
+pub struct Env<Key, Value>(pub Key, pub Value)
+where
+    Key: AsRef<OsStr>,
+    Value: AsRef<OsStr>;
+
 impl<Key, Value> Input for Env<Key, Value>
 where
     Key: AsRef<OsStr>,
