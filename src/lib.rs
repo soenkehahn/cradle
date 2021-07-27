@@ -412,7 +412,7 @@ mod tests {
     }
 
     fn test_helper() -> PathBuf {
-        test_executable("cradle_test_helper")
+        test_executable("test_executables_helper")
     }
 
     macro_rules! cmd_result_with_context_unit {
@@ -498,8 +498,8 @@ mod tests {
             #[rustversion::since(1.46)]
             #[test]
             fn includes_source_location_of_cmd_call() {
-                let (Status(_), Stderr(stderr)) = cmd!(test_executable("cradle_panic"));
-                let expected = "src/cradle_panic.rs:4:5";
+                let (Status(_), Stderr(stderr)) = cmd!(test_executable("test_executables_panic"));
+                let expected = "src/test_executables/panic.rs:4:5";
                 assert!(
                     stderr.contains(expected),
                     "{:?}\n  does not contain\n{:?}",
