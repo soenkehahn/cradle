@@ -1577,8 +1577,8 @@ mod tests {
                 .trim_margin()
                 .unwrap(),
             );
-            let StdoutUntrimmed(output) = cmd!(&script, Env("FOO", ""));
-            assert_eq!(output, "FOO set, but empty\n");
+            let StdoutTrimmed(output) = cmd!(&script, Env("FOO", ""));
+            assert_eq!(output, "FOO set, but empty");
         }
     }
 }
