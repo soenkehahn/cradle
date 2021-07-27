@@ -461,8 +461,9 @@ mod tests {
                 cmd_unit!(%"does-not-exist foo bar");
             }
 
+            #[rustversion::since(1.46)]
             #[test]
-            fn includes_source_locations_of_cmd_call() {
+            fn includes_source_location_of_cmd_call() {
                 let (Status(_), Stderr(stderr)) = cmd!(executable_path("cradle_panic"));
                 let expected = "src/cradle_panic.rs:4:5";
                 assert!(

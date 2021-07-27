@@ -32,7 +32,7 @@ impl Error {
 }
 
 #[doc(hidden)]
-#[track_caller]
+#[rustversion::attr(since(1.46), track_caller)]
 pub fn panic_on_error<T>(result: Result<T, Error>) -> T {
     match result {
         Ok(t) => t,
