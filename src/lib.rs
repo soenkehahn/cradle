@@ -360,11 +360,13 @@ fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Err
 mod tests {
     use super::*;
     use executable_path::executable_path;
+    use lazy_static::lazy_static;
     use std::{
         env::{current_dir, set_current_dir},
         ffi::OsStr,
         fs,
         path::PathBuf,
+        sync::Mutex,
     };
     use tempfile::TempDir;
     use trim_margin::MarginTrimmable;
@@ -373,6 +375,10 @@ mod tests {
     where
         F: FnOnce() + std::panic::UnwindSafe,
     {
+        lazy_static! {
+            static ref CURRENT_DIR_LOCK: Mutex<()> = Mutex::new(());
+        }
+        let _lock = CURRENT_DIR_LOCK.lock();
         let temp_dir = TempDir::new().unwrap();
         let original_working_directory = current_dir().unwrap();
         set_current_dir(&temp_dir).unwrap();
@@ -461,6 +467,19 @@ mod tests {
             )]
             fn includes_full_command_on_missing_executables() {
                 cmd_unit!(%"does-not-exist foo bar");
+            }
+
+            #[rustversion::since(1.46)]
+            #[test]
+            fn includes_source_location_of_cmd_call() {
+                let (Status(_), Stderr(stderr)) = cmd!(executable_path("cradle_panic"));
+                let expected = "src/cradle_panic.rs:4:5";
+                assert!(
+                    stderr.contains(expected),
+                    "{:?}\n  does not contain\n{:?}",
+                    stderr,
+                    expected
+                );
             }
 
             #[test]
