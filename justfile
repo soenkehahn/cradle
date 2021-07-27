@@ -5,7 +5,6 @@ build:
 
 test +pattern="": build
   cargo test --all -- --test-threads=1 {{ pattern }}
-  rm -f 'filename with spaces' foo
 
 test-lib-fast +pattern="":
   cargo test --lib -- --test-threads=1 {{ pattern }}

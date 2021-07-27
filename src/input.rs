@@ -413,6 +413,8 @@ impl Input for PathBuf {
 /// as arguments.
 ///
 /// ```
+/// # let temp_dir = tempfile::TempDir::new().unwrap();
+/// # std::env::set_current_dir(&temp_dir).unwrap();
 /// use cradle::*;
 /// use std::path::Path;
 ///

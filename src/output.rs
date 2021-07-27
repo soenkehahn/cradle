@@ -60,6 +60,8 @@ pub trait Output: Sized {
 /// Use this when you don't need any result from the child process.
 ///
 /// ```
+/// # let temp_dir = tempfile::TempDir::new().unwrap();
+/// # std::env::set_current_dir(&temp_dir).unwrap();
 /// use cradle::*;
 ///
 /// let () = cmd!(%"touch ./foo");
