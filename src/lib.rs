@@ -364,6 +364,7 @@ mod tests {
         env::{current_dir, set_current_dir},
         ffi::OsStr,
         path::PathBuf,
+        sync::Mutex,
     };
     use tempfile::TempDir;
 
@@ -371,6 +372,10 @@ mod tests {
     where
         F: FnOnce() + std::panic::UnwindSafe,
     {
+        lazy_static::lazy_static! {
+            static ref CURRENT_DIR_LOCK: Mutex<()> = Mutex::new(());
+        }
+        let _lock = CURRENT_DIR_LOCK.lock();
         let temp_dir = TempDir::new().unwrap();
         let original_working_directory = current_dir().unwrap();
         set_current_dir(&temp_dir).unwrap();
