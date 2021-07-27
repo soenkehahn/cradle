@@ -360,6 +360,7 @@ fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Err
 mod tests {
     use super::*;
     use executable_path::executable_path;
+    use lazy_static::lazy_static;
     use std::{
         env::{current_dir, set_current_dir},
         ffi::OsStr,
@@ -372,7 +373,7 @@ mod tests {
     where
         F: FnOnce() + std::panic::UnwindSafe,
     {
-        lazy_static::lazy_static! {
+        lazy_static! {
             static ref CURRENT_DIR_LOCK: Mutex<()> = Mutex::new(());
         }
         let _lock = CURRENT_DIR_LOCK.lock();
