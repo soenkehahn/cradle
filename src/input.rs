@@ -25,10 +25,11 @@ use std::{
 /// Here's a non-exhaustive list of the most commonly used types to get you started:
 ///
 /// - [`String`] and [`&str`],
-/// - [`Split`] (and its shortcut `%`),
+/// - [`Split`] (and its shortcut `%`) to split commands by whitespace,
 /// - [`PathBuf`] and [`&Path`],
 /// - multiple sequence types, like [`vectors`], [`slices`] and (since version 1.51) [`arrays`],
 /// - [`CurrentDir`],
+/// - [`Env`] for setting environment variables,
 /// - [`Stdin`], and
 /// - [`LogCommand`].
 ///
@@ -450,5 +451,37 @@ where
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
         Arc::make_mut(&mut config.stdin).extend_from_slice(self.0.as_ref());
+    }
+}
+
+/// Adds an environment variable to the environment of the child process.
+///
+/// ```
+/// use cradle::*;
+///
+/// let StdoutUntrimmed(output) = cmd!("env", Env("FOO", "bar"));
+/// assert!(output.contains("FOO=bar\n"));
+/// ```
+///
+/// Child processes inherit the environment of the parent process.
+/// [`Env`] only adds environment variables to that inherited environment.
+/// If the environment variable is also set in the parent process,
+/// it is overwritten by [`Env`].
+pub struct Env<Key, Value>(pub Key, pub Value)
+where
+    Key: AsRef<OsStr>,
+    Value: AsRef<OsStr>;
+
+impl<Key, Value> Input for Env<Key, Value>
+where
+    Key: AsRef<OsStr>,
+    Value: AsRef<OsStr>,
+{
+    #[doc(hidden)]
+    fn configure(self, config: &mut Config) {
+        let Self(key, value) = self;
+        config
+            .added_environment_variables
+            .push((key.as_ref().to_os_string(), value.as_ref().to_os_string()));
     }
 }

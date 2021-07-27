@@ -49,6 +49,14 @@ fn main() {
             while !stdin_is_closed() {}
             println!("stdin is closed");
         }
+        "echo" => {
+            for variable in args {
+                match std::env::var(&variable).unwrap().as_str() {
+                    "" => println!("empty variable: {}", variable),
+                    value => println!("{}", value),
+                }
+            }
+        }
         arg => panic!("cradle_test_helper: invalid arg: {}", arg),
     }
 }
