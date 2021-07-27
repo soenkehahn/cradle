@@ -185,7 +185,7 @@ use crate::collected_output::Waiter;
 pub use crate::{config::Config, context::Context};
 pub use crate::{
     error::{panic_on_error, Error},
-    input::{CurrentDir, Input, LogCommand, Split, Stdin},
+    input::{CurrentDir, Env, Input, LogCommand, Split, Stdin},
     output::{Output, Status, Stderr, StdoutTrimmed, StdoutUntrimmed},
 };
 use std::{
@@ -294,8 +294,11 @@ where
             .map_err(|error| Error::command_io_error(&config, error))?;
     }
     let mut command = Command::new(&executable);
+    command.args(arguments);
+    for (key, value) in &config.added_environment_variables {
+        command.env(key, value);
+    }
     command
-        .args(arguments)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
@@ -899,7 +902,7 @@ mod tests {
         }
 
         #[test]
-        fn does_allow_invalid_utf_8_to_stderr_when_not_capturing() {
+        fn does_allow_invalid_utf_8_to_stderr_when_not_captured() {
             cmd_unit!(
                 executable_path("cradle_test_helper"),
                 "invalid utf-8 stderr"
@@ -1447,6 +1450,89 @@ mod tests {
             cmd_unit!("echo", %"foo",);
             let StdoutUntrimmed(_) = cmd!("echo", %"foo",);
             let _result: Result<(), Error> = cmd_result!("echo", %"foo",);
+        }
+    }
+
+    mod environment_variables {
+        use super::*;
+        use pretty_assertions::assert_eq;
+        use std::env;
+
+        #[test]
+        fn allows_to_add_variables() {
+            let StdoutTrimmed(output) = cmd!(
+                executable_path("cradle_test_helper"),
+                %"echo FOO",
+                Env("FOO", "bar")
+            );
+            assert_eq!(output, "bar");
+        }
+
+        #[test]
+        fn works_for_multiple_variables() {
+            let StdoutUntrimmed(output) = cmd!(
+                executable_path("cradle_test_helper"),
+                %"echo FOO BAR",
+                Env("FOO", "a"),
+                Env("BAR", "b")
+            );
+            assert_eq!(output, "a\nb\n");
+        }
+
+        fn find_unused_environment_variable() -> String {
+            let mut i = 0;
+            loop {
+                let key = format!("CRADLE_TEST_VARIABLE_{}", i);
+                if env::var_os(&key).is_none() {
+                    break key;
+                }
+                i += 1;
+            }
+        }
+
+        #[test]
+        fn child_processes_inherit_the_environment() {
+            let unused_key = find_unused_environment_variable();
+            env::set_var(&unused_key, "foo");
+            let StdoutTrimmed(output) =
+                cmd!(executable_path("cradle_test_helper"), "echo", unused_key);
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn overwrites_existing_parent_variables() {
+            let unused_key = find_unused_environment_variable();
+            env::set_var(&unused_key, "foo");
+            let StdoutTrimmed(output) = cmd!(
+                executable_path("cradle_test_helper"),
+                "echo",
+                &unused_key,
+                Env(unused_key, "bar")
+            );
+            assert_eq!(output, "bar");
+        }
+
+        #[test]
+        fn variables_are_overwritten_by_subsequent_variables_with_the_same_name() {
+            let StdoutTrimmed(output) = cmd!(
+                executable_path("cradle_test_helper"),
+                "echo",
+                "FOO",
+                Env("FOO", "a"),
+                Env("FOO", "b"),
+            );
+            assert_eq!(output, "b");
+        }
+
+        #[test]
+        fn variables_can_be_set_to_the_empty_string() {
+            let StdoutUntrimmed(output) = cmd!(
+                executable_path("cradle_test_helper"),
+                "echo",
+                "FOO",
+                Env("FOO", ""),
+            );
+            assert_eq!(output, "empty variable: FOO\n");
         }
     }
 }
