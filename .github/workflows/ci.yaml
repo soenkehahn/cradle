@@ -71,10 +71,8 @@ jobs:
 
       - name: Install just
         run: |
-          if ! which just; then
-            curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | \
-              bash -s -- --to /usr/local/bin
-          fi
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | \
+            bash -s -- --to /usr/local/bin
 
       - name: Install clippy and rustfmt
         run: |
