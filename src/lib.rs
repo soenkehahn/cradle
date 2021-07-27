@@ -462,6 +462,18 @@ mod tests {
             }
 
             #[test]
+            fn includes_source_locations_of_cmd_call() {
+                let (Status(_), Stderr(stderr)) = cmd!(executable_path("cradle_panic"));
+                let expected = "src/cradle_panic.rs:4:5";
+                assert!(
+                    stderr.contains(expected),
+                    "{:?}\n  does not contain\n{:?}",
+                    stderr,
+                    expected
+                );
+            }
+
+            #[test]
             #[should_panic(expected = "cmd!: no arguments given")]
             fn no_executable() {
                 let vector: Vec<String> = Vec::new();
