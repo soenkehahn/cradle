@@ -365,13 +365,13 @@ fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Err
 #[cfg(test)]
 mod tests {
     use super::*;
-    use executable_path::executable_path;
     use lazy_static::lazy_static;
     use std::{
+        collections::BTreeSet,
         env::{current_dir, set_current_dir},
         ffi::OsStr,
         path::PathBuf,
-        sync::Mutex,
+        sync::{Arc, Mutex},
     };
     use tempfile::TempDir;
 
@@ -391,6 +391,28 @@ mod tests {
         });
         set_current_dir(original_working_directory).unwrap();
         result.unwrap();
+    }
+
+    fn test_executable(name: &str) -> PathBuf {
+        lazy_static! {
+            static ref BUILT: Arc<Mutex<BTreeSet<String>>> = Arc::new(Mutex::new(BTreeSet::new()));
+        }
+        let mut set = BUILT.lock().unwrap();
+        if !set.contains(name) {
+            set.insert(name.to_owned());
+            cmd_unit!(
+                LogCommand,
+                CurrentDir(std::env::var("CARGO_MANIFEST_DIR").unwrap()),
+                %"cargo build",
+                ("--bin", name),
+                %"--features test_executables",
+            );
+        }
+        executable_path::executable_path(name)
+    }
+
+    fn test_helper() -> PathBuf {
+        test_executable("cradle_test_helper")
     }
 
     macro_rules! cmd_result_with_context_unit {
@@ -436,7 +458,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "exited with exit code: 42")]
             fn other_exit_codes() {
-                cmd_unit!(executable_path("cradle_test_helper"), "exit code 42");
+                cmd_unit!(test_helper(), "exit code 42");
             }
 
             #[test]
@@ -476,7 +498,7 @@ mod tests {
             #[rustversion::since(1.46)]
             #[test]
             fn includes_source_location_of_cmd_call() {
-                let (Status(_), Stderr(stderr)) = cmd!(executable_path("cradle_panic"));
+                let (Status(_), Stderr(stderr)) = cmd!(test_executable("cradle_panic"));
                 let expected = "src/cradle_panic.rs:4:5";
                 assert!(
                     stderr.contains(expected),
@@ -496,18 +518,12 @@ mod tests {
             #[test]
             #[should_panic(expected = "invalid utf-8 written to stdout")]
             fn invalid_utf8_stdout() {
-                let StdoutTrimmed(_) = cmd!(
-                    executable_path("cradle_test_helper"),
-                    "invalid utf-8 stdout"
-                );
+                let StdoutTrimmed(_) = cmd!(test_helper(), "invalid utf-8 stdout");
             }
 
             #[test]
             fn invalid_utf8_to_stdout_is_allowed_when_not_captured() {
-                cmd_unit!(
-                    executable_path("cradle_test_helper"),
-                    "invalid utf-8 stdout"
-                );
+                cmd_unit!(test_helper(), "invalid utf-8 stdout");
             }
         }
 
@@ -569,8 +585,7 @@ mod tests {
 
             #[test]
             fn other_exit_codes() {
-                let result: Result<(), Error> =
-                    cmd_result!(executable_path("cradle_test_helper"), "exit code 42");
+                let result: Result<(), Error> = cmd_result!(test_helper(), "exit code 42");
                 assert!(result
                     .unwrap_err()
                     .to_string()
@@ -599,7 +614,7 @@ mod tests {
 
             #[test]
             fn invalid_utf8_stdout() {
-                let test_helper = executable_path("cradle_test_helper");
+                let test_helper = test_helper();
                 let result: Result<StdoutTrimmed, Error> =
                     cmd_result!(&test_helper, "invalid utf-8 stdout");
                 assert_eq!(
@@ -804,7 +819,7 @@ mod tests {
             let context = Context::test();
             let _: Result<(), Error> = cmd_result_with_context!(
                 context.clone(),
-                executable_path("cradle_test_helper"),
+                test_helper(),
                 "output foo and exit with 42"
             );
             assert_eq!(context.stdout(), "foo\n");
@@ -818,7 +833,7 @@ mod tests {
                 let thread = thread::spawn(|| {
                     cmd_result_with_context_unit!(
                         context_clone,
-                        executable_path("cradle_test_helper"),
+                        test_helper(),
                         "stream chunk then wait for file"
                     )
                     .unwrap();
@@ -855,12 +870,8 @@ mod tests {
         #[test]
         fn relays_stderr_by_default() {
             let context = Context::test();
-            cmd_result_with_context_unit!(
-                context.clone(),
-                executable_path("cradle_test_helper"),
-                "write to stderr"
-            )
-            .unwrap();
+            cmd_result_with_context_unit!(context.clone(), test_helper(), "write to stderr")
+                .unwrap();
             assert_eq!(context.stderr(), "foo\n");
         }
 
@@ -869,7 +880,7 @@ mod tests {
             let context = Context::test();
             let _: Result<(), Error> = cmd_result_with_context!(
                 context.clone(),
-                executable_path("cradle_test_helper"),
+                test_helper(),
                 "write to stderr and exit with 42"
             );
             assert_eq!(context.stderr(), "foo\n");
@@ -883,7 +894,7 @@ mod tests {
                 let thread = thread::spawn(|| {
                     cmd_result_with_context_unit!(
                         context_clone,
-                        executable_path("cradle_test_helper"),
+                        test_helper(),
                         "stream chunk to stderr then wait for file"
                     )
                     .unwrap();
@@ -909,40 +920,33 @@ mod tests {
 
         #[test]
         fn capture_stderr() {
-            let Stderr(stderr) = cmd!(executable_path("cradle_test_helper"), "write to stderr");
+            let Stderr(stderr) = cmd!(test_helper(), "write to stderr");
             assert_eq!(stderr, "foo\n");
         }
 
         #[test]
         fn assumes_stderr_is_utf_8() {
-            let test_helper = executable_path("cradle_test_helper");
-            let result: Result<Stderr, Error> = cmd_result!(&test_helper, "invalid utf-8 stderr");
+            let result: Result<Stderr, Error> = cmd_result!(test_helper(), "invalid utf-8 stderr");
             assert_eq!(
                 result.unwrap_err().to_string(),
                 format!(
                     "{} 'invalid utf-8 stderr':\n  invalid utf-8 written to stderr",
-                    test_helper.display(),
+                    test_helper().display(),
                 )
             );
         }
 
         #[test]
         fn does_allow_invalid_utf_8_to_stderr_when_not_captured() {
-            cmd_unit!(
-                executable_path("cradle_test_helper"),
-                "invalid utf-8 stderr"
-            );
+            cmd_unit!(test_helper(), "invalid utf-8 stderr");
         }
 
         #[test]
         fn does_not_relay_stderr_when_catpuring() {
             let context = Context::test();
-            let Stderr(_) = cmd_result_with_context!(
-                context.clone(),
-                executable_path("cradle_test_helper"),
-                "write to stderr"
-            )
-            .unwrap();
+            let Stderr(_) =
+                cmd_result_with_context!(context.clone(), test_helper(), "write to stderr")
+                    .unwrap();
             assert_eq!(context.stderr(), "");
         }
     }
@@ -1014,7 +1018,7 @@ mod tests {
 
         #[test]
         fn forty_two() {
-            let Status(exit_status) = cmd!(executable_path("cradle_test_helper"), "exit code 42");
+            let Status(exit_status) = cmd!(test_helper(), "exit code 42");
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
         }
@@ -1080,20 +1084,16 @@ mod tests {
 
         #[test]
         fn two_tuple_1() {
-            let (StdoutTrimmed(output), Status(exit_status)) = cmd!(
-                executable_path("cradle_test_helper"),
-                "output foo and exit with 42"
-            );
+            let (StdoutTrimmed(output), Status(exit_status)) =
+                cmd!(test_helper(), "output foo and exit with 42");
             assert_eq!(output, "foo");
             assert_eq!(exit_status.code(), Some(42));
         }
 
         #[test]
         fn two_tuple_2() {
-            let (Status(exit_status), StdoutTrimmed(output)) = cmd!(
-                executable_path("cradle_test_helper"),
-                "output foo and exit with 42"
-            );
+            let (Status(exit_status), StdoutTrimmed(output)) =
+                cmd!(test_helper(), "output foo and exit with 42");
             assert_eq!(output, "foo");
             assert_eq!(exit_status.code(), Some(42));
         }
@@ -1122,20 +1122,16 @@ mod tests {
 
         #[test]
         fn capturing_stdout_on_errors() {
-            let (StdoutTrimmed(output), Status(exit_status)) = cmd!(
-                executable_path("cradle_test_helper"),
-                "output foo and exit with 42"
-            );
+            let (StdoutTrimmed(output), Status(exit_status)) =
+                cmd!(test_helper(), "output foo and exit with 42");
             assert!(!exit_status.success());
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn capturing_stderr_on_errors() {
-            let (Stderr(output), Status(exit_status)) = cmd!(
-                executable_path("cradle_test_helper"),
-                "write to stderr and exit with 42"
-            );
+            let (Stderr(output), Status(exit_status)) =
+                cmd!(test_helper(), "write to stderr and exit with 42");
             assert!(!exit_status.success());
             assert_eq!(output, "foo\n");
         }
@@ -1393,31 +1389,20 @@ mod tests {
 
         #[test]
         fn allows_to_pass_in_strings_as_stdin() {
-            let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "reverse",
-                Stdin("foo")
-            );
+            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin("foo"));
             assert_eq!(output, "oof");
         }
 
         #[test]
         fn allows_passing_in_u8_slices_as_stdin() {
-            let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "reverse",
-                Stdin(&[0, 1, 2])
-            );
+            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin(&[0, 1, 2]));
             assert_eq!(output, "\x02\x01\x00");
         }
 
         #[test]
         #[cfg(unix)]
         fn stdin_is_closed_by_default() {
-            let StdoutTrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "wait until stdin is closed"
-            );
+            let StdoutTrimmed(output) = cmd!(test_helper(), "wait until stdin is closed");
             assert_eq!(output, "stdin is closed");
         }
 
@@ -1439,23 +1424,15 @@ mod tests {
 
         #[test]
         fn multiple_stdin_arguments_are_all_passed_into_the_child_process() {
-            let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "reverse",
-                Stdin("foo"),
-                Stdin("bar")
-            );
+            let StdoutUntrimmed(output) =
+                cmd!(test_helper(), "reverse", Stdin("foo"), Stdin("bar"));
             assert_eq!(output, "raboof");
         }
 
         #[test]
         fn works_for_owned_strings() {
             let argument: String = "foo".to_string();
-            let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "reverse",
-                Stdin(argument)
-            );
+            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin(argument));
             assert_eq!(output, "oof");
         }
     }
@@ -1486,7 +1463,7 @@ mod tests {
         #[test]
         fn allows_to_add_variables() {
             let StdoutTrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
+                test_helper(),
                 %"echo FOO",
                 Env("FOO", "bar")
             );
@@ -1496,7 +1473,7 @@ mod tests {
         #[test]
         fn works_for_multiple_variables() {
             let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
+                test_helper(),
                 %"echo FOO BAR",
                 Env("FOO", "a"),
                 Env("BAR", "b")
@@ -1519,8 +1496,7 @@ mod tests {
         fn child_processes_inherit_the_environment() {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
-            let StdoutTrimmed(output) =
-                cmd!(executable_path("cradle_test_helper"), "echo", unused_key);
+            let StdoutTrimmed(output) = cmd!(test_helper(), "echo", unused_key);
             assert_eq!(output, "foo");
         }
 
@@ -1528,19 +1504,15 @@ mod tests {
         fn overwrites_existing_parent_variables() {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
-            let StdoutTrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "echo",
-                &unused_key,
-                Env(unused_key, "bar")
-            );
+            let StdoutTrimmed(output) =
+                cmd!(test_helper(), "echo", &unused_key, Env(unused_key, "bar"));
             assert_eq!(output, "bar");
         }
 
         #[test]
         fn variables_are_overwritten_by_subsequent_variables_with_the_same_name() {
             let StdoutTrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
+                test_helper(),
                 "echo",
                 "FOO",
                 Env("FOO", "a"),
@@ -1551,12 +1523,7 @@ mod tests {
 
         #[test]
         fn variables_can_be_set_to_the_empty_string() {
-            let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "echo",
-                "FOO",
-                Env("FOO", ""),
-            );
+            let StdoutUntrimmed(output) = cmd!(test_helper(), "echo", "FOO", Env("FOO", ""),);
             assert_eq!(output, "empty variable: FOO\n");
         }
     }

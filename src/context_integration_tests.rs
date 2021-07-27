@@ -2,6 +2,15 @@ fn main() {
     #[cfg(unix)]
     {
         use cradle::*;
+        cmd_unit!(
+            LogCommand,
+            %"cargo build",
+            ("--bin", "cradle_test_helper"),
+            %"--features test_executables",
+        );
+    }
+    {
+        use cradle::*;
         use executable_path::executable_path;
         use gag::BufferRedirect;
         use std::io::{self, Read};
