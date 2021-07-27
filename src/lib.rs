@@ -363,9 +363,11 @@ mod tests {
     use std::{
         env::{current_dir, set_current_dir},
         ffi::OsStr,
+        fs,
         path::PathBuf,
     };
     use tempfile::TempDir;
+    use trim_margin::MarginTrimmable;
 
     fn in_temporary_directory<F>(f: F)
     where
@@ -1458,6 +1460,29 @@ mod tests {
         use pretty_assertions::assert_eq;
         use std::env;
 
+        struct Script {
+            temp_dir: TempDir,
+        }
+
+        impl Script {
+            fn new(code: &str) -> Self {
+                let temp_dir = TempDir::new().unwrap();
+                let result = Self { temp_dir };
+                fs::write(result.script_path(), code).unwrap();
+                result
+            }
+
+            fn script_path(&self) -> PathBuf {
+                self.temp_dir.path().join("test-script.py")
+            }
+        }
+
+        impl Input for &Script {
+            fn configure(self, config: &mut Config) {
+                ("python3", self.script_path()).configure(config)
+            }
+        }
+
         #[test]
         fn allows_to_add_variables() {
             let StdoutTrimmed(output) = cmd!(
@@ -1494,8 +1519,11 @@ mod tests {
         fn child_processes_inherit_the_environment() {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
-            let StdoutTrimmed(output) =
-                cmd!(executable_path("cradle_test_helper"), "echo", unused_key);
+            let script = Script::new(&format!(
+                "import os; print(os.environ.get('{}'))",
+                &unused_key
+            ));
+            let StdoutTrimmed(output) = cmd!(&script);
             assert_eq!(output, "foo");
         }
 
@@ -1503,45 +1531,35 @@ mod tests {
         fn overwrites_existing_parent_variables() {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
-            let StdoutTrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "echo",
-                &unused_key,
-                Env(unused_key, "bar")
-            );
+            let script = Script::new(&format!(
+                "import os; print(os.environ.get('{}'))",
+                &unused_key
+            ));
+            let StdoutTrimmed(output) = cmd!(&script, Env(unused_key, "bar"));
             assert_eq!(output, "bar");
         }
 
         #[test]
         fn variables_are_overwritten_by_subsequent_variables_with_the_same_name() {
-            let StdoutTrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "echo",
-                "FOO",
-                Env("FOO", "a"),
-                Env("FOO", "b"),
-            );
+            let script = Script::new("import os; print(os.environ.get('FOO'))");
+            let StdoutTrimmed(output) = cmd!(&script, Env("FOO", "a"), Env("FOO", "b"),);
             assert_eq!(output, "b");
         }
 
         #[test]
         fn variables_can_be_set_to_the_empty_string() {
-            let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "echo",
-                "FOO",
-                Env("FOO", ""),
+            let script = Script::new(
+                &"
+                    |import os
+                    |value = os.environ.get('FOO')
+                    |if value is not None and value == '':
+                    |  print('FOO set, but empty')
+                "
+                .trim_margin()
+                .unwrap(),
             );
-            assert_eq!(output, "empty variable: FOO\n");
+            let StdoutUntrimmed(output) = cmd!(&script, Env("FOO", ""));
+            assert_eq!(output, "FOO set, but empty\n");
         }
-    }
-
-    #[test]
-    fn foo() {
-        in_temporary_directory(|| {
-            std::fs::write("foo.py", "print('hurra')").unwrap();
-            let StdoutTrimmed(output) = cmd!(%"python3 foo.py");
-            assert_eq!(output, "hurra");
-        });
     }
 }
