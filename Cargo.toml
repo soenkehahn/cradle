@@ -24,6 +24,11 @@ name = "cradle_test_helper"
 path = "src/test_helper.rs"
 required-features = ["test_executables"]
 
+[[bin]]
+name = "cradle_panic"
+path = "src/cradle_panic.rs"
+required-features = ["test_executables"]
+
 [target.'cfg(unix)'.dependencies.gag]
 version = "0.1.10"
 optional = true
