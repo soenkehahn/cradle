@@ -1540,8 +1540,8 @@ mod tests {
     fn foo() {
         in_temporary_directory(|| {
             std::fs::write("foo.py", "print('hurra')").unwrap();
-            let StdoutUntrimmed(output) = cmd!(%"python3 foo.py");
-            assert_eq!(output, "hurra\n");
+            let StdoutTrimmed(output) = cmd!(%"python3 foo.py");
+            assert_eq!(output, "hurra");
         });
     }
 }
