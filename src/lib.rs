@@ -1493,7 +1493,10 @@ mod tests {
             fn new(code: &str) -> Self {
                 let temp_dir = TempDir::new().unwrap();
                 let result = Self { temp_dir };
-                fs::write(result.script_path(), code).unwrap();
+                match code.trim_margin() {
+                    Some(trimmed) => fs::write(result.script_path(), trimmed).unwrap(),
+                    None => fs::write(result.script_path(), code).unwrap(),
+                };
                 result
             }
 
@@ -1510,23 +1513,23 @@ mod tests {
 
         #[test]
         fn allows_to_add_variables() {
-            let StdoutTrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                %"echo FOO",
-                Env("FOO", "bar")
-            );
+            let script = Script::new("import os; print(os.environ.get('FOO'))");
+            let StdoutTrimmed(output) = cmd!(&script, Env("FOO", "bar"));
             assert_eq!(output, "bar");
         }
 
         #[test]
         fn works_for_multiple_variables() {
-            let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                %"echo FOO BAR",
-                Env("FOO", "a"),
-                Env("BAR", "b")
+            let script = Script::new(
+                "
+                    |import os
+                    |foo = os.environ.get('FOO')
+                    |bar = os.environ.get('BAR')
+                    |print(f'{foo} - {bar}')
+                ",
             );
-            assert_eq!(output, "a\nb\n");
+            let StdoutTrimmed(output) = cmd!(&script, Env("FOO", "a"), Env("BAR", "b"));
+            assert_eq!(output, "a - b");
         }
 
         fn find_unused_environment_variable() -> String {
@@ -1579,9 +1582,7 @@ mod tests {
                     |value = os.environ.get('FOO')
                     |if value is not None and value == '':
                     |  print('FOO set, but empty')
-                "
-                .trim_margin()
-                .unwrap(),
+                ",
             );
             let StdoutTrimmed(output) = cmd!(&script, Env("FOO", ""));
             assert_eq!(output, "FOO set, but empty");
