@@ -15,8 +15,10 @@ rustversion = "1.0.4"
 
 [dev-dependencies]
 executable-path = "1.0.0"
+hex = "0.4.3"
 lazy_static = "1.4.0"
 pretty_assertions = "0.7.2"
+sha3 = "0.9.1"
 tempfile = "3.2.0"
 unindent = "0.1.7"
 

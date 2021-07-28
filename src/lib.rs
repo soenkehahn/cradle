@@ -371,7 +371,7 @@ mod tests {
         env::{current_dir, set_current_dir},
         ffi::OsStr,
         fs,
-        path::PathBuf,
+        path::{Path, PathBuf},
         sync::Mutex,
     };
     use tempfile::TempDir;
@@ -1483,31 +1483,54 @@ mod tests {
     mod environment_variables {
         use super::*;
         use pretty_assertions::assert_eq;
+        use sha3::Digest;
         use std::env;
 
         struct Script {
-            temp_dir: TempDir,
+            project_directory: PathBuf,
         }
 
         impl Script {
             fn new(code: &str) -> Self {
-                let temp_dir = TempDir::new().unwrap();
-                let result = Self { temp_dir };
-                fs::write(result.script_path(), code.unindent()).unwrap();
-                result
-            }
-
-            fn script_path(&self) -> PathBuf {
-                self.temp_dir.path().join("test-script.rs")
+                let repo_dir = Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap());
+                let script_dir = repo_dir.join("test-scripts");
+                let code_hash = hex::encode(sha3::Sha3_224::digest(code.as_bytes()));
+                let project_directory = script_dir.join(code_hash);
+                std::fs::create_dir_all(&project_directory.join("src")).unwrap();
+                fs::write(
+                    &project_directory.join("Cargo.toml"),
+                    r#"
+                        [package]
+                        name = "cradle-test-script"
+                        version = "0.1.0"
+                        edition = "2018"
+                    "#
+                    .unindent(),
+                )
+                .unwrap();
+                fs::write(
+                    &project_directory.join("src/main.rs"),
+                    format!(
+                        r#"
+                            fn main() {{
+                                {}
+                            }}
+                        "#,
+                        code.unindent()
+                    ),
+                )
+                .unwrap();
+                Self { project_directory }
             }
         }
 
         impl Input for &Script {
             fn configure(self, config: &mut Config) {
                 (
-                    CurrentDir(self.temp_dir.path()),
-                    "rust-script",
-                    self.script_path(),
+                    CurrentDir(&self.project_directory),
+                    "cargo",
+                    "run",
+                    "--quiet",
                 )
                     .configure(config)
             }
