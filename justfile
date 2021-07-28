@@ -10,6 +10,7 @@ test-lib-fast +pattern="":
   cargo test --lib {{ pattern }}
 
 context-integration-tests:
+  env
   cargo run --features "test_executables" --bin context_integration_tests
 
 doc +args="":
