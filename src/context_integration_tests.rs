@@ -5,7 +5,7 @@ fn main() {
         cmd_unit!(
             LogCommand,
             %"cargo build",
-            ("--bin", "cradle_test_helper"),
+            ("--bin", "test_executables_helper"),
             %"--features test_executables",
         );
     }
