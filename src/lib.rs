@@ -375,7 +375,7 @@ mod tests {
         sync::Mutex,
     };
     use tempfile::TempDir;
-    use trim_margin::MarginTrimmable;
+    use unindent::Unindent;
 
     fn in_temporary_directory<F>(f: F)
     where
@@ -1493,10 +1493,7 @@ mod tests {
             fn new(code: &str) -> Self {
                 let temp_dir = TempDir::new().unwrap();
                 let result = Self { temp_dir };
-                match code.trim_margin() {
-                    Some(trimmed) => fs::write(result.script_path(), trimmed).unwrap(),
-                    None => fs::write(result.script_path(), code).unwrap(),
-                };
+                fs::write(result.script_path(), code.unindent()).unwrap();
                 result
             }
 
@@ -1522,10 +1519,10 @@ mod tests {
         fn works_for_multiple_variables() {
             let script = Script::new(
                 "
-                    |import os
-                    |foo = os.environ.get('FOO')
-                    |bar = os.environ.get('BAR')
-                    |print(f'{foo} - {bar}')
+                    import os
+                    foo = os.environ.get('FOO')
+                    bar = os.environ.get('BAR')
+                    print(f'{foo} - {bar}')
                 ",
             );
             let StdoutTrimmed(output) = cmd!(&script, Env("FOO", "a"), Env("BAR", "b"));
@@ -1578,10 +1575,10 @@ mod tests {
         fn variables_can_be_set_to_the_empty_string() {
             let script = Script::new(
                 &"
-                    |import os
-                    |value = os.environ.get('FOO')
-                    |if value is not None and value == '':
-                    |  print('FOO set, but empty')
+                    import os
+                    value = os.environ.get('FOO')
+                    if value is not None and value == '':
+                      print('FOO set, but empty')
                 ",
             );
             let StdoutTrimmed(output) = cmd!(&script, Env("FOO", ""));

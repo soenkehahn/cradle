@@ -18,7 +18,7 @@ executable-path = "1.0.0"
 lazy_static = "1.4.0"
 pretty_assertions = "0.7.2"
 tempfile = "3.2.0"
-trim-margin = "0.1.0"
+unindent = "0.1.7"
 
 [[bin]]
 name = "cradle_test_helper"
