@@ -1,13 +1,14 @@
 fn main() {
     #[cfg(unix)]
     {
-        use cradle::*;
-        cmd_unit!(
-            LogCommand,
-            %"cargo build --bin test_executables_helper --features test_executables",
-        );
-    }
-    {
+        {
+            use cradle::*;
+            cmd_unit!(
+                LogCommand,
+                %"cargo build --bin test_executables_helper --features test_executables",
+            );
+        }
+
         use cradle::*;
         use executable_path::executable_path;
         use gag::BufferRedirect;
