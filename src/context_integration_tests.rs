@@ -34,7 +34,7 @@ fn main() {
         {
             assert_eq!(
                 with_gag(BufferRedirect::stderr, || cmd!(
-                    executable_path("cradle_test_helper").to_str().unwrap(),
+                    executable_path("test_executables_helper").to_str().unwrap(),
                     "write to stderr"
                 )),
                 "foo\n"
