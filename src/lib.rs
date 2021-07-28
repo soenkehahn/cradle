@@ -371,7 +371,7 @@ mod tests {
         env::{current_dir, set_current_dir},
         ffi::OsStr,
         fs,
-        path::{Path, PathBuf},
+        path::PathBuf,
         sync::Mutex,
     };
     use tempfile::TempDir;
@@ -1492,7 +1492,7 @@ mod tests {
 
         impl Script {
             fn new(code: &str) -> Self {
-                let repo_dir = Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap());
+                let repo_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
                 let script_dir = repo_dir.join("test-scripts");
                 let code_hash = hex::encode(sha3::Sha3_224::digest(code.as_bytes()));
                 let project_directory = script_dir.join(code_hash);
