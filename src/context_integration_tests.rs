@@ -4,9 +4,7 @@ fn main() {
         use cradle::*;
         cmd_unit!(
             LogCommand,
-            %"cargo build",
-            ("--bin", "test_executables_helper"),
-            %"--features test_executables",
+            %"cargo build --bin test_executables_helper --features test_executables",
         );
     }
     {
