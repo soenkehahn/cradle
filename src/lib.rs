@@ -1498,19 +1498,28 @@ mod tests {
             }
 
             fn script_path(&self) -> PathBuf {
-                self.temp_dir.path().join("test-script.py")
+                self.temp_dir.path().join("test-script.rs")
             }
         }
 
         impl Input for &Script {
             fn configure(self, config: &mut Config) {
-                ("python3", self.script_path()).configure(config)
+                (
+                    CurrentDir(self.temp_dir.path()),
+                    "rust-script",
+                    self.script_path(),
+                )
+                    .configure(config)
             }
         }
 
         #[test]
         fn allows_to_add_variables() {
-            let script = Script::new("import os; print(os.environ.get('FOO'))");
+            let script = Script::new(
+                r#"
+                    println!("{}", std::env::var("FOO").unwrap());
+                "#,
+            );
             let StdoutTrimmed(output) = cmd!(&script, Env("FOO", "bar"));
             assert_eq!(output, "bar");
         }
@@ -1518,12 +1527,12 @@ mod tests {
         #[test]
         fn works_for_multiple_variables() {
             let script = Script::new(
-                "
-                    import os
-                    foo = os.environ.get('FOO')
-                    bar = os.environ.get('BAR')
-                    print(f'{foo} - {bar}')
-                ",
+                r#"
+                    use std::env::var;
+                    let foo = var("FOO").unwrap();
+                    let bar = var("BAR").unwrap();
+                    println!("{} - {}", foo, bar);
+                "#,
             );
             let StdoutTrimmed(output) = cmd!(&script, Env("FOO", "a"), Env("BAR", "b"));
             assert_eq!(output, "a - b");
@@ -1545,7 +1554,9 @@ mod tests {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
             let script = Script::new(&format!(
-                "import os; print(os.environ.get('{}'))",
+                r#"
+                    println!("{{}}", std::env::var("{}").unwrap());
+                "#,
                 &unused_key
             ));
             let StdoutTrimmed(output) = cmd!(&script);
@@ -1557,7 +1568,9 @@ mod tests {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
             let script = Script::new(&format!(
-                "import os; print(os.environ.get('{}'))",
+                r#"
+                    println!("{{}}", std::env::var("{}").unwrap());
+                "#,
                 &unused_key
             ));
             let StdoutTrimmed(output) = cmd!(&script, Env(unused_key, "bar"));
@@ -1566,7 +1579,11 @@ mod tests {
 
         #[test]
         fn variables_are_overwritten_by_subsequent_variables_with_the_same_name() {
-            let script = Script::new("import os; print(os.environ.get('FOO'))");
+            let script = Script::new(
+                r#"
+                    println!("{}", std::env::var("FOO").unwrap());
+                "#,
+            );
             let StdoutTrimmed(output) = cmd!(&script, Env("FOO", "a"), Env("FOO", "b"),);
             assert_eq!(output, "b");
         }
@@ -1574,12 +1591,13 @@ mod tests {
         #[test]
         fn variables_can_be_set_to_the_empty_string() {
             let script = Script::new(
-                &"
-                    import os
-                    value = os.environ.get('FOO')
-                    if value is not None and value == '':
-                      print('FOO set, but empty')
-                ",
+                r#"
+                    let value = std::env::var("FOO").unwrap();
+                    match value.as_str() {
+                        "" => println!("FOO set, but empty"),
+                        value => println!("{}", value),
+                    }
+                "#,
             );
             let StdoutTrimmed(output) = cmd!(&script, Env("FOO", ""));
             assert_eq!(output, "FOO set, but empty");
