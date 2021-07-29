@@ -1,3 +1,6 @@
+//! The [`Input`] trait that defines all possible inputs to [`cmd!`],
+//! [`cmd_unit!`] and [`cmd_result!`].
+
 use crate::config::Config;
 use std::{
     ffi::{OsStr, OsString},

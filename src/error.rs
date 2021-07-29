@@ -1,3 +1,5 @@
+//! The [`Error`] type used in the return type of [`cmd_result!`].
+
 use crate::config::Config;
 use std::{fmt::Display, io, process::ExitStatus, string::FromUtf8Error, sync::Arc};
 

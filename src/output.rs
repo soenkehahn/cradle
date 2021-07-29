@@ -1,3 +1,6 @@
+//! The [`Output`] trait that defines all possible outputs of [`cmd!`],
+//! [`cmd_unit!`] and [`cmd_result!`].
+
 use crate::{config::Config, error::Error, RunResult};
 use std::{process::ExitStatus, sync::Arc};
 

@@ -187,10 +187,6 @@ pub mod prelude;
 
 use crate::{collected_output::Waiter, config::Config, context::Context, output::Output};
 pub use error::Error;
-// Status, Stderr, StdoutTrimmed, StdoutUntrimmed
-//
-// error::{panic_on_error, Error},
-// input::{CurrentDir, Env, Input, LogCommand, Split, Stdin},
 use std::{
     ffi::OsString,
     io::Write,
