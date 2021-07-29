@@ -1,4 +1,4 @@
-use crate::{Config, Error, RunResult};
+use crate::{config::Config, error::Error, RunResult};
 use std::{process::ExitStatus, sync::Arc};
 
 /// All possible return types of [`cmd!`], [`cmd_unit!`] or
@@ -8,7 +8,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// to `stdout` you can do that using [`StdoutUntrimmed`]:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutUntrimmed(output) = cmd!(%"echo foo");
 /// assert_eq!(output, "foo\n");
@@ -18,7 +18,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// you can use [`Status`]:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let Status(exit_status) = cmd!("false");
 /// assert_eq!(exit_status.code(), Some(1));
@@ -41,7 +41,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// **and** what it writes to `stdout`:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let (Status(exit_status), StdoutUntrimmed(stdout)) = cmd!(%"echo foo");
 /// assert!(exit_status.success());
@@ -62,7 +62,7 @@ pub trait Output: Sized {
 /// ```
 /// # let temp_dir = tempfile::TempDir::new().unwrap();
 /// # std::env::set_current_dir(&temp_dir).unwrap();
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let () = cmd!(%"touch ./foo");
 /// ```
@@ -124,7 +124,7 @@ tuple_impl!(A, B, C, D, E, F,);
 ///
 /// ```
 /// use std::path::Path;
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// # #[cfg(unix)]
 /// # {
@@ -151,7 +151,7 @@ impl Output for StdoutTrimmed {
 /// Same as [`StdoutTrimmed`], but does not trim whitespace from the output:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutUntrimmed(output) = cmd!(%"echo foo");
 /// assert_eq!(output, "foo\n");
@@ -180,7 +180,7 @@ impl Output for StdoutUntrimmed {
 /// [`Stderr`] allows to capture the `stderr` of a child process:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// // (`Status` is used here to suppress panics caused by `ls`
 /// // terminating with a non-zero exit code.)
@@ -218,7 +218,7 @@ impl Output for Stderr {
 /// [`ExitStatus`] of the child process:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let Status(exit_status) = cmd!(%"echo foo");
 /// assert!(exit_status.success());
@@ -228,7 +228,7 @@ impl Output for Stderr {
 /// result in neither a panic nor a [`std::result::Result::Err`]:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let Status(exit_status) = cmd!("false");
 /// assert_eq!(exit_status.code(), Some(1));
@@ -258,7 +258,7 @@ impl Output for Status {
 /// the command returned successfully, and `false` otherwise:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// if !cmd!(%"which cargo") {
 ///     panic!("Cargo is not installed!");
@@ -269,7 +269,7 @@ impl Output for Status {
 /// or [`std::result::Result::Err`]:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let success: bool = cmd!("false");
 /// assert!(!success);

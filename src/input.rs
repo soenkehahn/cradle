@@ -12,7 +12,7 @@ use std::{
 /// and a variable number of arguments as a [`Vec`]:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let executable = "echo";
 /// let arguments = vec!["foo", "bar"];
@@ -47,7 +47,7 @@ use std::{
 /// Instead of passing multiple arguments to [`cmd!`], they can be passed in a single tuple:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let args = ("echo", "foo");
 /// let StdoutTrimmed(output) = cmd!(args);
@@ -57,7 +57,7 @@ use std::{
 /// This can be used to group arguments:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let to_hex_command = ("xxd", "-ps", "-u", LogCommand);
 /// let StdoutTrimmed(output) = cmd!(to_hex_command, Stdin(&[14, 15, 16]));
@@ -67,7 +67,7 @@ use std::{
 /// Also, tuples make it possible to write wrappers around [`cmd!`] without requiring the use of macros:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// fn to_hex<I: Input>(input: I) -> String {
 ///   let StdoutTrimmed(hex) = cmd!(%"xxd -ps -u", input);
@@ -106,7 +106,7 @@ where
 /// as arguments.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// cmd_unit!("ls", std::env::var_os("HOME").unwrap());
 /// ```
@@ -121,7 +121,7 @@ impl Input for OsString {
 /// as arguments.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// cmd_unit!("echo", std::env::current_dir().unwrap().file_name().unwrap());
 /// ```
@@ -138,7 +138,7 @@ impl Input for &OsStr {
 /// This is especially useful because it allows you to use string literals:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!("echo", "foo");
 /// assert_eq!(output, "foo");
@@ -154,7 +154,7 @@ impl Input for &str {
 /// as arguments. Executables can also be passed as [`String`]s:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let executable: String = "echo".to_string();
 /// let argument: String = "foo".to_string();
@@ -172,7 +172,7 @@ impl Input for String {
 /// and uses the resulting words as separate arguments.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!(Split("echo foo"));
 /// assert_eq!(output, "foo");
@@ -185,7 +185,7 @@ impl Input for String {
 /// for [`Split`], the `%` symbol:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!(%"echo foo");
 /// assert_eq!(output, "foo");
@@ -206,7 +206,7 @@ impl<T: AsRef<str>> Input for crate::input::Split<T> {
 /// Allows to use [`split`] to split your argument into words:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!("echo foo".split(' '));
 /// assert_eq!(output, "foo");
@@ -227,7 +227,7 @@ impl<'a> Input for std::str::Split<'a, char> {
 /// Allows to use [`split_whitespace`] to split your argument into words:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!("echo foo".split_whitespace());
 /// assert_eq!(output, "foo");
@@ -246,7 +246,7 @@ impl<'a> Input for std::str::SplitWhitespace<'a> {
 /// Allows to use [`split_ascii_whitespace`] to split your argument into words:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!("echo foo".split_ascii_whitespace());
 /// assert_eq!(output, "foo");
@@ -293,7 +293,7 @@ tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G,);
 /// Same as passing in the elements separately.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!(vec!["echo", "foo"]);
 /// assert_eq!(output, "foo");
@@ -314,7 +314,7 @@ where
 /// All elements of the array will be used as arguments.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = cmd!(["echo", "foo"]);
 /// assert_eq!(output, "foo");
@@ -351,7 +351,7 @@ where
 /// (This is similar `bash`'s `-x` option.)
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// cmd_unit!(LogCommand, %"echo foo");
 /// // writes '+ echo foo' to stderr
@@ -370,7 +370,7 @@ impl Input for LogCommand {
 /// parent. You can override this with [`CurrentDir`]:
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// # #[cfg(linux)]
 /// # {
@@ -396,7 +396,7 @@ where
 /// as arguments.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 /// use std::path::PathBuf;
 ///
 /// let current_dir: PathBuf = std::env::current_dir().unwrap();
@@ -415,7 +415,7 @@ impl Input for PathBuf {
 /// ```
 /// # let temp_dir = tempfile::TempDir::new().unwrap();
 /// # std::env::set_current_dir(&temp_dir).unwrap();
-/// use cradle::*;
+/// use cradle::prelude::*;
 /// use std::path::Path;
 ///
 /// let file: &Path = Path::new("./foo");
@@ -433,7 +433,7 @@ impl Input for &Path {
 /// Writes the given byte slice to the child's standard input.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// # #[cfg(linux)]
 /// # {
@@ -459,7 +459,7 @@ where
 /// Adds an environment variable to the environment of the child process.
 ///
 /// ```
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// let StdoutUntrimmed(output) = cmd!("env", Env("FOO", "bar"));
 /// assert!(output.contains("FOO=bar\n"));
