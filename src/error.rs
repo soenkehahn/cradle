@@ -51,7 +51,7 @@ impl Display for Error {
             Error::ExecutableNotFound { executable, .. } => {
                 write!(
                     f,
-                    "cannot find executable: '{}'",
+                    "File not found error when executing '{}'",
                     executable.to_string_lossy()
                 )
             }

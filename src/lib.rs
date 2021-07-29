@@ -471,7 +471,7 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(expected = "cmd!: cannot find executable: 'does-not-exist'")]
+            #[should_panic(expected = "cmd!: File not found error when executing 'does-not-exist'")]
             fn executable_cannot_be_found() {
                 cmd_unit!("does-not-exist");
             }
@@ -592,7 +592,7 @@ mod tests {
                 let result: Result<(), Error> = cmd_result!("does-not-exist");
                 assert_eq!(
                     result.unwrap_err().to_string(),
-                    "cannot find executable: 'does-not-exist'"
+                    "File not found error when executing 'does-not-exist'"
                 );
             }
 
