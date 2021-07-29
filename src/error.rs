@@ -48,13 +48,11 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::NoArgumentsGiven => write!(f, "no arguments given"),
-            Error::ExecutableNotFound { executable, .. } => {
-                write!(
-                    f,
-                    "File not found error when executing '{}'",
-                    executable.to_string_lossy()
-                )
-            }
+            Error::ExecutableNotFound { executable, .. } => write!(
+                f,
+                "File not found error when executing '{}'",
+                executable.to_string_lossy()
+            ),
             Error::CommandIoError { message, .. } => write!(f, "{}", message),
             Error::NonZeroExitCode {
                 full_command,
