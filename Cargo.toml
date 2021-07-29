@@ -20,13 +20,13 @@ pretty_assertions = "0.7.2"
 tempfile = "3.2.0"
 
 [[bin]]
-name = "cradle_test_helper"
-path = "src/test_helper.rs"
+name = "test_executables_helper"
+path = "src/test_executables/helper.rs"
 required-features = ["test_executables"]
 
 [[bin]]
-name = "cradle_panic"
-path = "src/cradle_panic.rs"
+name = "test_executables_panic"
+path = "src/test_executables/panic.rs"
 required-features = ["test_executables"]
 
 [target.'cfg(unix)'.dependencies.gag]

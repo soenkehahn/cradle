@@ -1,6 +1,14 @@
 fn main() {
     #[cfg(unix)]
     {
+        {
+            use cradle::*;
+            cmd_unit!(
+                LogCommand,
+                %"cargo build --bin test_executables_helper --features test_executables",
+            );
+        }
+
         use cradle::*;
         use executable_path::executable_path;
         use gag::BufferRedirect;
@@ -27,7 +35,7 @@ fn main() {
         {
             assert_eq!(
                 with_gag(BufferRedirect::stderr, || cmd!(
-                    executable_path("cradle_test_helper").to_str().unwrap(),
+                    executable_path("test_executables_helper").to_str().unwrap(),
                     "write to stderr"
                 )),
                 "foo\n"
