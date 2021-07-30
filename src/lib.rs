@@ -193,6 +193,7 @@ use std::{
     ffi::OsString,
     io::Write,
     process::{Command, ExitStatus, Stdio},
+    sync::Arc,
 };
 
 /// Execute child processes. See the module documentation on how to use it.
@@ -308,9 +309,16 @@ where
     if let Some(working_directory) = &config.working_directory {
         command.current_dir(working_directory);
     }
-    let mut child = command
-        .spawn()
-        .map_err(|error| Error::command_io_error(&config, error))?;
+    let mut child = command.spawn().map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            Error::FileNotFoundWhenExecuting {
+                executable,
+                source: Arc::new(error),
+            }
+        } else {
+            Error::command_io_error(&config, error)
+        }
+    })?;
     let waiter = Waiter::spawn_standard_stream_relaying(
         &context,
         config,
@@ -368,6 +376,7 @@ mod tests {
         collections::BTreeSet,
         env::{current_dir, set_current_dir},
         ffi::{OsStr, OsString},
+        fs,
         path::PathBuf,
         sync::{Arc, Mutex},
     };
@@ -460,37 +469,19 @@ mod tests {
             }
 
             #[test]
-            #[cfg_attr(
-                unix,
-                should_panic(
-                    expected = "cmd!: does-not-exist:\n  No such file or directory (os error 2)"
-                )
-            )]
-            #[cfg_attr(
-                windows,
-                should_panic(
-                    expected = "cmd!: does-not-exist:\n  The system cannot find the file specified. (os error 2)"
-                )
-            )]
+            #[should_panic(expected = "cmd!: File not found error when executing 'does-not-exist'")]
             fn executable_cannot_be_found() {
                 cmd_unit!("does-not-exist");
             }
 
             #[test]
-            #[cfg_attr(
-                unix,
-                should_panic(
-                    expected = "cmd!: does-not-exist foo bar:\n  No such file or directory (os error 2)"
-                )
-            )]
-            #[cfg_attr(
-                windows,
-                should_panic(
-                    expected = "cmd!: does-not-exist foo bar:\n  The system cannot find the file specified. (os error 2)"
-                )
-            )]
-            fn includes_full_command_on_missing_executables() {
-                cmd_unit!(%"does-not-exist foo bar");
+            #[cfg(unix)]
+            #[should_panic(expected = "/file foo bar:\n  Permission denied (os error 13)")]
+            fn includes_full_command_on_io_errors() {
+                let temp_dir = TempDir::new().unwrap();
+                let without_executable_bit = temp_dir.path().join("file");
+                fs::write(&without_executable_bit, "").unwrap();
+                cmd_unit!(without_executable_bit, %"foo bar");
             }
 
             #[rustversion::since(1.46)]
@@ -569,16 +560,20 @@ mod tests {
             }
 
             #[test]
-            fn includes_full_command_on_missing_executables() {
-                let result: Result<(), Error> = cmd_result!(%"does-not-exist foo bar");
-                assert_eq!(
-                    result.unwrap_err().to_string(),
-                    if cfg!(windows) {
-                        "does-not-exist foo bar:\n  The system cannot find the file specified. (os error 2)"
-                    } else {
-                        "does-not-exist foo bar:\n  No such file or directory (os error 2)"
-                    }
-                );
+            fn includes_full_command_on_io_errors() {
+                in_temporary_directory(|| {
+                    fs::write("without-executable-bit", "").unwrap();
+                    let result: Result<(), Error> =
+                        cmd_result!(%"./without-executable-bit foo bar");
+                    assert_eq!(
+                        result.unwrap_err().to_string(),
+                        if cfg!(windows) {
+                            "./without-executable-bit foo bar:\n  %1 is not a valid Win32 application. (os error 193)"
+                        } else {
+                            "./without-executable-bit foo bar:\n  Permission denied (os error 13)"
+                        }
+                    );
+                });
             }
 
             #[test]
@@ -591,16 +586,34 @@ mod tests {
             }
 
             #[test]
-            fn executable_cannot_be_found() {
+            fn missing_executable_file_error_message() {
                 let result: Result<(), Error> = cmd_result!("does-not-exist");
                 assert_eq!(
                     result.unwrap_err().to_string(),
-                    if cfg!(windows) {
-                        "does-not-exist:\n  The system cannot find the file specified. (os error 2)"
-                    } else {
-                        "does-not-exist:\n  No such file or directory (os error 2)"
-                    }
+                    "File not found error when executing 'does-not-exist'"
                 );
+            }
+
+            #[test]
+            fn missing_executable_file_error_can_be_matched_against() {
+                let result: Result<(), Error> = cmd_result!("does-not-exist");
+                match result {
+                    Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
+                        assert_eq!(executable, "does-not-exist");
+                    }
+                    _ => panic!("should match Error::ExecutableNotFound"),
+                }
+            }
+
+            #[test]
+            fn missing_executable_file_error_can_be_caused_by_relative_paths() {
+                let result: Result<(), Error> = cmd_result!("./does-not-exist");
+                match result {
+                    Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
+                        assert_eq!(executable, "./does-not-exist");
+                    }
+                    _ => panic!("should match Error::ExecutableNotFound"),
+                }
             }
 
             #[test]
@@ -1135,7 +1148,7 @@ mod tests {
 
     mod current_dir {
         use super::*;
-        use std::{fs, path::Path};
+        use std::path::Path;
 
         #[test]
         fn sets_the_working_directory() {
@@ -1330,13 +1343,13 @@ mod tests {
             if cfg!(unix) {
                 let file = PathBuf::from("./test-script");
                 let script = "#!/usr/bin/env bash\necho test-output\n";
-                std::fs::write(&file, script).unwrap();
+                fs::write(&file, script).unwrap();
                 cmd_unit!(%"chmod +x test-script");
                 file
             } else {
                 let file = PathBuf::from("./test-script.bat");
                 let script = "@echo test-output\n";
-                std::fs::write(&file, script).unwrap();
+                fs::write(&file, script).unwrap();
                 file
             }
         }
@@ -1345,7 +1358,7 @@ mod tests {
         fn ref_path_as_argument() {
             in_temporary_directory(|| {
                 let file: &Path = Path::new("file");
-                std::fs::write(file, "test-contents").unwrap();
+                fs::write(file, "test-contents").unwrap();
                 let StdoutUntrimmed(output) = cmd!("cat", file);
                 assert_eq!(output, "test-contents");
             })
@@ -1364,7 +1377,7 @@ mod tests {
         fn path_buf_as_argument() {
             in_temporary_directory(|| {
                 let file: PathBuf = PathBuf::from("file");
-                std::fs::write(&file, "test-contents").unwrap();
+                fs::write(&file, "test-contents").unwrap();
                 let StdoutUntrimmed(output) = cmd!("cat", file);
                 assert_eq!(output, "test-contents");
             })
