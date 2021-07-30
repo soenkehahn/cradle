@@ -90,6 +90,7 @@ pub trait Input {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
 
+    /// todo
     fn run<O>(self) -> O
     where
         Self: Sized,
@@ -98,6 +99,7 @@ pub trait Input {
         crate::cmd!(self)
     }
 
+    /// todo
     fn run_unit(self)
     where
         Self: Sized,
@@ -105,6 +107,7 @@ pub trait Input {
         crate::cmd_unit!(self);
     }
 
+    /// todo
     fn run_result<O>(self) -> Result<O, crate::error::Error>
     where
         Self: Sized,
