@@ -178,7 +178,9 @@
 //! function.
 
 mod collected_output;
+#[doc(hidden)]
 pub mod config;
+#[doc(hidden)]
 pub mod context;
 pub mod error;
 pub mod input;
