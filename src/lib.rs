@@ -1540,4 +1540,20 @@ mod tests {
             assert_eq!(output, "empty variable: FOO\n");
         }
     }
+
+    mod run_interface {
+        use super::*;
+
+        #[test]
+        fn allows_to_run_commands_with_dot_run() {
+            let StdoutTrimmed(output) = Split("echo foo").run();
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn allows_to_boundle_arguments_up_in_tuples() {
+            let StdoutTrimmed(output) = ("echo", "foo").run();
+            assert_eq!(output, "foo");
+        }
+    }
 }

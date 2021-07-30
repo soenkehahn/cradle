@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::{config::Config, output::Output};
 use std::{
     ffi::{OsStr, OsString},
     path::{Path, PathBuf},
@@ -89,6 +89,14 @@ use std::{
 pub trait Input {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
+
+    fn run<O>(self) -> O
+    where
+        Self: Sized,
+        O: Output,
+    {
+        crate::cmd!(self)
+    }
 }
 
 /// Blanket implementation for `&_`.
