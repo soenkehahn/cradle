@@ -1560,7 +1560,7 @@ mod tests {
         #[test]
         fn works_for_different_output_types() {
             let Status(status) = "false".run();
-            assert_eq!(status.success(), false);
+            assert!(!status.success());
         }
 
         #[test]
