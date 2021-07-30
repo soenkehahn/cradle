@@ -914,12 +914,20 @@ mod tests {
                 let context = Context::test();
                 let context_clone = context.clone();
                 let thread = thread::spawn(|| {
-                    cmd_result_with_context_unit!(
-                        context_clone,
-                        test_helper(),
-                        "stream chunk to stderr then wait for file"
-                    )
-                    .unwrap();
+                    let script = TestScript::new(
+                        &r#"
+                            import os
+                            import sys
+                            import time
+
+                            print("foo", file=sys.stderr)
+                            sys.stderr.flush()
+                            while not os.path.exists("./file"):
+                                time.sleep(0.1)
+                        "#
+                        .unindent(),
+                    );
+                    cmd_result_with_context_unit!(context_clone, &script).unwrap();
                 });
                 loop {
                     let expected = "foo\n";
@@ -1407,15 +1415,30 @@ mod tests {
     mod stdin {
         use super::*;
 
+        fn reverse_script() -> TestScript {
+            TestScript::new(
+                &r#"
+                    import sys
+
+                    input = sys.stdin.read()
+                    sys.stdout.write(input[::-1])
+                    sys.stdout.flush()
+                "#
+                .unindent(),
+            )
+        }
+
         #[test]
         fn allows_to_pass_in_strings_as_stdin() {
-            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin("foo"));
+            let script = reverse_script();
+            let StdoutUntrimmed(output) = cmd!(&script, Stdin("foo"));
             assert_eq!(output, "oof");
         }
 
         #[test]
         fn allows_passing_in_u8_slices_as_stdin() {
-            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin(&[0, 1, 2]));
+            let script = reverse_script();
+            let StdoutUntrimmed(output) = cmd!(&script, Stdin(&[0, 1, 2]));
             assert_eq!(output, "\x02\x01\x00");
         }
 
@@ -1455,15 +1478,16 @@ mod tests {
 
         #[test]
         fn multiple_stdin_arguments_are_all_passed_into_the_child_process() {
-            let StdoutUntrimmed(output) =
-                cmd!(test_helper(), "reverse", Stdin("foo"), Stdin("bar"));
+            let script = reverse_script();
+            let StdoutUntrimmed(output) = cmd!(&script, Stdin("foo"), Stdin("bar"));
             assert_eq!(output, "raboof");
         }
 
         #[test]
         fn works_for_owned_strings() {
             let argument: String = "foo".to_string();
-            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin(argument));
+            let script = reverse_script();
+            let StdoutUntrimmed(output) = cmd!(&script, Stdin(argument));
             assert_eq!(output, "oof");
         }
     }
