@@ -97,6 +97,13 @@ pub trait Input {
     {
         crate::cmd!(self)
     }
+
+    fn run_unit(self)
+    where
+        Self: Sized,
+    {
+        crate::cmd_unit!(self);
+    }
 }
 
 /// Blanket implementation for `&_`.

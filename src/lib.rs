@@ -1543,6 +1543,7 @@ mod tests {
 
     mod run_interface {
         use super::*;
+        use std::path::Path;
 
         #[test]
         fn allows_to_run_commands_with_dot_run() {
@@ -1554,6 +1555,20 @@ mod tests {
         fn allows_to_boundle_arguments_up_in_tuples() {
             let StdoutTrimmed(output) = ("echo", "foo").run();
             assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn works_for_different_output_types() {
+            let Status(status) = "false".run();
+            assert_eq!(status.success(), false);
+        }
+
+        #[test]
+        fn run_unit() {
+            in_temporary_directory(|| {
+                ("touch", "foo").run_unit();
+                assert!(Path::new("foo").exists());
+            });
         }
     }
 }
