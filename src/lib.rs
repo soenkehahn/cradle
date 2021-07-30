@@ -173,16 +173,19 @@
 //! # Alternative interface
 //!
 //! `cradle` also provides an alternative interface to execute commands
-//! through methods on the [`Input`] trait:
-//! [`.run()`](Input::run), [`.run_unit()`](Input::run_unit)
-//! and [`.run_result()`](Input::run_result).
-//! These methods can be invoked on all values whose types implement [`Input`].
-//! When using these methods, it's especially useful that [`Input`] is implemented
-//! by tuples.
+//! through methods on the [`Input`](input::Input) trait:
+//! [`.run()`](input::Input::run), [`.run_unit()`](input::Input::run_unit)
+//! and [`.run_result()`](input::Input::run_result).
+//! These methods can be invoked on all values whose types implement
+//! [`Input`](input::Input).
+//! When using these methods, it's especially useful that
+//! [`Input`](input::Input) is implemented by tuples.
 //! The work analog to [`cmd!`], [`cmd_unit!`] and [`cmd_result!`].
 //! Here's some examples:
 //!
 //! ```
+//! use cradle::prelude::*;
+//!
 //! let StdoutTrimmed(output) = ("echo", "foo").run();
 //! assert_eq!(output, "foo");
 //!
@@ -198,10 +201,12 @@
 //! );
 //! ```
 //!
-//! Note: The `%` shortcut for [`Split`] is not available in this notation.
-//! You can either use tuples, or [`Split`] explicitly:
+//! Note: The `%` shortcut for [`Split`](input::Split) is not available in this notation.
+//! You can either use tuples, or [`Split`](input::Split) explicitly:
 //!
 //! ```
+//! use cradle::prelude::*;
+//!
 //! Split("echo foo").run_unit();
 //! ("echo", "foo").run_unit();
 //! ```
