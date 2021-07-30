@@ -5,7 +5,7 @@ const WHICH: &str = "where";
 
 #[test]
 fn capturing_stdout() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     let StdoutTrimmed(output) = cmd!(%"echo foo");
     assert_eq!(output, "foo");
@@ -14,14 +14,14 @@ fn capturing_stdout() {
 #[test]
 #[should_panic(expected = "false:\n  exited with exit code: 1")]
 fn panics_on_non_zero_exit_codes() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     cmd_unit!("false");
 }
 
 #[test]
 fn result_succeeding() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     fn test() -> Result<(), Error> {
         // make sure 'ls' is installed
@@ -34,7 +34,7 @@ fn result_succeeding() {
 
 #[test]
 fn result_failing() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     fn test() -> Result<(), Error> {
         cmd_result!(WHICH, "does-not-exist")?;
@@ -53,7 +53,7 @@ fn result_failing() {
 
 #[test]
 fn trimmed_stdout() {
-    use cradle::*;
+    use cradle::prelude::*;
     use std::path::PathBuf;
 
     {
@@ -68,7 +68,7 @@ fn trimmed_stdout() {
 
 #[test]
 fn trimmed_stdout_and_results() {
-    use cradle::*;
+    use cradle::prelude::*;
     use std::path::PathBuf;
 
     fn test() -> Result<(), Error> {
@@ -86,7 +86,7 @@ fn trimmed_stdout_and_results() {
 
 #[test]
 fn box_dyn_errors_succeeding() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -100,7 +100,7 @@ fn box_dyn_errors_succeeding() {
 
 #[test]
 fn box_dyn_errors_failing() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -121,7 +121,7 @@ fn box_dyn_errors_failing() {
 
 #[test]
 fn user_supplied_errors_succeeding() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     #[derive(Debug)]
     enum Error {
@@ -144,7 +144,7 @@ fn user_supplied_errors_succeeding() {
 
 #[test]
 fn user_supplied_errors_failing() {
-    use cradle::*;
+    use cradle::prelude::*;
     use std::fmt::Display;
 
     #[derive(Debug)]
@@ -186,7 +186,7 @@ mod run_interface {
 
     #[test]
     fn result_succeeding() {
-        use cradle::*;
+        use cradle::prelude::*;
 
         fn test() -> Result<(), Error> {
             // make sure 'ls' is installed
@@ -199,7 +199,7 @@ mod run_interface {
 
     #[test]
     fn result_failing() {
-        use cradle::*;
+        use cradle::prelude::*;
 
         fn test() -> Result<(), Error> {
             (WHICH, "does-not-exist").run_result()?;
@@ -218,7 +218,7 @@ mod run_interface {
 
     #[test]
     fn box_dyn_errors_succeeding() {
-        use cradle::*;
+        use cradle::prelude::*;
 
         type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -232,7 +232,7 @@ mod run_interface {
 
     #[test]
     fn box_dyn_errors_failing() {
-        use cradle::*;
+        use cradle::prelude::*;
 
         type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -253,7 +253,7 @@ mod run_interface {
 
     #[test]
     fn user_supplied_errors_succeeding() {
-        use cradle::*;
+        use cradle::prelude::*;
 
         #[derive(Debug)]
         enum Error {
@@ -276,7 +276,7 @@ mod run_interface {
 
     #[test]
     fn user_supplied_errors_failing() {
-        use cradle::*;
+        use cradle::prelude::*;
         use std::fmt::Display;
 
         #[derive(Debug)]

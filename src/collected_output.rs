@@ -1,4 +1,4 @@
-use crate::{Config, Context};
+use crate::{config::Config, context::Context};
 use std::{
     io::{self, Read, Write},
     process::{ChildStderr, ChildStdin, ChildStdout},

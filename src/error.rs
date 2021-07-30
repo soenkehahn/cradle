@@ -1,4 +1,6 @@
-use crate::Config;
+//! The [`Error`] type used in the return type of [`cmd_result!`].
+
+use crate::config::Config;
 use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8Error, sync::Arc};
 
 #[derive(Debug, Clone)]
@@ -92,7 +94,7 @@ impl std::error::Error for Error {
 
 #[cfg(test)]
 mod tests {
-    use crate::{cmd_result, Stderr, StdoutUntrimmed};
+    use crate::prelude::*;
     use executable_path::executable_path;
     use std::error::Error;
 
