@@ -1,3 +1,5 @@
+//! An internal module used for configuring child processes.
+
 use std::{ffi::OsString, path::PathBuf, sync::Arc};
 
 #[doc(hidden)]

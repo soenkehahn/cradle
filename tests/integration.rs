@@ -7,7 +7,7 @@ const WHICH: &str = "where";
 
 #[test]
 fn capturing_stdout() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     let StdoutTrimmed(output) = cmd!(%"echo foo");
     assert_eq!(output, "foo");
@@ -55,7 +55,7 @@ fn result_failing() {
 
 #[test]
 fn trimmed_stdout() {
-    use cradle::*;
+    use cradle::prelude::*;
     use std::path::PathBuf;
 
     {
@@ -70,7 +70,7 @@ fn trimmed_stdout() {
 
 #[test]
 fn trimmed_stdout_and_results() {
-    use cradle::*;
+    use cradle::prelude::*;
     use std::path::PathBuf;
 
     fn test() -> Result<(), Error> {

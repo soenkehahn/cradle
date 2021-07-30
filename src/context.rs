@@ -1,3 +1,5 @@
+//! An internal module used for testing cradle.
+
 use std::io::{self, Write};
 
 #[derive(Clone)]
