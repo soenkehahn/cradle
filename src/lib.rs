@@ -570,7 +570,7 @@ mod tests {
                     assert_eq!(
                         result.unwrap_err().to_string(),
                         if cfg!(windows) {
-                            "./without-executable-bit foo bar:\n  The system cannot find the file specified. (os error 2)"
+                            "./without-executable-bit foo bar:\n  %1 is not a valid Win32 application. (os error 193)"
                         } else {
                             "./without-executable-bit foo bar:\n  Permission denied (os error 13)"
                         }
