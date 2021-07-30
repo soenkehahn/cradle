@@ -845,12 +845,20 @@ mod tests {
                 let context = Context::test();
                 let context_clone = context.clone();
                 let thread = thread::spawn(|| {
-                    cmd_result_with_context_unit!(
-                        context_clone,
-                        test_helper(),
-                        "stream chunk then wait for file"
-                    )
-                    .unwrap();
+                    let script = TestScript::new(
+                        &r#"
+                            import os
+                            import sys
+                            import time
+
+                            print("foo")
+                            sys.stdout.flush()
+                            while not os.path.exists("./file"):
+                                time.sleep(0.1)
+                        "#
+                        .unindent(),
+                    );
+                    cmd_result_with_context_unit!(context_clone, &script).unwrap();
                 });
                 while (context.stdout()) != "foo\n" {
                     thread::sleep(Duration::from_secs_f32(0.05));
@@ -1419,7 +1427,7 @@ mod tests {
                     import sys
 
                     for line in sys.stdin:
-                        None
+                        pass
 
                     print('stdin is closed')
                 "
@@ -1554,7 +1562,7 @@ mod tests {
                     import os
                     value = os.environ.get('FOO')
                     if value is not None and value == '':
-                      print('FOO set, but empty')
+                        print('FOO set, but empty')
                 "
                 .unindent(),
             );
