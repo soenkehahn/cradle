@@ -15,7 +15,7 @@ defaults:
     shell: bash
 
 env:
-  CACHE_KEY: 1
+  CACHE_KEY: 2
 
 jobs:
   all:
@@ -42,6 +42,7 @@ jobs:
           - "1.51"
           - "1.52"
           - "1.53"
+          - "1.54"
 
     runs-on: ${{matrix.os}}
 

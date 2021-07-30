@@ -1,4 +1,4 @@
-use cradle::*;
+use cradle::prelude::*;
 
 fn main() {
     let StdoutTrimmed(git_version) = cmd!(%"git --version");

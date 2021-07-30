@@ -6,7 +6,7 @@
 //! it easy to run child processes from rust programs.
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(stdout) = cmd!(%"echo foo");
 //! assert_eq!(stdout, "foo");
@@ -15,17 +15,17 @@
 //! # Arguments
 //!
 //! You can pass in multiple arguments (of different types) to [`cmd!`]
-//! to specify arguments, as long as they implement the [`Input`]
+//! to specify arguments, as long as they implement the [`Input`](input::Input)
 //! trait:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(stdout) = cmd!("echo", "foo", "bar");
 //! assert_eq!(stdout, "foo bar");
 //! ```
 //!
-//! For all possible inputs to [`cmd!`], see the documentation of [`Input`].
+//! For all possible inputs to [`cmd!`], see the documentation of [`Input`](input::Input).
 //!
 //! ## Whitespace Splitting
 //!
@@ -33,7 +33,7 @@
 //! So for example this code fails:
 //!
 //! ``` should_panic
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(_) = cmd!("echo foo");
 //! ```
@@ -41,24 +41,24 @@
 //! In this code `cradle` tries to run a process from an executable called
 //! `"echo foo"`, including the space in the file name of the executable.
 //! That fails, because an executable with that name doesn't exist.
-//! `cradle` provides a new-type wrapper [`Split`] to help with that:
+//! `cradle` provides a new-type wrapper [`Split`](input::Split) to help with that:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(output) = cmd!(Split("echo foo"));
 //! assert_eq!(output, "foo");
 //! ```
 //!
-//! Wrapping an argument of type `&str` in [`Split`] will cause `cradle` to first
+//! Wrapping an argument of type `&str` in [`Split`](input::Split) will cause `cradle` to first
 //! split it by whitespace and then use the resulting words as if they were passed
 //! into [`cmd!`] as separate arguments.
 //!
 //! And -- since this is such a common case -- `cradle` provides a syntactic shortcut
-//! for [`Split`], the `%` symbol:
+//! for [`Split`](input::Split), the `%` symbol:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(output) = cmd!(%"echo foo");
 //! assert_eq!(output, "foo");
@@ -68,12 +68,12 @@
 //!
 //! You can choose which return type you want [`cmd!`] to return,
 //! as long as the chosen return type implements [`Output`].
-//! For example you can use e.g. [`StdoutTrimmed`] to collect what the
-//! child process writes to `stdout`,
+//! For example you can use e.g. [`StdoutTrimmed`](output::StdoutTrimmed)
+//! to collect what the child process writes to `stdout`,
 //! trimmed of leading and trailing whitespace:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(output) = cmd!(%"echo foo");
 //! assert_eq!(output, "foo");
@@ -88,7 +88,7 @@
 //! ```
 //! # let temp_dir = tempfile::TempDir::new().unwrap();
 //! # std::env::set_current_dir(&temp_dir).unwrap();
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let () = cmd!(%"touch foo");
 //! ```
@@ -100,7 +100,7 @@
 //! ```
 //! # let temp_dir = tempfile::TempDir::new().unwrap();
 //! # std::env::set_current_dir(&temp_dir).unwrap();
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! cmd_unit!(%"touch foo");
 //! ```
@@ -118,17 +118,17 @@
 //! For example:
 //!
 //! ``` should_panic
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! // panics with "false:\n  exited with exit code: 1"
 //! cmd_unit!("false");
 //! ```
 //!
 //! You can suppress panics caused by non-zero exit codes by using the
-//! [`Status`] type as a return type of [`cmd!`]:
+//! [`Status`](output::Status) type as a return type of [`cmd!`]:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let Status(exit_status) = cmd!("false");
 //! assert_eq!(exit_status.code(), Some(1));
@@ -141,7 +141,7 @@
 //! Here's some examples:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! let result: Result<(), cradle::Error> = cmd_result!("false");
 //! let error_message = format!("{}", result.unwrap_err());
@@ -159,7 +159,7 @@
 //! idiomatic way, for example:
 //!
 //! ```
-//! use cradle::*;
+//! use cradle::prelude::*;
 //!
 //! fn build() -> Result<(), Error> {
 //!     cmd_result!(%"which make")?;
@@ -178,32 +178,30 @@
 //! function.
 
 mod collected_output;
-mod config;
-mod context;
-mod error;
-mod input;
-mod output;
-
-use crate::collected_output::Waiter;
 #[doc(hidden)]
-pub use crate::{config::Config, context::Context};
-pub use crate::{
-    error::{panic_on_error, Error},
-    input::{CurrentDir, Env, Input, LogCommand, Split, Stdin},
-    output::{Output, Status, Stderr, StdoutTrimmed, StdoutUntrimmed},
-};
+pub mod config;
+#[doc(hidden)]
+pub mod context;
+pub mod error;
+pub mod input;
+pub mod output;
+pub mod prelude;
+
+use crate::{collected_output::Waiter, config::Config, context::Context, output::Output};
+pub use error::Error;
 use std::{
     ffi::OsString,
     io::Write,
     process::{Command, ExitStatus, Stdio},
+    sync::Arc,
 };
 
 /// Execute child processes. See the module documentation on how to use it.
 #[macro_export]
 macro_rules! cmd {
     ($($args:tt)*) => {{
-        let context = $crate::Context::production();
-        $crate::panic_on_error($crate::cmd_result_with_context!(context, $($args)*))
+        let context = $crate::context::Context::production();
+        $crate::error::panic_on_error($crate::cmd_result_with_context!(context, $($args)*))
     }}
 }
 
@@ -213,7 +211,7 @@ macro_rules! cmd {
 /// ```
 /// # let temp_dir = tempfile::TempDir::new().unwrap();
 /// # std::env::set_current_dir(&temp_dir).unwrap();
-/// use cradle::*;
+/// use cradle::prelude::*;
 ///
 /// cmd_unit!(%"touch ./foo");
 /// ```
@@ -225,11 +223,11 @@ macro_rules! cmd_unit {
 }
 
 /// Like [`cmd!`], but fixes the return type to [`Result<T, Error>`],
-/// where `T` is any type that implements [`Output`].
+/// where `T` is any type that implements [`Output`](output::Output).
 #[macro_export]
 macro_rules! cmd_result {
     ($($args:tt)*) => {{
-        let context = $crate::Context::production();
+        let context = $crate::context::Context::production();
         $crate::cmd_result_with_context!(context, $($args)*)
     }}
 }
@@ -238,7 +236,7 @@ macro_rules! cmd_result {
 #[macro_export]
 macro_rules! cmd_result_with_context {
     ($context:expr, $($args:tt)*) => {{
-        let mut config = $crate::Config::default();
+        let mut config = $crate::config::Config::default();
         $crate::configure!(config: config, args: $($args)*);
         $crate::run_cmd($context, config)
     }}
@@ -248,17 +246,17 @@ macro_rules! cmd_result_with_context {
 #[macro_export]
 macro_rules! configure {
     (config: $config:ident, args: % $head:expr $(,)?) => {
-        $crate::Input::configure($crate::Split($head), &mut $config);
+        $crate::input::Input::configure($crate::input::Split($head), &mut $config);
     };
     (config: $config:ident, args: $head:expr $(,)?) => {
-        $crate::Input::configure($head, &mut $config);
+        $crate::input::Input::configure($head, &mut $config);
     };
     (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
-        $crate::Input::configure($crate::Split($head), &mut $config);
+        $crate::input::Input::configure($crate::input::Split($head), &mut $config);
         $crate::configure!(config: $config, args: $($tail)*);
     };
     (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
-        $crate::Input::configure($head, &mut $config);
+        $crate::input::Input::configure($head, &mut $config);
         $crate::configure!(config: $config, args: $($tail)*);
     };
 }
@@ -297,7 +295,7 @@ where
     let (executable, arguments) = parse_input(config.arguments.clone())?;
     if config.log_command {
         writeln!(context.stderr, "+ {}", config.full_command())
-            .map_err(|error| Error::command_io_error(&config, error))?;
+            .map_err(|error| Error::command_io_error(config, error))?;
     }
     let mut command = Command::new(&executable);
     command.args(arguments);
@@ -311,9 +309,16 @@ where
     if let Some(working_directory) = &config.working_directory {
         command.current_dir(working_directory);
     }
-    let mut child = command
-        .spawn()
-        .map_err(|error| Error::command_io_error(&config, error))?;
+    let mut child = command.spawn().map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            Error::FileNotFoundWhenExecuting {
+                executable,
+                source: Arc::new(error),
+            }
+        } else {
+            Error::command_io_error(config, error)
+        }
+    })?;
     let waiter = Waiter::spawn_standard_stream_relaying(
         &context,
         config,
@@ -329,11 +334,11 @@ where
     );
     let exit_status = child
         .wait()
-        .map_err(|error| Error::command_io_error(&config, error))?;
+        .map_err(|error| Error::command_io_error(config, error))?;
     let collected_output = waiter
         .join()
-        .map_err(|error| Error::command_io_error(&config, error))?;
-    check_exit_status(&config, exit_status)?;
+        .map_err(|error| Error::command_io_error(config, error))?;
+    check_exit_status(config, exit_status)?;
     Ok(RunResult {
         stdout: collected_output.stdout,
         stderr: collected_output.stderr,
@@ -364,15 +369,16 @@ fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Err
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use executable_path::executable_path;
+    use crate::context::Context;
+    use crate::prelude::*;
     use lazy_static::lazy_static;
     use std::{
+        collections::BTreeSet,
         env::{current_dir, set_current_dir},
-        ffi::OsStr,
+        ffi::{OsStr, OsString},
         fs,
         path::PathBuf,
-        sync::Mutex,
+        sync::{Arc, Mutex},
     };
     use tempfile::TempDir;
     use unindent::Unindent;
@@ -393,6 +399,28 @@ mod tests {
         });
         set_current_dir(original_working_directory).unwrap();
         result.unwrap();
+    }
+
+    fn test_executable(name: &str) -> PathBuf {
+        lazy_static! {
+            static ref BUILT: Arc<Mutex<BTreeSet<String>>> = Arc::new(Mutex::new(BTreeSet::new()));
+        }
+        let mut set = BUILT.lock().unwrap();
+        if !set.contains(name) {
+            set.insert(name.to_owned());
+            cmd_unit!(
+                LogCommand,
+                CurrentDir(std::env::var("CARGO_MANIFEST_DIR").unwrap()),
+                %"cargo build",
+                ("--bin", name),
+                %"--features test_executables",
+            );
+        }
+        executable_path::executable_path(name)
+    }
+
+    fn test_helper() -> PathBuf {
+        test_executable("test_executables_helper")
     }
 
     macro_rules! cmd_result_with_context_unit {
@@ -438,48 +466,30 @@ mod tests {
             #[test]
             #[should_panic(expected = "exited with exit code: 42")]
             fn other_exit_codes() {
-                cmd_unit!(executable_path("cradle_test_helper"), "exit code 42");
+                cmd_unit!(test_helper(), "exit code 42");
             }
 
             #[test]
-            #[cfg_attr(
-                unix,
-                should_panic(
-                    expected = "cmd!: does-not-exist:\n  No such file or directory (os error 2)"
-                )
-            )]
-            #[cfg_attr(
-                windows,
-                should_panic(
-                    expected = "cmd!: does-not-exist:\n  The system cannot find the file specified. (os error 2)"
-                )
-            )]
+            #[should_panic(expected = "cmd!: File not found error when executing 'does-not-exist'")]
             fn executable_cannot_be_found() {
                 cmd_unit!("does-not-exist");
             }
 
             #[test]
-            #[cfg_attr(
-                unix,
-                should_panic(
-                    expected = "cmd!: does-not-exist foo bar:\n  No such file or directory (os error 2)"
-                )
-            )]
-            #[cfg_attr(
-                windows,
-                should_panic(
-                    expected = "cmd!: does-not-exist foo bar:\n  The system cannot find the file specified. (os error 2)"
-                )
-            )]
-            fn includes_full_command_on_missing_executables() {
-                cmd_unit!(%"does-not-exist foo bar");
+            #[cfg(unix)]
+            #[should_panic(expected = "/file foo bar:\n  Permission denied (os error 13)")]
+            fn includes_full_command_on_io_errors() {
+                let temp_dir = TempDir::new().unwrap();
+                let without_executable_bit = temp_dir.path().join("file");
+                fs::write(&without_executable_bit, "").unwrap();
+                cmd_unit!(without_executable_bit, %"foo bar");
             }
 
             #[rustversion::since(1.46)]
             #[test]
             fn includes_source_location_of_cmd_call() {
-                let (Status(_), Stderr(stderr)) = cmd!(executable_path("cradle_panic"));
-                let expected = "src/cradle_panic.rs:4:5";
+                let (Status(_), Stderr(stderr)) = cmd!(test_executable("test_executables_panic"));
+                let expected = "src/test_executables/panic.rs:4:5";
                 assert!(
                     stderr.contains(expected),
                     "{:?}\n  does not contain\n{:?}",
@@ -498,18 +508,12 @@ mod tests {
             #[test]
             #[should_panic(expected = "invalid utf-8 written to stdout")]
             fn invalid_utf8_stdout() {
-                let StdoutTrimmed(_) = cmd!(
-                    executable_path("cradle_test_helper"),
-                    "invalid utf-8 stdout"
-                );
+                let StdoutTrimmed(_) = cmd!(test_helper(), "invalid utf-8 stdout");
             }
 
             #[test]
             fn invalid_utf8_to_stdout_is_allowed_when_not_captured() {
-                cmd_unit!(
-                    executable_path("cradle_test_helper"),
-                    "invalid utf-8 stdout"
-                );
+                cmd_unit!(test_helper(), "invalid utf-8 stdout");
             }
         }
 
@@ -557,22 +561,25 @@ mod tests {
             }
 
             #[test]
-            fn includes_full_command_on_missing_executables() {
-                let result: Result<(), Error> = cmd_result!(%"does-not-exist foo bar");
-                assert_eq!(
-                    result.unwrap_err().to_string(),
-                    if cfg!(windows) {
-                        "does-not-exist foo bar:\n  The system cannot find the file specified. (os error 2)"
-                    } else {
-                        "does-not-exist foo bar:\n  No such file or directory (os error 2)"
-                    }
-                );
+            fn includes_full_command_on_io_errors() {
+                in_temporary_directory(|| {
+                    fs::write("without-executable-bit", "").unwrap();
+                    let result: Result<(), Error> =
+                        cmd_result!(%"./without-executable-bit foo bar");
+                    assert_eq!(
+                        result.unwrap_err().to_string(),
+                        if cfg!(windows) {
+                            "./without-executable-bit foo bar:\n  %1 is not a valid Win32 application. (os error 193)"
+                        } else {
+                            "./without-executable-bit foo bar:\n  Permission denied (os error 13)"
+                        }
+                    );
+                });
             }
 
             #[test]
             fn other_exit_codes() {
-                let result: Result<(), Error> =
-                    cmd_result!(executable_path("cradle_test_helper"), "exit code 42");
+                let result: Result<(), Error> = cmd_result!(test_helper(), "exit code 42");
                 assert!(result
                     .unwrap_err()
                     .to_string()
@@ -580,16 +587,34 @@ mod tests {
             }
 
             #[test]
-            fn executable_cannot_be_found() {
+            fn missing_executable_file_error_message() {
                 let result: Result<(), Error> = cmd_result!("does-not-exist");
                 assert_eq!(
                     result.unwrap_err().to_string(),
-                    if cfg!(windows) {
-                        "does-not-exist:\n  The system cannot find the file specified. (os error 2)"
-                    } else {
-                        "does-not-exist:\n  No such file or directory (os error 2)"
-                    }
+                    "File not found error when executing 'does-not-exist'"
                 );
+            }
+
+            #[test]
+            fn missing_executable_file_error_can_be_matched_against() {
+                let result: Result<(), Error> = cmd_result!("does-not-exist");
+                match result {
+                    Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
+                        assert_eq!(executable, "does-not-exist");
+                    }
+                    _ => panic!("should match Error::ExecutableNotFound"),
+                }
+            }
+
+            #[test]
+            fn missing_executable_file_error_can_be_caused_by_relative_paths() {
+                let result: Result<(), Error> = cmd_result!("./does-not-exist");
+                match result {
+                    Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
+                        assert_eq!(executable, "./does-not-exist");
+                    }
+                    _ => panic!("should match Error::ExecutableNotFound"),
+                }
             }
 
             #[test]
@@ -601,7 +626,7 @@ mod tests {
 
             #[test]
             fn invalid_utf8_stdout() {
-                let test_helper = executable_path("cradle_test_helper");
+                let test_helper = test_helper();
                 let result: Result<StdoutTrimmed, Error> =
                     cmd_result!(&test_helper, "invalid utf-8 stdout");
                 assert_eq!(
@@ -806,7 +831,7 @@ mod tests {
             let context = Context::test();
             let _: Result<(), Error> = cmd_result_with_context!(
                 context.clone(),
-                executable_path("cradle_test_helper"),
+                test_helper(),
                 "output foo and exit with 42"
             );
             assert_eq!(context.stdout(), "foo\n");
@@ -820,7 +845,7 @@ mod tests {
                 let thread = thread::spawn(|| {
                     cmd_result_with_context_unit!(
                         context_clone,
-                        executable_path("cradle_test_helper"),
+                        test_helper(),
                         "stream chunk then wait for file"
                     )
                     .unwrap();
@@ -857,12 +882,8 @@ mod tests {
         #[test]
         fn relays_stderr_by_default() {
             let context = Context::test();
-            cmd_result_with_context_unit!(
-                context.clone(),
-                executable_path("cradle_test_helper"),
-                "write to stderr"
-            )
-            .unwrap();
+            cmd_result_with_context_unit!(context.clone(), test_helper(), "write to stderr")
+                .unwrap();
             assert_eq!(context.stderr(), "foo\n");
         }
 
@@ -871,7 +892,7 @@ mod tests {
             let context = Context::test();
             let _: Result<(), Error> = cmd_result_with_context!(
                 context.clone(),
-                executable_path("cradle_test_helper"),
+                test_helper(),
                 "write to stderr and exit with 42"
             );
             assert_eq!(context.stderr(), "foo\n");
@@ -885,7 +906,7 @@ mod tests {
                 let thread = thread::spawn(|| {
                     cmd_result_with_context_unit!(
                         context_clone,
-                        executable_path("cradle_test_helper"),
+                        test_helper(),
                         "stream chunk to stderr then wait for file"
                     )
                     .unwrap();
@@ -911,40 +932,33 @@ mod tests {
 
         #[test]
         fn capture_stderr() {
-            let Stderr(stderr) = cmd!(executable_path("cradle_test_helper"), "write to stderr");
+            let Stderr(stderr) = cmd!(test_helper(), "write to stderr");
             assert_eq!(stderr, "foo\n");
         }
 
         #[test]
         fn assumes_stderr_is_utf_8() {
-            let test_helper = executable_path("cradle_test_helper");
-            let result: Result<Stderr, Error> = cmd_result!(&test_helper, "invalid utf-8 stderr");
+            let result: Result<Stderr, Error> = cmd_result!(test_helper(), "invalid utf-8 stderr");
             assert_eq!(
                 result.unwrap_err().to_string(),
                 format!(
                     "{} 'invalid utf-8 stderr':\n  invalid utf-8 written to stderr",
-                    test_helper.display(),
+                    test_helper().display(),
                 )
             );
         }
 
         #[test]
         fn does_allow_invalid_utf_8_to_stderr_when_not_captured() {
-            cmd_unit!(
-                executable_path("cradle_test_helper"),
-                "invalid utf-8 stderr"
-            );
+            cmd_unit!(test_helper(), "invalid utf-8 stderr");
         }
 
         #[test]
         fn does_not_relay_stderr_when_catpuring() {
             let context = Context::test();
-            let Stderr(_) = cmd_result_with_context!(
-                context.clone(),
-                executable_path("cradle_test_helper"),
-                "write to stderr"
-            )
-            .unwrap();
+            let Stderr(_) =
+                cmd_result_with_context!(context.clone(), test_helper(), "write to stderr")
+                    .unwrap();
             assert_eq!(context.stderr(), "");
         }
     }
@@ -1016,7 +1030,7 @@ mod tests {
 
         #[test]
         fn forty_two() {
-            let Status(exit_status) = cmd!(executable_path("cradle_test_helper"), "exit code 42");
+            let Status(exit_status) = cmd!(test_helper(), "exit code 42");
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
         }
@@ -1029,8 +1043,6 @@ mod tests {
     }
 
     mod bool_output {
-        use super::*;
-
         #[test]
         fn success_exit_status_is_true() {
             assert!(cmd!("true"));
@@ -1082,20 +1094,16 @@ mod tests {
 
         #[test]
         fn two_tuple_1() {
-            let (StdoutTrimmed(output), Status(exit_status)) = cmd!(
-                executable_path("cradle_test_helper"),
-                "output foo and exit with 42"
-            );
+            let (StdoutTrimmed(output), Status(exit_status)) =
+                cmd!(test_helper(), "output foo and exit with 42");
             assert_eq!(output, "foo");
             assert_eq!(exit_status.code(), Some(42));
         }
 
         #[test]
         fn two_tuple_2() {
-            let (Status(exit_status), StdoutTrimmed(output)) = cmd!(
-                executable_path("cradle_test_helper"),
-                "output foo and exit with 42"
-            );
+            let (Status(exit_status), StdoutTrimmed(output)) =
+                cmd!(test_helper(), "output foo and exit with 42");
             assert_eq!(output, "foo");
             assert_eq!(exit_status.code(), Some(42));
         }
@@ -1124,20 +1132,16 @@ mod tests {
 
         #[test]
         fn capturing_stdout_on_errors() {
-            let (StdoutTrimmed(output), Status(exit_status)) = cmd!(
-                executable_path("cradle_test_helper"),
-                "output foo and exit with 42"
-            );
+            let (StdoutTrimmed(output), Status(exit_status)) =
+                cmd!(test_helper(), "output foo and exit with 42");
             assert!(!exit_status.success());
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn capturing_stderr_on_errors() {
-            let (Stderr(output), Status(exit_status)) = cmd!(
-                executable_path("cradle_test_helper"),
-                "write to stderr and exit with 42"
-            );
+            let (Stderr(output), Status(exit_status)) =
+                cmd!(test_helper(), "write to stderr and exit with 42");
             assert!(!exit_status.success());
             assert_eq!(output, "foo\n");
         }
@@ -1145,7 +1149,7 @@ mod tests {
 
     mod current_dir {
         use super::*;
-        use std::{fs, path::Path};
+        use std::path::Path;
 
         #[test]
         fn sets_the_working_directory() {
@@ -1340,13 +1344,13 @@ mod tests {
             if cfg!(unix) {
                 let file = PathBuf::from("./test-script");
                 let script = "#!/usr/bin/env bash\necho test-output\n";
-                std::fs::write(&file, script).unwrap();
+                fs::write(&file, script).unwrap();
                 cmd_unit!(%"chmod +x test-script");
                 file
             } else {
                 let file = PathBuf::from("./test-script.bat");
                 let script = "@echo test-output\n";
-                std::fs::write(&file, script).unwrap();
+                fs::write(&file, script).unwrap();
                 file
             }
         }
@@ -1355,7 +1359,7 @@ mod tests {
         fn ref_path_as_argument() {
             in_temporary_directory(|| {
                 let file: &Path = Path::new("file");
-                std::fs::write(file, "test-contents").unwrap();
+                fs::write(file, "test-contents").unwrap();
                 let StdoutUntrimmed(output) = cmd!("cat", file);
                 assert_eq!(output, "test-contents");
             })
@@ -1374,7 +1378,7 @@ mod tests {
         fn path_buf_as_argument() {
             in_temporary_directory(|| {
                 let file: PathBuf = PathBuf::from("file");
-                std::fs::write(&file, "test-contents").unwrap();
+                fs::write(&file, "test-contents").unwrap();
                 let StdoutUntrimmed(output) = cmd!("cat", file);
                 assert_eq!(output, "test-contents");
             })
@@ -1395,31 +1399,20 @@ mod tests {
 
         #[test]
         fn allows_to_pass_in_strings_as_stdin() {
-            let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "reverse",
-                Stdin("foo")
-            );
+            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin("foo"));
             assert_eq!(output, "oof");
         }
 
         #[test]
         fn allows_passing_in_u8_slices_as_stdin() {
-            let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "reverse",
-                Stdin(&[0, 1, 2])
-            );
+            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin(&[0, 1, 2]));
             assert_eq!(output, "\x02\x01\x00");
         }
 
         #[test]
         #[cfg(unix)]
         fn stdin_is_closed_by_default() {
-            let StdoutTrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "wait until stdin is closed"
-            );
+            let StdoutTrimmed(output) = cmd!(test_helper(), "wait until stdin is closed");
             assert_eq!(output, "stdin is closed");
         }
 
@@ -1441,23 +1434,15 @@ mod tests {
 
         #[test]
         fn multiple_stdin_arguments_are_all_passed_into_the_child_process() {
-            let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "reverse",
-                Stdin("foo"),
-                Stdin("bar")
-            );
+            let StdoutUntrimmed(output) =
+                cmd!(test_helper(), "reverse", Stdin("foo"), Stdin("bar"));
             assert_eq!(output, "raboof");
         }
 
         #[test]
         fn works_for_owned_strings() {
             let argument: String = "foo".to_string();
-            let StdoutUntrimmed(output) = cmd!(
-                executable_path("cradle_test_helper"),
-                "reverse",
-                Stdin(argument)
-            );
+            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin(argument));
             assert_eq!(output, "oof");
         }
     }
@@ -1482,6 +1467,7 @@ mod tests {
 
     mod environment_variables {
         use super::*;
+        use crate::config::Config;
         use pretty_assertions::assert_eq;
         use std::env;
 
