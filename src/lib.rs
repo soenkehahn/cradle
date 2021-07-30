@@ -642,7 +642,7 @@ mod tests {
                     Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
                         assert_eq!(executable, "does-not-exist");
                     }
-                    _ => panic!("should match Error::ExecutableNotFound"),
+                    _ => panic!("should match Error::FileNotFoundWhenExecuting"),
                 }
             }
 
@@ -653,7 +653,7 @@ mod tests {
                     Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
                         assert_eq!(executable, "./does-not-exist");
                     }
-                    _ => panic!("should match Error::ExecutableNotFound"),
+                    _ => panic!("should match Error::FileNotFoundWhenExecuting"),
                 }
             }
 
@@ -1613,10 +1613,10 @@ mod tests {
             let StdoutTrimmed(output) = ("echo", "foo").run_result().unwrap();
             assert_eq!(output, "foo");
             let result: Result<(), Error> = "does-not-exist".run_result();
-            assert!(matches!(
-                result,
-                Err(Error::FileNotFoundWhenExecuting { .. })
-            ));
+            match result {
+                Err(Error::FileNotFoundWhenExecuting { .. }) => {}
+                _ => panic!("should match Error::FileNotFoundWhenExecuting"),
+            }
         }
     }
 }
