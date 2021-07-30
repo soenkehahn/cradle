@@ -3,13 +3,13 @@ ci: test build doc clippy fmt context-integration-tests run-examples forbidden-w
 build:
   cargo build --all-targets --all-features
 
-test +pattern="": build
+test +pattern="":
   cargo test --all {{ pattern }}
 
 test-lib-fast +pattern="":
   cargo test --lib {{ pattern }}
 
-context-integration-tests: build
+context-integration-tests:
   cargo run --features "test_executables" --bin context_integration_tests
 
 doc +args="":
