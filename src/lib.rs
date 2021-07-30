@@ -184,13 +184,13 @@
 //! Here's some examples:
 //!
 //! ```
+//! # let temp_dir = tempfile::TempDir::new().unwrap();
+//! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(output) = ("echo", "foo").run();
 //! assert_eq!(output, "foo");
 //!
-//! # let temp_dir = tempfile::TempDir::new().unwrap();
-//! # std::env::set_current_dir(&temp_dir).unwrap();
 //! ("touch", "foo").run_unit();
 //!
 //! let result: Result<(), cradle::Error> = "false".run_result();

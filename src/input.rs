@@ -93,7 +93,15 @@ pub trait Input {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
 
-    /// todo
+    /// `input.run()` runs `input` as a child process.
+    /// It's equivalent to `cmd!(input)`.
+    ///
+    /// ```
+    /// use cradle::prelude::*;
+    ///
+    /// let StdoutTrimmed(output) = ("echo", "foo").run();
+    /// assert_eq!(output, "foo");
+    /// ```
     fn run<O>(self) -> O
     where
         Self: Sized,
@@ -102,7 +110,16 @@ pub trait Input {
         crate::cmd!(self)
     }
 
-    /// todo
+    /// `input.run_unit()` runs `input` as a child process.
+    /// It's equivalent to `cmd_unit!(input)`.
+    ///
+    /// ```
+    /// # let temp_dir = tempfile::TempDir::new().unwrap();
+    /// # std::env::set_current_dir(&temp_dir).unwrap();
+    /// use cradle::prelude::*;
+    ///
+    /// ("touch", "foo").run_unit();
+    /// ```
     fn run_unit(self)
     where
         Self: Sized,
@@ -110,7 +127,21 @@ pub trait Input {
         crate::cmd_unit!(self);
     }
 
-    /// todo
+    /// `input.run_result()` runs `input` as a child process.
+    /// It's equivalent to `cmd_result!(input)`.
+    ///
+    /// ```
+    /// use cradle::prelude::*;
+    ///
+    /// # fn build() -> Result<(), Error> {
+    /// // make sure build tools are installed
+    /// cmd_result!(%"which make")?;
+    /// cmd_result!(%"which gcc")?;
+    /// cmd_result!(%"which ld")?;
+    /// cmd_result!(%"make build")?;
+    /// # Ok(())
+    /// # }
+    /// ```
     fn run_result<O>(self) -> Result<O, crate::error::Error>
     where
         Self: Sized,
