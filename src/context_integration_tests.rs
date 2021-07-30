@@ -2,7 +2,7 @@ fn main() {
     #[cfg(unix)]
     {
         {
-            use cradle::*;
+            use cradle::prelude::*;
             cmd_unit!(
                 LogCommand,
                 %"cargo build --bin test_executables_helper --features test_executables",
