@@ -372,8 +372,7 @@ fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Err
 
 #[cfg(test)]
 mod tests {
-    use crate::context::Context;
-    use crate::prelude::*;
+    use crate::{context::Context, prelude::*, test_script::TestScript};
     use lazy_static::lazy_static;
     use std::{
         collections::BTreeSet,
@@ -384,6 +383,7 @@ mod tests {
         sync::{Arc, Mutex},
     };
     use tempfile::TempDir;
+    use unindent::Unindent;
 
     fn in_temporary_directory<F>(f: F)
     where
@@ -1414,7 +1414,18 @@ mod tests {
         #[test]
         #[cfg(unix)]
         fn stdin_is_closed_by_default() {
-            let StdoutTrimmed(output) = cmd!(test_helper(), "wait until stdin is closed");
+            let script = TestScript::new(
+                &"
+                    import sys
+
+                    for line in sys.stdin:
+                        None
+
+                    print('stdin is closed')
+                "
+                .unindent(),
+            );
+            let StdoutTrimmed(output) = cmd!(&script);
             assert_eq!(output, "stdin is closed");
         }
 
@@ -1469,7 +1480,6 @@ mod tests {
 
     mod environment_variables {
         use super::*;
-        use crate::test_script::TestScript;
         use pretty_assertions::assert_eq;
         use std::env;
 
@@ -1483,12 +1493,13 @@ mod tests {
         #[test]
         fn works_for_multiple_variables() {
             let script = TestScript::new(
-                "
+                &"
                     import os
                     foo = os.environ.get('FOO')
                     bar = os.environ.get('BAR')
                     print(f'{foo} - {bar}')
-                ",
+                "
+                .unindent(),
             );
             let StdoutTrimmed(output) = cmd!(&script, Env("FOO", "a"), Env("BAR", "b"));
             assert_eq!(output, "a - b");
@@ -1539,12 +1550,13 @@ mod tests {
         #[test]
         fn variables_can_be_set_to_the_empty_string() {
             let script = TestScript::new(
-                "
+                &"
                     import os
                     value = os.environ.get('FOO')
                     if value is not None and value == '':
                       print('FOO set, but empty')
-                ",
+                "
+                .unindent(),
             );
             let StdoutTrimmed(output) = cmd!(&script, Env("FOO", ""));
             assert_eq!(output, "FOO set, but empty");
