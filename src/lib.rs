@@ -600,7 +600,9 @@ mod tests {
             fn missing_executable_file_error_can_be_matched_against() {
                 let result: Result<(), Error> = cmd_result!("does-not-exist");
                 match result {
-                    Err(Error::FileNotFoundWhenExecuting { .. }) => {}
+                    Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
+                        assert_eq!(executable, "does-not-exist");
+                    }
                     _ => panic!("should match Error::ExecutableNotFound"),
                 }
             }
