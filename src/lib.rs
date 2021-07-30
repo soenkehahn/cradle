@@ -295,7 +295,7 @@ where
     let (executable, arguments) = parse_input(config.arguments.clone())?;
     if config.log_command {
         writeln!(context.stderr, "+ {}", config.full_command())
-            .map_err(|error| Error::command_io_error(&config, error))?;
+            .map_err(|error| Error::command_io_error(config, error))?;
     }
     let mut command = Command::new(&executable);
     command.args(arguments);
@@ -316,7 +316,7 @@ where
                 source: Arc::new(error),
             }
         } else {
-            Error::command_io_error(&config, error)
+            Error::command_io_error(config, error)
         }
     })?;
     let waiter = Waiter::spawn_standard_stream_relaying(
@@ -334,11 +334,11 @@ where
     );
     let exit_status = child
         .wait()
-        .map_err(|error| Error::command_io_error(&config, error))?;
+        .map_err(|error| Error::command_io_error(config, error))?;
     let collected_output = waiter
         .join()
-        .map_err(|error| Error::command_io_error(&config, error))?;
-    check_exit_status(&config, exit_status)?;
+        .map_err(|error| Error::command_io_error(config, error))?;
+    check_exit_status(config, exit_status)?;
     Ok(RunResult {
         stdout: collected_output.stdout,
         stderr: collected_output.stderr,
