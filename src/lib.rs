@@ -1560,7 +1560,7 @@ mod tests {
         #[test]
         fn variables_can_be_set_to_the_empty_string() {
             let script = Script::new(
-                &"
+                "
                     import os
                     value = os.environ.get('FOO')
                     if value is not None and value == '':
