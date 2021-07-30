@@ -4,7 +4,7 @@ use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8
 #[derive(Debug, Clone)]
 pub enum Error {
     NoArgumentsGiven,
-    ExecutableNotFound {
+    FileNotFoundWhenExecuting {
         executable: OsString,
         source: Arc<io::Error>,
     },
@@ -48,7 +48,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::NoArgumentsGiven => write!(f, "no arguments given"),
-            Error::ExecutableNotFound { executable, .. } => write!(
+            Error::FileNotFoundWhenExecuting { executable, .. } => write!(
                 f,
                 "File not found error when executing '{}'",
                 executable.to_string_lossy()
@@ -81,9 +81,8 @@ impl Display for Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Error::ExecutableNotFound { source, .. } | Error::CommandIoError { source, .. } => {
-                Some(&**source)
-            }
+            Error::FileNotFoundWhenExecuting { source, .. }
+            | Error::CommandIoError { source, .. } => Some(&**source),
             Error::InvalidUtf8ToStdout { source, .. }
             | Error::InvalidUtf8ToStderr { source, .. } => Some(&**source),
             Error::NoArgumentsGiven | Error::NonZeroExitCode { .. } => None,

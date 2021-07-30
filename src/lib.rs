@@ -314,7 +314,7 @@ where
     }
     let mut child = command.spawn().map_err(|error| {
         if error.kind() == std::io::ErrorKind::NotFound {
-            Error::ExecutableNotFound {
+            Error::FileNotFoundWhenExecuting {
                 executable,
                 source: Arc::new(error),
             }
@@ -600,7 +600,7 @@ mod tests {
             fn missing_executable_file_error_can_be_matched_against() {
                 let result: Result<(), Error> = cmd_result!("does-not-exist");
                 match result {
-                    Err(Error::ExecutableNotFound { .. }) => {}
+                    Err(Error::FileNotFoundWhenExecuting { .. }) => {}
                     _ => panic!("should match Error::ExecutableNotFound"),
                 }
             }
@@ -609,7 +609,7 @@ mod tests {
             fn missing_executable_file_error_can_be_caused_by_relative_paths() {
                 let result: Result<(), Error> = cmd_result!("./does-not-exist");
                 match result {
-                    Err(Error::ExecutableNotFound { executable, .. }) => {
+                    Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
                         assert_eq!(executable, "./does-not-exist");
                     }
                     _ => panic!("should match Error::ExecutableNotFound"),
