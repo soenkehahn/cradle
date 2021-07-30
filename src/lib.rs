@@ -1570,5 +1570,16 @@ mod tests {
                 assert!(Path::new("foo").exists());
             });
         }
+
+        #[test]
+        fn run_result() {
+            let StdoutTrimmed(output) = ("echo", "foo").run_result().unwrap();
+            assert_eq!(output, "foo");
+            let result: Result<(), Error> = "does-not-exist".run_result();
+            assert!(matches!(
+                result,
+                Err(Error::FileNotFoundWhenExecuting { .. })
+            ));
+        }
     }
 }

@@ -104,6 +104,14 @@ pub trait Input {
     {
         crate::cmd_unit!(self);
     }
+
+    fn run_result<O>(self) -> Result<O, crate::error::Error>
+    where
+        Self: Sized,
+        O: Output,
+    {
+        crate::cmd_result!(self)
+    }
 }
 
 /// Blanket implementation for `&_`.
