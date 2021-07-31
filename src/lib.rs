@@ -187,6 +187,9 @@ pub mod input;
 pub mod output;
 pub mod prelude;
 
+#[cfg(test)]
+mod test_script;
+
 use crate::{collected_output::Waiter, config::Config, context::Context, output::Output};
 pub use error::Error;
 use std::{
@@ -369,8 +372,7 @@ fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Err
 
 #[cfg(test)]
 mod tests {
-    use crate::context::Context;
-    use crate::prelude::*;
+    use crate::{context::Context, prelude::*, test_script::TestScript};
     use lazy_static::lazy_static;
     use std::{
         collections::BTreeSet,
@@ -381,6 +383,7 @@ mod tests {
         sync::{Arc, Mutex},
     };
     use tempfile::TempDir;
+    use unindent::Unindent;
 
     fn in_temporary_directory<F>(f: F)
     where
@@ -465,7 +468,8 @@ mod tests {
             #[test]
             #[should_panic(expected = "exited with exit code: 42")]
             fn other_exit_codes() {
-                cmd_unit!(test_helper(), "exit code 42");
+                let script = TestScript::new("import sys; sys.exit(42)");
+                cmd_unit!(&script);
             }
 
             #[test]
@@ -578,7 +582,8 @@ mod tests {
 
             #[test]
             fn other_exit_codes() {
-                let result: Result<(), Error> = cmd_result!(test_helper(), "exit code 42");
+                let script = TestScript::new("import sys; sys.exit(42)");
+                let result: Result<(), Error> = cmd_result!(&script);
                 assert!(result
                     .unwrap_err()
                     .to_string()
@@ -842,12 +847,20 @@ mod tests {
                 let context = Context::test();
                 let context_clone = context.clone();
                 let thread = thread::spawn(|| {
-                    cmd_result_with_context_unit!(
-                        context_clone,
-                        test_helper(),
-                        "stream chunk then wait for file"
-                    )
-                    .unwrap();
+                    let script = TestScript::new(
+                        &r#"
+                            import os
+                            import sys
+                            import time
+
+                            print("foo")
+                            sys.stdout.flush()
+                            while not os.path.exists("./file"):
+                                time.sleep(0.1)
+                        "#
+                        .unindent(),
+                    );
+                    cmd_result_with_context_unit!(context_clone, &script).unwrap();
                 });
                 while (context.stdout()) != "foo\n" {
                     thread::sleep(Duration::from_secs_f32(0.05));
@@ -881,19 +894,22 @@ mod tests {
         #[test]
         fn relays_stderr_by_default() {
             let context = Context::test();
-            cmd_result_with_context_unit!(context.clone(), test_helper(), "write to stderr")
-                .unwrap();
+            let script = TestScript::new(r#"import sys; print("foo", file=sys.stderr)"#);
+            cmd_result_with_context_unit!(context.clone(), &script).unwrap();
             assert_eq!(context.stderr(), "foo\n");
         }
 
         #[test]
         fn relays_stderr_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<(), Error> = cmd_result_with_context!(
-                context.clone(),
-                test_helper(),
-                "write to stderr and exit with 42"
+            let script = TestScript::new(
+                r#"
+                    import sys
+                    print("foo", file=sys.stderr)
+                    sys.exit(42)
+                "#,
             );
+            let _: Result<(), Error> = cmd_result_with_context!(context.clone(), &script);
             assert_eq!(context.stderr(), "foo\n");
         }
 
@@ -903,12 +919,20 @@ mod tests {
                 let context = Context::test();
                 let context_clone = context.clone();
                 let thread = thread::spawn(|| {
-                    cmd_result_with_context_unit!(
-                        context_clone,
-                        test_helper(),
-                        "stream chunk to stderr then wait for file"
-                    )
-                    .unwrap();
+                    let script = TestScript::new(
+                        &r#"
+                            import os
+                            import sys
+                            import time
+
+                            print("foo", file=sys.stderr)
+                            sys.stderr.flush()
+                            while not os.path.exists("./file"):
+                                time.sleep(0.1)
+                        "#
+                        .unindent(),
+                    );
+                    cmd_result_with_context_unit!(context_clone, &script).unwrap();
                 });
                 loop {
                     let expected = "foo\n";
@@ -931,7 +955,8 @@ mod tests {
 
         #[test]
         fn capture_stderr() {
-            let Stderr(stderr) = cmd!(test_helper(), "write to stderr");
+            let script = TestScript::new(r#"import sys; print("foo", file=sys.stderr)"#);
+            let Stderr(stderr) = cmd!(&script);
             assert_eq!(stderr, "foo\n");
         }
 
@@ -955,9 +980,8 @@ mod tests {
         #[test]
         fn does_not_relay_stderr_when_catpuring() {
             let context = Context::test();
-            let Stderr(_) =
-                cmd_result_with_context!(context.clone(), test_helper(), "write to stderr")
-                    .unwrap();
+            let script = TestScript::new(r#"import sys; print("foo", file=sys.stderr)"#);
+            let Stderr(_) = cmd_result_with_context!(context.clone(), &script).unwrap();
             assert_eq!(context.stderr(), "");
         }
     }
@@ -1029,7 +1053,8 @@ mod tests {
 
         #[test]
         fn forty_two() {
-            let Status(exit_status) = cmd!(test_helper(), "exit code 42");
+            let script = TestScript::new("import sys; sys.exit(42)");
+            let Status(exit_status) = cmd!(&script);
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
         }
@@ -1139,8 +1164,14 @@ mod tests {
 
         #[test]
         fn capturing_stderr_on_errors() {
-            let (Stderr(output), Status(exit_status)) =
-                cmd!(test_helper(), "write to stderr and exit with 42");
+            let script = TestScript::new(
+                r#"
+                    import sys
+                    print("foo", file=sys.stderr)
+                    sys.exit(42)
+                "#,
+            );
+            let (Stderr(output), Status(exit_status)) = cmd!(&script);
             assert!(!exit_status.success());
             assert_eq!(output, "foo\n");
         }
@@ -1396,22 +1427,48 @@ mod tests {
     mod stdin {
         use super::*;
 
+        fn reverse_script() -> TestScript {
+            TestScript::new(
+                &r#"
+                    import sys
+
+                    input = sys.stdin.read()
+                    sys.stdout.write(input[::-1])
+                    sys.stdout.flush()
+                "#
+                .unindent(),
+            )
+        }
+
         #[test]
         fn allows_to_pass_in_strings_as_stdin() {
-            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin("foo"));
+            let script = reverse_script();
+            let StdoutUntrimmed(output) = cmd!(&script, Stdin("foo"));
             assert_eq!(output, "oof");
         }
 
         #[test]
         fn allows_passing_in_u8_slices_as_stdin() {
-            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin(&[0, 1, 2]));
+            let script = reverse_script();
+            let StdoutUntrimmed(output) = cmd!(&script, Stdin(&[0, 1, 2]));
             assert_eq!(output, "\x02\x01\x00");
         }
 
         #[test]
         #[cfg(unix)]
         fn stdin_is_closed_by_default() {
-            let StdoutTrimmed(output) = cmd!(test_helper(), "wait until stdin is closed");
+            let script = TestScript::new(
+                &"
+                    import sys
+
+                    for line in sys.stdin:
+                        pass
+
+                    print('stdin is closed')
+                "
+                .unindent(),
+            );
+            let StdoutTrimmed(output) = cmd!(&script);
             assert_eq!(output, "stdin is closed");
         }
 
@@ -1433,15 +1490,16 @@ mod tests {
 
         #[test]
         fn multiple_stdin_arguments_are_all_passed_into_the_child_process() {
-            let StdoutUntrimmed(output) =
-                cmd!(test_helper(), "reverse", Stdin("foo"), Stdin("bar"));
+            let script = reverse_script();
+            let StdoutUntrimmed(output) = cmd!(&script, Stdin("foo"), Stdin("bar"));
             assert_eq!(output, "raboof");
         }
 
         #[test]
         fn works_for_owned_strings() {
             let argument: String = "foo".to_string();
-            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin(argument));
+            let script = reverse_script();
+            let StdoutUntrimmed(output) = cmd!(&script, Stdin(argument));
             assert_eq!(output, "oof");
         }
     }
@@ -1471,23 +1529,24 @@ mod tests {
 
         #[test]
         fn allows_to_add_variables() {
-            let StdoutTrimmed(output) = cmd!(
-                test_helper(),
-                %"echo FOO",
-                Env("FOO", "bar")
-            );
+            let script = TestScript::new("import os; print(os.environ.get('FOO'))");
+            let StdoutTrimmed(output) = cmd!(&script, Env("FOO", "bar"));
             assert_eq!(output, "bar");
         }
 
         #[test]
         fn works_for_multiple_variables() {
-            let StdoutUntrimmed(output) = cmd!(
-                test_helper(),
-                %"echo FOO BAR",
-                Env("FOO", "a"),
-                Env("BAR", "b")
+            let script = TestScript::new(
+                &"
+                    import os
+                    foo = os.environ.get('FOO')
+                    bar = os.environ.get('BAR')
+                    print(f'{foo} - {bar}')
+                "
+                .unindent(),
             );
-            assert_eq!(output, "a\nb\n");
+            let StdoutTrimmed(output) = cmd!(&script, Env("FOO", "a"), Env("BAR", "b"));
+            assert_eq!(output, "a - b");
         }
 
         fn find_unused_environment_variable() -> String {
@@ -1505,7 +1564,11 @@ mod tests {
         fn child_processes_inherit_the_environment() {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
-            let StdoutTrimmed(output) = cmd!(test_helper(), "echo", unused_key);
+            let script = TestScript::new(&format!(
+                "import os; print(os.environ.get('{}'))",
+                &unused_key
+            ));
+            let StdoutTrimmed(output) = cmd!(&script);
             assert_eq!(output, "foo");
         }
 
@@ -1513,27 +1576,34 @@ mod tests {
         fn overwrites_existing_parent_variables() {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
-            let StdoutTrimmed(output) =
-                cmd!(test_helper(), "echo", &unused_key, Env(unused_key, "bar"));
+            let script = TestScript::new(&format!(
+                "import os; print(os.environ.get('{}'))",
+                &unused_key
+            ));
+            let StdoutTrimmed(output) = cmd!(&script, Env(unused_key, "bar"));
             assert_eq!(output, "bar");
         }
 
         #[test]
         fn variables_are_overwritten_by_subsequent_variables_with_the_same_name() {
-            let StdoutTrimmed(output) = cmd!(
-                test_helper(),
-                "echo",
-                "FOO",
-                Env("FOO", "a"),
-                Env("FOO", "b"),
-            );
+            let script = TestScript::new("import os; print(os.environ.get('FOO'))");
+            let StdoutTrimmed(output) = cmd!(&script, Env("FOO", "a"), Env("FOO", "b"),);
             assert_eq!(output, "b");
         }
 
         #[test]
         fn variables_can_be_set_to_the_empty_string() {
-            let StdoutUntrimmed(output) = cmd!(test_helper(), "echo", "FOO", Env("FOO", ""),);
-            assert_eq!(output, "empty variable: FOO\n");
+            let script = TestScript::new(
+                &"
+                    import os
+                    value = os.environ.get('FOO')
+                    if value is not None and value == '':
+                        print('FOO set, but empty')
+                "
+                .unindent(),
+            );
+            let StdoutTrimmed(output) = cmd!(&script, Env("FOO", ""));
+            assert_eq!(output, "FOO set, but empty");
         }
     }
 }
