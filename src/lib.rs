@@ -180,8 +180,8 @@
 //! [`Input`](input::Input).
 //! When using these methods, it's especially useful that
 //! [`Input`](input::Input) is implemented by tuples.
-//! The work analog to [`cmd!`], [`cmd_unit!`] and [`cmd_result!`].
-//! Here's some examples:
+//! They work analog to [`cmd!`], [`cmd_unit!`] and [`cmd_result!`].
+//! Here are some examples:
 //!
 //! ```
 //! # let temp_dir = tempfile::TempDir::new().unwrap();
@@ -207,8 +207,8 @@
 //! ```
 //! use cradle::prelude::*;
 //!
-//! Split("echo foo").run_unit();
 //! ("echo", "foo").run_unit();
+//! Split("echo foo").run_unit();
 //! ```
 //!
 //! # Prior Art
@@ -1589,7 +1589,7 @@ mod tests {
         }
 
         #[test]
-        fn allows_to_boundle_arguments_up_in_tuples() {
+        fn allows_to_bundle_arguments_up_in_tuples() {
             let StdoutTrimmed(output) = ("echo", "foo").run();
             assert_eq!(output, "foo");
         }
