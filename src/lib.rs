@@ -468,7 +468,8 @@ mod tests {
             #[test]
             #[should_panic(expected = "exited with exit code: 42")]
             fn other_exit_codes() {
-                cmd_unit!(test_helper(), "exit code 42");
+                let script = TestScript::new("import sys; sys.exit(42)");
+                cmd_unit!(&script);
             }
 
             #[test]
@@ -581,7 +582,8 @@ mod tests {
 
             #[test]
             fn other_exit_codes() {
-                let result: Result<(), Error> = cmd_result!(test_helper(), "exit code 42");
+                let script = TestScript::new("import sys; sys.exit(42)");
+                let result: Result<(), Error> = cmd_result!(&script);
                 assert!(result
                     .unwrap_err()
                     .to_string()
@@ -892,19 +894,22 @@ mod tests {
         #[test]
         fn relays_stderr_by_default() {
             let context = Context::test();
-            cmd_result_with_context_unit!(context.clone(), test_helper(), "write to stderr")
-                .unwrap();
+            let script = TestScript::new(r#"import sys; print("foo", file=sys.stderr)"#);
+            cmd_result_with_context_unit!(context.clone(), &script).unwrap();
             assert_eq!(context.stderr(), "foo\n");
         }
 
         #[test]
         fn relays_stderr_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<(), Error> = cmd_result_with_context!(
-                context.clone(),
-                test_helper(),
-                "write to stderr and exit with 42"
+            let script = TestScript::new(
+                r#"
+                    import sys
+                    print("foo", file=sys.stderr)
+                    sys.exit(42)
+                "#,
             );
+            let _: Result<(), Error> = cmd_result_with_context!(context.clone(), &script);
             assert_eq!(context.stderr(), "foo\n");
         }
 
@@ -950,7 +955,8 @@ mod tests {
 
         #[test]
         fn capture_stderr() {
-            let Stderr(stderr) = cmd!(test_helper(), "write to stderr");
+            let script = TestScript::new(r#"import sys; print("foo", file=sys.stderr)"#);
+            let Stderr(stderr) = cmd!(&script);
             assert_eq!(stderr, "foo\n");
         }
 
@@ -974,9 +980,8 @@ mod tests {
         #[test]
         fn does_not_relay_stderr_when_catpuring() {
             let context = Context::test();
-            let Stderr(_) =
-                cmd_result_with_context!(context.clone(), test_helper(), "write to stderr")
-                    .unwrap();
+            let script = TestScript::new(r#"import sys; print("foo", file=sys.stderr)"#);
+            let Stderr(_) = cmd_result_with_context!(context.clone(), &script).unwrap();
             assert_eq!(context.stderr(), "");
         }
     }
@@ -1048,7 +1053,8 @@ mod tests {
 
         #[test]
         fn forty_two() {
-            let Status(exit_status) = cmd!(test_helper(), "exit code 42");
+            let script = TestScript::new("import sys; sys.exit(42)");
+            let Status(exit_status) = cmd!(&script);
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
         }
@@ -1158,8 +1164,14 @@ mod tests {
 
         #[test]
         fn capturing_stderr_on_errors() {
-            let (Stderr(output), Status(exit_status)) =
-                cmd!(test_helper(), "write to stderr and exit with 42");
+            let script = TestScript::new(
+                r#"
+                    import sys
+                    print("foo", file=sys.stderr)
+                    sys.exit(42)
+                "#,
+            );
+            let (Stderr(output), Status(exit_status)) = cmd!(&script);
             assert!(!exit_status.success());
             assert_eq!(output, "foo\n");
         }
