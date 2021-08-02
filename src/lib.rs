@@ -170,6 +170,47 @@
 //! }
 //! ```
 //!
+//! # Alternative interface
+//!
+//! `cradle` also provides an alternative interface to execute commands
+//! through methods on the [`Input`](input::Input) trait:
+//! [`.run()`](input::Input::run), [`.run_unit()`](input::Input::run_unit)
+//! and [`.run_result()`](input::Input::run_result).
+//! These methods can be invoked on all values whose types implement
+//! [`Input`](input::Input).
+//! When using these methods, it's especially useful that
+//! [`Input`](input::Input) is implemented by tuples.
+//! They work analog to [`cmd!`], [`cmd_unit!`] and [`cmd_result!`].
+//! Here are some examples:
+//!
+//! ```
+//! # let temp_dir = tempfile::TempDir::new().unwrap();
+//! # std::env::set_current_dir(&temp_dir).unwrap();
+//! use cradle::prelude::*;
+//!
+//! let StdoutTrimmed(output) = ("echo", "foo").run();
+//! assert_eq!(output, "foo");
+//!
+//! ("touch", "foo").run_unit();
+//!
+//! let result: Result<(), cradle::Error> = "false".run_result();
+//! let error_message = format!("{}", result.unwrap_err());
+//! assert_eq!(
+//!     error_message,
+//!     "false:\n  exited with exit code: 1"
+//! );
+//! ```
+//!
+//! Note: The `%` shortcut for [`Split`](input::Split) is not available in this notation.
+//! You can either use tuples, or [`Split`](input::Split) explicitly:
+//!
+//! ```
+//! use cradle::prelude::*;
+//!
+//! ("echo", "foo").run_unit();
+//! Split("echo foo").run_unit();
+//! ```
+//!
 //! # Prior Art
 //!
 //! `cradle` is heavily inspired by [shake](https://shakebuild.com/),
@@ -601,7 +642,7 @@ mod tests {
                     Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
                         assert_eq!(executable, "does-not-exist");
                     }
-                    _ => panic!("should match Error::ExecutableNotFound"),
+                    _ => panic!("should match Error::FileNotFoundWhenExecuting"),
                 }
             }
 
@@ -612,7 +653,7 @@ mod tests {
                     Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
                         assert_eq!(executable, "./does-not-exist");
                     }
-                    _ => panic!("should match Error::ExecutableNotFound"),
+                    _ => panic!("should match Error::FileNotFoundWhenExecuting"),
                 }
             }
 
@@ -1534,6 +1575,48 @@ mod tests {
         fn variables_can_be_set_to_the_empty_string() {
             let StdoutUntrimmed(output) = cmd!(test_helper(), "echo", "FOO", Env("FOO", ""),);
             assert_eq!(output, "empty variable: FOO\n");
+        }
+    }
+
+    mod run_interface {
+        use super::*;
+        use std::path::Path;
+
+        #[test]
+        fn allows_to_run_commands_with_dot_run() {
+            let StdoutTrimmed(output) = Split("echo foo").run();
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn allows_to_bundle_arguments_up_in_tuples() {
+            let StdoutTrimmed(output) = ("echo", "foo").run();
+            assert_eq!(output, "foo");
+        }
+
+        #[test]
+        fn works_for_different_output_types() {
+            let Status(status) = "false".run();
+            assert!(!status.success());
+        }
+
+        #[test]
+        fn run_unit() {
+            in_temporary_directory(|| {
+                ("touch", "foo").run_unit();
+                assert!(Path::new("foo").exists());
+            });
+        }
+
+        #[test]
+        fn run_result() {
+            let StdoutTrimmed(output) = ("echo", "foo").run_result().unwrap();
+            assert_eq!(output, "foo");
+            let result: Result<(), Error> = "does-not-exist".run_result();
+            match result {
+                Err(Error::FileNotFoundWhenExecuting { .. }) => {}
+                _ => panic!("should match Error::FileNotFoundWhenExecuting"),
+            }
         }
     }
 }

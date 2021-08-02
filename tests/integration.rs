@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 #[cfg(unix)]
 const WHICH: &str = "which";
 #[cfg(windows)]
@@ -16,14 +14,14 @@ fn capturing_stdout() {
 #[test]
 #[should_panic(expected = "false:\n  exited with exit code: 1")]
 fn panics_on_non_zero_exit_codes() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     cmd_unit!("false");
 }
 
 #[test]
 fn result_succeeding() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     fn test() -> Result<(), Error> {
         // make sure 'ls' is installed
@@ -36,7 +34,7 @@ fn result_succeeding() {
 
 #[test]
 fn result_failing() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     fn test() -> Result<(), Error> {
         cmd_result!(WHICH, "does-not-exist")?;
@@ -88,7 +86,7 @@ fn trimmed_stdout_and_results() {
 
 #[test]
 fn box_dyn_errors_succeeding() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -102,7 +100,7 @@ fn box_dyn_errors_succeeding() {
 
 #[test]
 fn box_dyn_errors_failing() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -123,7 +121,7 @@ fn box_dyn_errors_failing() {
 
 #[test]
 fn user_supplied_errors_succeeding() {
-    use cradle::*;
+    use cradle::prelude::*;
 
     #[derive(Debug)]
     enum Error {
@@ -146,7 +144,8 @@ fn user_supplied_errors_succeeding() {
 
 #[test]
 fn user_supplied_errors_failing() {
-    use cradle::*;
+    use cradle::prelude::*;
+    use std::fmt::Display;
 
     #[derive(Debug)]
     enum Error {
@@ -180,4 +179,137 @@ fn user_supplied_errors_failing() {
             "cmd-error: where does-not-exist:\n  exited with exit code: 1"
         }
     );
+}
+
+mod run_interface {
+    use super::*;
+
+    #[test]
+    fn result_succeeding() {
+        use cradle::prelude::*;
+
+        fn test() -> Result<(), Error> {
+            // make sure 'ls' is installed
+            (WHICH, "ls").run_result()?;
+            Ok(())
+        }
+
+        test().unwrap();
+    }
+
+    #[test]
+    fn result_failing() {
+        use cradle::prelude::*;
+
+        fn test() -> Result<(), Error> {
+            (WHICH, "does-not-exist").run_result()?;
+            Ok(())
+        }
+
+        assert_eq!(
+            test().unwrap_err().to_string(),
+            if cfg!(unix) {
+                "which does-not-exist:\n  exited with exit code: 1"
+            } else {
+                "where does-not-exist:\n  exited with exit code: 1"
+            }
+        );
+    }
+
+    #[test]
+    fn box_dyn_errors_succeeding() {
+        use cradle::prelude::*;
+
+        type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
+
+        fn test() -> MyResult<()> {
+            (WHICH, "ls").run_result()?;
+            Ok(())
+        }
+
+        test().unwrap();
+    }
+
+    #[test]
+    fn box_dyn_errors_failing() {
+        use cradle::prelude::*;
+
+        type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
+
+        fn test() -> MyResult<()> {
+            (WHICH, "does-not-exist").run_result()?;
+            Ok(())
+        }
+
+        assert_eq!(
+            test().unwrap_err().to_string(),
+            if cfg!(unix) {
+                "which does-not-exist:\n  exited with exit code: 1"
+            } else {
+                "where does-not-exist:\n  exited with exit code: 1"
+            }
+        );
+    }
+
+    #[test]
+    fn user_supplied_errors_succeeding() {
+        use cradle::prelude::*;
+
+        #[derive(Debug)]
+        enum Error {
+            CmdError(cradle::Error),
+        }
+
+        impl From<cradle::Error> for Error {
+            fn from(error: cradle::Error) -> Self {
+                Error::CmdError(error)
+            }
+        }
+
+        fn test() -> Result<(), Error> {
+            (WHICH, "ls").run_result()?;
+            Ok(())
+        }
+
+        test().unwrap();
+    }
+
+    #[test]
+    fn user_supplied_errors_failing() {
+        use cradle::prelude::*;
+        use std::fmt::Display;
+
+        #[derive(Debug)]
+        enum Error {
+            CmdError(cradle::Error),
+        }
+
+        impl From<cradle::Error> for Error {
+            fn from(error: cradle::Error) -> Self {
+                Error::CmdError(error)
+            }
+        }
+
+        impl Display for Error {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    Error::CmdError(error) => write!(f, "cmd-error: {}", error),
+                }
+            }
+        }
+
+        fn test() -> Result<(), Error> {
+            (WHICH, "does-not-exist").run_result()?;
+            Ok(())
+        }
+
+        assert_eq!(
+            test().unwrap_err().to_string(),
+            if cfg!(unix) {
+                "cmd-error: which does-not-exist:\n  exited with exit code: 1"
+            } else {
+                "cmd-error: where does-not-exist:\n  exited with exit code: 1"
+            }
+        );
+    }
 }
