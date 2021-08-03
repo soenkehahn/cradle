@@ -552,6 +552,7 @@ mod tests {
             }
 
             #[test]
+            #[cfg(not(windows))]
             fn invalid_utf8_to_stdout_is_allowed_when_not_captured() {
                 cmd_unit!(test_helper(), "invalid utf-8 stdout");
             }
@@ -989,6 +990,7 @@ mod tests {
         }
 
         #[test]
+        #[cfg(not(windows))]
         fn does_allow_invalid_utf_8_to_stderr_when_not_captured() {
             cmd_unit!(test_helper(), "invalid utf-8 stderr");
         }
