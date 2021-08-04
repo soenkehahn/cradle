@@ -17,6 +17,7 @@ doc +args="":
 
 clippy:
   cargo clippy --all-targets --all-features
+  cd memory-test; cargo clippy
 
 fmt:
   cargo fmt --all -- --check

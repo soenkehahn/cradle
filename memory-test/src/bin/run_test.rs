@@ -29,12 +29,14 @@ fn measure_memory_consumption(bytes: usize) -> Result<usize> {
         .output()?;
     let stderr = String::from_utf8(output.stderr)?;
     eprintln!("{}", stderr);
+    if !output.status.success() {
+        panic!("running 'cradle_user' failed");
+    }
     let memory_size_prefix = "Maximum resident set size (kbytes): ";
     let kilo_bytes: usize = stderr
         .lines()
         .map(|x| x.trim())
-        .filter(|line| line.starts_with(memory_size_prefix))
-        .next()
+        .find(|line| line.starts_with(memory_size_prefix))
         .unwrap()
         .strip_prefix(memory_size_prefix)
         .unwrap()
