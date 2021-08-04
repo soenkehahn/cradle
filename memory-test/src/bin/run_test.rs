@@ -46,8 +46,8 @@ fn measure_memory_consumption(bytes: usize) -> Result<usize> {
     Ok(bytes)
 }
 
+#[rustversion::attr(since(1.48), allow(clippy::manual_strip))]
 fn strip_prefix<'a>(string: &'a str, prefix: &'a str) -> &'a str {
-    #[allow(clippy::manual_strip)]
     if string.starts_with(prefix) {
         &string[prefix.len()..]
     } else {

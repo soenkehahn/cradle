@@ -6,3 +6,4 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0.42"
 cradle = { path = ".." }
+rustversion = "1.0.5"
