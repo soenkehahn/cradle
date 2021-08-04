@@ -10,7 +10,7 @@ fn main() -> Result<()> {
     Split("cargo build --release").run_unit();
     let bytes = from_mb(64);
     let memory_consumption = measure_memory_consumption(bytes)?;
-    let allowed_memory_consumption = from_mb(70);
+    let allowed_memory_consumption = from_mb(70); // should be 16
     assert!(
         memory_consumption < allowed_memory_consumption,
         "Maximum resident set size: {}, allowed upper limit: {}",
@@ -47,6 +47,7 @@ fn measure_memory_consumption(bytes: usize) -> Result<usize> {
 }
 
 fn strip_prefix<'a>(string: &'a str, prefix: &'a str) -> &'a str {
+    #[allow(clippy::manual_strip)]
     if string.starts_with(prefix) {
         &string[prefix.len()..]
     } else {
