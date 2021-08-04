@@ -1,4 +1,9 @@
-ci: test build doc clippy fmt context-integration-tests memory-test run-examples forbidden-words render-readme-check
+ci: test build doc clippy fmt context-integration-tests run-examples forbidden-words render-readme-check
+  #!/bin/bash
+  set -eux
+  if [[ $(uname) == "Linux" ]]; then
+    just memory-test
+  fi
 
 build:
   cargo build --all-targets --all-features
