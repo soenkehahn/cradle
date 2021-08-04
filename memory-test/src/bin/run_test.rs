@@ -33,14 +33,23 @@ fn measure_memory_consumption(bytes: usize) -> Result<usize> {
         panic!("running 'cradle_user' failed");
     }
     let memory_size_prefix = "Maximum resident set size (kbytes): ";
-    let kilo_bytes: usize = stderr
-        .lines()
-        .map(|x| x.trim())
-        .find(|line| line.starts_with(memory_size_prefix))
-        .unwrap()
-        .strip_prefix(memory_size_prefix)
-        .unwrap()
-        .parse()?;
+    let kilo_bytes: usize = strip_prefix(
+        stderr
+            .lines()
+            .map(|x| x.trim())
+            .find(|line| line.starts_with(memory_size_prefix))
+            .unwrap(),
+        memory_size_prefix,
+    )
+    .parse()?;
     let bytes = kilo_bytes * 1024;
     Ok(bytes)
+}
+
+fn strip_prefix<'a>(string: &'a str, prefix: &'a str) -> &'a str {
+    if string.starts_with(prefix) {
+        &string[prefix.len()..]
+    } else {
+        panic!("{} doesn't start with {}", string, prefix);
+    }
 }
