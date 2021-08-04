@@ -1,4 +1,4 @@
-ci: test build doc clippy fmt context-integration-tests run-examples forbidden-words render-readme-check
+ci: test build doc clippy fmt context-integration-tests memory-test run-examples forbidden-words render-readme-check
 
 build:
   cargo build --all-targets --all-features
@@ -20,6 +20,9 @@ clippy:
 
 fmt:
   cargo fmt --all -- --check
+
+memory-test:
+  cd memory-test; cargo run --bin run_test
 
 run-examples:
   cargo run --example readme
