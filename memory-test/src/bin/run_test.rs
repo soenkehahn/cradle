@@ -10,7 +10,7 @@ fn main() -> Result<()> {
     Split("cargo build --release").run_unit();
     let bytes = from_mb(64);
     let memory_consumption = measure_memory_consumption(bytes)?;
-    let allowed_memory_consumption = from_mb(16);
+    let allowed_memory_consumption = from_mb(70);
     assert!(
         memory_consumption < allowed_memory_consumption,
         "Maximum resident set size: {}, allowed upper limit: {}",
