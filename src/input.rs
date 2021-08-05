@@ -149,6 +149,34 @@ pub trait Input {
     {
         crate::cmd_result!(self)
     }
+
+    /// Returns a boxed version of the `Input` value.
+    /// This is useful if you have two or more values of different types that all implement [`Input`],
+    /// and it'd be convenient for them to have the same type.
+    /// For example for conditional command line flags:
+    ///
+    /// ```
+    /// fn echo_foo(include_newline: bool) -> String {
+    ///     let newline_flag = if include_newline { vec![] } else { vec!["-n"] };
+    ///     let StdoutUntrimmed(output) = cmd!("echo", newline_flag, "foo");
+    ///     output
+    /// }
+    /// assert_eq!(echo_foo(false), "foo");
+    /// assert_eq!(echo_foo(true), "foo\n");
+    /// ```
+    ///
+    /// Or if you want to put multiple [`Inputs`](Input) of different types into a vector:
+    ///
+    /// ```
+    /// let command = vec![LogCommand, "echo", "foo"];
+    /// assert_eq!(command.run_unit(), StdoutUntrimmed("foo"));
+    /// ```
+    fn boxed(self) -> BoxedInput
+    where
+        Self: Sized + 'static,
+    {
+        BoxedInput(Box::new(self))
+    }
 }
 
 /// Blanket implementation for `&_`.
@@ -545,5 +573,15 @@ where
         config
             .added_environment_variables
             .push((key.as_ref().to_os_string(), value.as_ref().to_os_string()));
+    }
+}
+
+/// Return type of [`Input::boxed`].
+pub struct BoxedInput(Box<dyn Input>);
+
+impl Input for BoxedInput {
+    #[doc(hidden)]
+    fn configure(self, config: &mut Config) {
+        self.0.configure(config)
     }
 }

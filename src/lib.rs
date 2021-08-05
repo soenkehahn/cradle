@@ -1,3 +1,5 @@
+#![feature(box_into_inner, unsized_fn_params)]
+
 //! (`cradle` is in an early stage of development.
 //! APIs may change drastically!
 //! Use at your own risk!)
@@ -1620,5 +1622,29 @@ mod tests {
                 _ => panic!("should match Error::FileNotFoundWhenExecuting"),
             }
         }
+    }
+
+    mod boxed_input {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn allows_to_conditionally_contain_an_input_value() {
+            fn echo_foo(include_newline: bool) -> String {
+                let newline_flag = if include_newline {
+                    ().boxed()
+                } else {
+                    "-n".boxed()
+                };
+                let StdoutUntrimmed(output) = cmd!("echo", newline_flag, "foo");
+                output
+            }
+            assert_eq!(echo_foo(false), "foo");
+            assert_eq!(echo_foo(true), "foo\n");
+        }
+
+        #[test]
+        #[ignore]
+        fn allows_to_put_multiple_homogenous_input_values_into_a_vector() {}
     }
 }
