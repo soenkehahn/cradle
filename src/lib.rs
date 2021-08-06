@@ -679,6 +679,62 @@ mod tests {
                 );
             }
         }
+
+        mod debug_input {
+            use super::*;
+            use crate::config::Config;
+
+            #[derive(Clone, Debug)]
+            struct Extractor {
+                debug_input: Arc<Mutex<Option<String>>>,
+            }
+
+            impl Extractor {
+                fn new() -> Self {
+                    Self {
+                        debug_input: Arc::new(Mutex::new(None)),
+                    }
+                }
+
+                fn debug_input(&self) -> String {
+                    let guard = self.debug_input.lock().unwrap();
+                    match &*guard {
+                        None => panic!("Extractor::debug_input not set yet"),
+                        Some(debug_input) => debug_input.clone(),
+                    }
+                }
+            }
+
+            impl Input for Extractor {
+                fn configure(self, config: &mut Config) {
+                    let mut guard = self.debug_input.lock().unwrap();
+                    *guard = Some(config.debug_input.clone());
+                }
+            }
+
+            #[test]
+            fn config_contains_rendered_input() {
+                let extractor = Extractor::new();
+                cmd_unit!(&extractor, "true");
+                assert_eq!(extractor.debug_input(), format!("{:?}", "true".to_string()));
+            }
+
+            #[test]
+            #[ignore]
+            fn config_contains_rendered_output() {}
+
+            #[test]
+            #[ignore]
+            fn tuples_up_multiple_inputs() {}
+
+            #[test]
+            #[ignore]
+            fn works_for_tuples_in_input() {}
+
+            #[test]
+            #[ignore]
+            fn works_for_tuples_in_output() {}
+        }
     }
 
     #[test]
