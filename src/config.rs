@@ -4,6 +4,7 @@ use std::{ffi::OsString, path::PathBuf, sync::Arc};
 
 #[doc(hidden)]
 #[rustversion::attr(since(1.48), allow(clippy::rc_buffer))]
+#[derive(Debug, Clone)]
 pub struct Config {
     pub(crate) arguments: Vec<OsString>,
     pub(crate) log_command: bool,

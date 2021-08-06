@@ -171,7 +171,8 @@ impl Output for StdoutUntrimmed {
     #[doc(hidden)]
     fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
         let result = result?;
-        Ok(StdoutUntrimmed(String::from_utf8(result.stdout).map_err(
+        let stdout = result.stdout.ok_or_else(|| Error::cradle_bug(config))?;
+        Ok(StdoutUntrimmed(String::from_utf8(stdout).map_err(
             |source| Error::InvalidUtf8ToStdout {
                 full_command: config.full_command(),
                 source: Arc::new(source),

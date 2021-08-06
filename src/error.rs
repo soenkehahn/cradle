@@ -26,6 +26,10 @@ pub enum Error {
         full_command: String,
         source: Arc<FromUtf8Error>,
     },
+    CradleBug {
+        full_command: String,
+        config: Config,
+    },
 }
 
 impl Error {
@@ -33,6 +37,13 @@ impl Error {
         Error::CommandIoError {
             message: format!("{}:\n  {}", config.full_command(), error),
             source: Arc::new(error),
+        }
+    }
+
+    pub(crate) fn cradle_bug(config: &Config) -> Error {
+        Error::CradleBug {
+            full_command: config.full_command(),
+            config: config.clone(),
         }
     }
 }
@@ -48,15 +59,16 @@ pub fn panic_on_error<T>(result: Result<T, Error>) -> T {
 
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use Error::*;
         match self {
-            Error::NoArgumentsGiven => write!(f, "no arguments given"),
-            Error::FileNotFoundWhenExecuting { executable, .. } => write!(
+            NoArgumentsGiven => write!(f, "no arguments given"),
+            FileNotFoundWhenExecuting { executable, .. } => write!(
                 f,
                 "File not found error when executing '{}'",
                 executable.to_string_lossy()
             ),
-            Error::CommandIoError { message, .. } => write!(f, "{}", message),
-            Error::NonZeroExitCode {
+            CommandIoError { message, .. } => write!(f, "{}", message),
+            NonZeroExitCode {
                 full_command,
                 exit_status,
             } => {
@@ -70,11 +82,19 @@ impl Display for Error {
                     write!(f, "{}:\n  exited with {}", full_command, exit_status)
                 }
             }
-            Error::InvalidUtf8ToStdout { full_command, .. } => {
+            InvalidUtf8ToStdout { full_command, .. } => {
                 write!(f, "{}:\n  invalid utf-8 written to stdout", full_command)
             }
-            Error::InvalidUtf8ToStderr { full_command, .. } => {
+            InvalidUtf8ToStderr { full_command, .. } => {
                 write!(f, "{}:\n  invalid utf-8 written to stderr", full_command)
+            }
+            CradleBug { .. } => {
+                let snippets = vec![
+                  "Congratulations, you've found a bug in cradle! :/",
+                  "Please, consider reporting a bug on https://github.com/soenkehahn/cradle/issues,",
+                  "including the following information:",
+                ];
+                writeln!(f, "{}\n{:#?}", snippets.join(" "), self)
             }
         }
     }
@@ -82,12 +102,15 @@ impl Display for Error {
 
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        use Error::*;
         match self {
-            Error::FileNotFoundWhenExecuting { source, .. }
-            | Error::CommandIoError { source, .. } => Some(&**source),
-            Error::InvalidUtf8ToStdout { source, .. }
-            | Error::InvalidUtf8ToStderr { source, .. } => Some(&**source),
-            Error::NoArgumentsGiven | Error::NonZeroExitCode { .. } => None,
+            FileNotFoundWhenExecuting { source, .. } | CommandIoError { source, .. } => {
+                Some(&**source)
+            }
+            InvalidUtf8ToStdout { source, .. } | InvalidUtf8ToStderr { source, .. } => {
+                Some(&**source)
+            }
+            NoArgumentsGiven | NonZeroExitCode { .. } | CradleBug { .. } => None,
         }
     }
 }

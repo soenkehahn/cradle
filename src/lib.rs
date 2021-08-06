@@ -320,7 +320,7 @@ where
 #[doc(hidden)]
 #[derive(Clone)]
 pub struct RunResult {
-    stdout: Vec<u8>,
+    stdout: Option<Vec<u8>>,
     stderr: Vec<u8>,
     exit_status: ExitStatus,
 }

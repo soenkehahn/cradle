@@ -7,7 +7,7 @@ use std::{
 
 pub(crate) struct Waiter {
     stdin: JoinHandle<io::Result<()>>,
-    stdout: JoinHandle<io::Result<Vec<u8>>>,
+    stdout: JoinHandle<io::Result<Option<Vec<u8>>>>,
     stderr: JoinHandle<io::Result<Vec<u8>>>,
 }
 
@@ -30,8 +30,8 @@ impl Waiter {
         });
         let mut context_clone = context.clone();
         let relay_stdout = config.relay_stdout;
-        let stdout_join_handle = thread::spawn(move || -> io::Result<Vec<u8>> {
-            let mut collected_stdout = Vec::new();
+        let stdout_join_handle = thread::spawn(move || -> io::Result<Option<Vec<u8>>> {
+            let mut collected_stdout = if relay_stdout { None } else { Some(Vec::new()) };
             let buffer = &mut [0; 256];
             loop {
                 let length = child_stdout.read(buffer)?;
@@ -41,7 +41,9 @@ impl Waiter {
                 if relay_stdout {
                     context_clone.stdout.write_all(&buffer[..length])?;
                 }
-                collected_stdout.extend(&buffer[..length]);
+                if let Some(collected_stdout) = &mut collected_stdout {
+                    collected_stdout.extend(&buffer[..length]);
+                }
             }
             Ok(collected_stdout)
         });
@@ -87,6 +89,6 @@ impl Waiter {
 }
 
 pub(crate) struct CollectedOutput {
-    pub(crate) stdout: Vec<u8>,
+    pub(crate) stdout: Option<Vec<u8>>,
     pub(crate) stderr: Vec<u8>,
 }
