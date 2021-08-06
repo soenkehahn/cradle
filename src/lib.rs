@@ -318,7 +318,7 @@ where
 }
 
 #[doc(hidden)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RunResult {
     stdout: Vec<u8>,
     stderr: Vec<u8>,
