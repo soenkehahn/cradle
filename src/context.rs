@@ -2,7 +2,7 @@
 
 use std::io::{self, Write};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Stdout;
 
 impl Write for Stdout {
@@ -15,7 +15,7 @@ impl Write for Stdout {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Stderr;
 
 impl Write for Stderr {
@@ -29,7 +29,7 @@ impl Write for Stderr {
 }
 
 #[doc(hidden)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Context<Stdout, Stderr> {
     pub(crate) stdout: Stdout,
     pub(crate) stderr: Stderr,
@@ -52,7 +52,7 @@ mod test {
         sync::{Arc, Mutex},
     };
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     pub(crate) struct TestOutput(Arc<Mutex<Cursor<Vec<u8>>>>);
 
     impl TestOutput {
