@@ -22,13 +22,13 @@ doc +args="":
 
 clippy:
   cargo clippy --all-targets --all-features
-  cd memory-test; cargo clippy
+  (cd memory-test && cargo clippy)
 
 fmt:
   cargo fmt --all -- --check
 
 memory-test:
-  cd memory-test; cargo run --bin run_test
+  (cd memory-test && cargo run --bin run_test)
 
 run-examples:
   cargo run --example readme

@@ -36,7 +36,7 @@ fn measure_memory_consumption(bytes: usize) -> Result<usize> {
     let kilo_bytes: usize = strip_prefix(
         stderr
             .lines()
-            .map(|x| x.trim())
+            .map(|line| line.trim())
             .find(|line| line.starts_with(memory_size_prefix))
             .unwrap(),
         memory_size_prefix,
