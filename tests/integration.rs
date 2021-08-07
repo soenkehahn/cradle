@@ -313,3 +313,10 @@ mod run_interface {
         );
     }
 }
+
+#[test]
+fn memory_test() {
+    use cradle::prelude::*;
+    cmd_unit!(%"cargo build -p memory-test --release");
+    cmd_unit!(%"cargo run -p memory-test --bin run_test");
+}

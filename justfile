@@ -1,15 +1,10 @@
 ci: test build doc clippy fmt context-integration-tests run-examples forbidden-words render-readme-check
-  #!/bin/bash
-  set -eux
-  if [[ $(uname) == "Linux" ]]; then
-    just memory-test
-  fi
 
 build:
-  cargo build --all-targets --all-features
+  cargo build --all-targets --all-features --workspace
 
 test +pattern="":
-  cargo test --all {{ pattern }}
+  cargo test {{ pattern }}
 
 test-lib-fast +pattern="":
   cargo test --lib {{ pattern }}
@@ -18,17 +13,13 @@ context-integration-tests:
   cargo run --features "test_executables" --bin context_integration_tests
 
 doc +args="":
-  cargo doc --all {{args}}
+  cargo doc --workspace {{args}}
 
 clippy:
-  cargo clippy --all-targets --all-features
-  (cd memory-test && cargo clippy)
+  cargo clippy --all-targets --all-features --workspace
 
 fmt:
   cargo fmt --all -- --check
-
-memory-test:
-  (cd memory-test && cargo run --bin run_test)
 
 run-examples:
   cargo run --example readme
