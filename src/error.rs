@@ -90,9 +90,9 @@ impl Display for Error {
             }
             CradleBug { .. } => {
                 let snippets = vec![
-                  "Congratulations, you've found a bug in cradle! :/",
-                  "Please, consider reporting a bug on https://github.com/soenkehahn/cradle/issues,",
-                  "including the following information:",
+                    "Congratulations, you've found a bug in cradle! :/",
+                    "Please, open an issue on https://github.com/soenkehahn/cradle/issues",
+                    "including the following information:",
                 ];
                 writeln!(f, "{}\n{:#?}", snippets.join(" "), self)
             }
