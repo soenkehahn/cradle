@@ -11,7 +11,7 @@ pub struct Config {
     pub(crate) working_directory: Option<PathBuf>,
     pub(crate) added_environment_variables: Vec<(OsString, OsString)>,
     pub(crate) stdin: Arc<Vec<u8>>,
-    pub(crate) relay_stdout: bool,
+    pub(crate) capture_stdout: bool,
     pub(crate) relay_stderr: bool,
     pub(crate) error_on_non_zero_exit_code: bool,
 }
@@ -45,7 +45,7 @@ impl Default for Config {
             working_directory: None,
             added_environment_variables: Vec::new(),
             stdin: Arc::new(Vec::new()),
-            relay_stdout: true,
+            capture_stdout: false,
             relay_stderr: true,
             error_on_non_zero_exit_code: true,
         }

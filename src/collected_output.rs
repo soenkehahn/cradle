@@ -29,20 +29,24 @@ impl Waiter {
             Ok(())
         });
         let mut context_clone = context.clone();
-        let relay_stdout = config.relay_stdout;
+        let capture_stdout = config.capture_stdout;
         let stdout_join_handle = thread::spawn(move || -> io::Result<Option<Vec<u8>>> {
-            let mut collected_stdout = if relay_stdout { None } else { Some(Vec::new()) };
+            let mut collected_stdout = if capture_stdout {
+                Some(Vec::new())
+            } else {
+                None
+            };
             let buffer = &mut [0; 256];
             loop {
                 let length = child_stdout.read(buffer)?;
                 if (length) == 0 {
                     break;
                 }
-                if relay_stdout {
-                    context_clone.stdout.write_all(&buffer[..length])?;
-                }
                 if let Some(collected_stdout) = &mut collected_stdout {
                     collected_stdout.extend(&buffer[..length]);
+                }
+                if !capture_stdout {
+                    context_clone.stdout.write_all(&buffer[..length])?;
                 }
             }
             Ok(collected_stdout)

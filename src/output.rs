@@ -165,7 +165,7 @@ pub struct StdoutUntrimmed(pub String);
 impl Output for StdoutUntrimmed {
     #[doc(hidden)]
     fn configure(config: &mut Config) {
-        config.relay_stdout = false;
+        config.capture_stdout = true;
     }
 
     #[doc(hidden)]
