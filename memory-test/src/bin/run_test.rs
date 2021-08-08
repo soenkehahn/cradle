@@ -3,14 +3,14 @@ use cradle::prelude::*;
 use std::process::{Command, Stdio};
 
 fn from_mib(mebibytes: usize) -> usize {
-    mega_bytes * 2_usize.pow(20)
+    mebibytes * 2_usize.pow(20)
 }
 
 fn main() -> Result<()> {
     Split("cargo build --release").run_unit();
-    let bytes = from_mb(64);
+    let bytes = from_mib(64);
     let memory_consumption = measure_memory_consumption(bytes)?;
-    let allowed_memory_consumption = from_mb(16);
+    let allowed_memory_consumption = from_mib(16);
     assert!(
         memory_consumption < allowed_memory_consumption,
         "Maximum resident set size: {}, allowed upper limit: {}",
@@ -42,7 +42,7 @@ fn measure_memory_consumption(bytes: usize) -> Result<usize> {
         memory_size_prefix,
     )
     .parse()?;
-    let bytes = kilo_bytes * 1024;
+    let bytes = kibibytes * 1024;
     Ok(bytes)
 }
 
