@@ -33,7 +33,7 @@ fn measure_memory_consumption(bytes: usize) -> Result<usize> {
         panic!("running 'cradle_user' failed");
     }
     let memory_size_prefix = "Maximum resident set size (kbytes): ";
-    let kilo_bytes: usize = strip_prefix(
+    let kibibytes: usize = strip_prefix(
         stderr
             .lines()
             .map(|line| line.trim())
