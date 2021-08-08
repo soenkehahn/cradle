@@ -8,8 +8,9 @@ fn main() -> Result<()> {
     let buffer = &[b'x'; 1024];
     let mut stdout = stdout();
     while bytes > 0 {
-        stdout.write_all(&buffer[..bytes])?;
-        bytes -= bytes;
+        let chunk_size = bytes.min(1024);
+        stdout.write_all(&buffer[..chunk_size])?;
+        bytes -= chunk_size;
     }
     stdout.flush()?;
     Ok(())
