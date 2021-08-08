@@ -26,7 +26,7 @@ pub enum Error {
         full_command: String,
         source: Arc<FromUtf8Error>,
     },
-    CradleBug {
+    Internal {
         full_command: String,
         config: Config,
     },
@@ -40,8 +40,8 @@ impl Error {
         }
     }
 
-    pub(crate) fn cradle_bug(config: &Config) -> Error {
-        Error::CradleBug {
+    pub(crate) fn internal(config: &Config) -> Error {
+        Error::Internal {
             full_command: config.full_command(),
             config: config.clone(),
         }
@@ -88,7 +88,7 @@ impl Display for Error {
             InvalidUtf8ToStderr { full_command, .. } => {
                 write!(f, "{}:\n  invalid utf-8 written to stderr", full_command)
             }
-            CradleBug { .. } => {
+            Internal { .. } => {
                 let snippets = vec![
                     "Congratulations, you've found a bug in cradle! :/",
                     "Please, open an issue on https://github.com/soenkehahn/cradle/issues",
@@ -110,7 +110,7 @@ impl std::error::Error for Error {
             InvalidUtf8ToStdout { source, .. } | InvalidUtf8ToStderr { source, .. } => {
                 Some(&**source)
             }
-            NoArgumentsGiven | NonZeroExitCode { .. } | CradleBug { .. } => None,
+            NoArgumentsGiven | NonZeroExitCode { .. } | Internal { .. } => None,
         }
     }
 }
