@@ -204,7 +204,7 @@ pub struct Stderr(pub String);
 impl Output for Stderr {
     #[doc(hidden)]
     fn configure(config: &mut Config) {
-        config.relay_stderr = false;
+        config.capture_stderr = true;
     }
 
     #[doc(hidden)]

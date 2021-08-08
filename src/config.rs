@@ -12,7 +12,7 @@ pub struct Config {
     pub(crate) added_environment_variables: Vec<(OsString, OsString)>,
     pub(crate) stdin: Arc<Vec<u8>>,
     pub(crate) capture_stdout: bool,
-    pub(crate) relay_stderr: bool,
+    pub(crate) capture_stderr: bool,
     pub(crate) error_on_non_zero_exit_code: bool,
 }
 
@@ -46,7 +46,7 @@ impl Default for Config {
             added_environment_variables: Vec::new(),
             stdin: Arc::new(Vec::new()),
             capture_stdout: false,
-            relay_stderr: true,
+            capture_stderr: false,
             error_on_non_zero_exit_code: true,
         }
     }

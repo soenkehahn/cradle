@@ -52,7 +52,7 @@ impl Waiter {
             Ok(collected_stdout)
         });
         let mut context_clone = context.clone();
-        let relay_stderr = config.relay_stderr;
+        let capture_stderr = config.capture_stderr;
         let stderr_join_handle = thread::spawn(move || -> io::Result<Vec<u8>> {
             let mut collected_stderr = Vec::new();
             let buffer = &mut [0; 256];
@@ -61,10 +61,10 @@ impl Waiter {
                 if (length) == 0 {
                     break;
                 }
-                if relay_stderr {
+                collected_stderr.extend(&buffer[..length]);
+                if !capture_stderr {
                     context_clone.stderr.write_all(&buffer[..length])?;
                 }
-                collected_stderr.extend(&buffer[..length]);
             }
             Ok(collected_stderr)
         });
