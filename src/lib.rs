@@ -1,3 +1,5 @@
+#![deny(missing_debug_implementations)]
+
 //! (`cradle` is in an early stage of development.
 //! APIs may change drastically!
 //! Use at your own risk!)
@@ -318,7 +320,7 @@ where
 }
 
 #[doc(hidden)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RunResult {
     stdout: Option<Vec<u8>>,
     stderr: Vec<u8>,

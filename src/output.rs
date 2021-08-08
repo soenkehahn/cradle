@@ -244,6 +244,7 @@ impl Output for Stderr {
 /// Also see the
 /// [section about error handling](index.html#error-handling) in
 /// the module documentation.
+#[derive(Debug)]
 pub struct Status(pub ExitStatus);
 
 impl Output for Status {

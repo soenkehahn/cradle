@@ -5,6 +5,7 @@ use std::{
     thread::{self, JoinHandle},
 };
 
+#[derive(Debug)]
 pub(crate) struct Waiter {
     stdin: JoinHandle<io::Result<()>>,
     stdout: JoinHandle<io::Result<Option<Vec<u8>>>>,
@@ -92,6 +93,7 @@ impl Waiter {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct CollectedOutput {
     pub(crate) stdout: Option<Vec<u8>>,
     pub(crate) stderr: Vec<u8>,
