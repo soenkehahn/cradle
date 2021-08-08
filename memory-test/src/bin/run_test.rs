@@ -2,7 +2,7 @@ use anyhow::Result;
 use cradle::prelude::*;
 use std::process::{Command, Stdio};
 
-fn from_mb(mega_bytes: usize) -> usize {
+fn from_mib(mebibytes: usize) -> usize {
     mega_bytes * 2_usize.pow(20)
 }
 
