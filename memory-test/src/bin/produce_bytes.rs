@@ -8,13 +8,8 @@ fn main() -> Result<()> {
     let buffer = &[b'x'; 1024];
     let mut stdout = stdout();
     while bytes > 0 {
-        if bytes >= buffer.len() {
-            stdout.write_all(buffer)?;
-            bytes -= buffer.len();
-        } else {
-            stdout.write_all(&[b'x'])?;
-            bytes -= 1;
-        }
+        stdout.write_all(&buffer[..bytes])?;
+        bytes -= bytes;
     }
     stdout.flush()?;
     Ok(())
