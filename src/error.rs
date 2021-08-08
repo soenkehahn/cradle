@@ -92,7 +92,7 @@ impl Display for Error {
                 let snippets = vec![
                     "Congratulations, you've found a bug in cradle! :/",
                     "Please, open an issue on https://github.com/soenkehahn/cradle/issues",
-                    "including the following information:",
+                    "with the following information:",
                 ];
                 writeln!(f, "{}\n{:#?}", snippets.join(" "), self)
             }
