@@ -1,6 +1,6 @@
 [package]
 name = "cradle"
-version = "0.0.17"
+version = "0.0.18"
 description = "Execute child processes with ease"
 authors = ["Sönke Hahn <soenkehahn@gmail.com>"]
 license = "CC0-1.0"
@@ -23,6 +23,11 @@ pretty_assertions = "0.7.2"
 tempfile = "3.2.0"
 
 [[bin]]
+name = "context_integration_tests"
+path = "src/context_integration_tests.rs"
+required-features = ["test_executables"]
+
+[[bin]]
 name = "test_executables_helper"
 path = "src/test_executables/helper.rs"
 required-features = ["test_executables"]
@@ -43,11 +48,6 @@ optional = true
 [target.'cfg(unix)'.dependencies.nix]
 version = "0.21.0"
 optional = true
-
-[[bin]]
-name = "context_integration_tests"
-path = "src/context_integration_tests.rs"
-required-features = ["test_executables"]
 
 [features]
 test_executables = ["gag", "executable-path", "nix"]
