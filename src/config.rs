@@ -4,15 +4,15 @@ use std::{ffi::OsString, path::PathBuf, sync::Arc};
 
 #[doc(hidden)]
 #[rustversion::attr(since(1.48), allow(clippy::rc_buffer))]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Config {
     pub(crate) arguments: Vec<OsString>,
     pub(crate) log_command: bool,
     pub(crate) working_directory: Option<PathBuf>,
     pub(crate) added_environment_variables: Vec<(OsString, OsString)>,
     pub(crate) stdin: Arc<Vec<u8>>,
-    pub(crate) relay_stdout: bool,
-    pub(crate) relay_stderr: bool,
+    pub(crate) capture_stdout: bool,
+    pub(crate) capture_stderr: bool,
     pub(crate) error_on_non_zero_exit_code: bool,
 }
 
@@ -45,8 +45,8 @@ impl Default for Config {
             working_directory: None,
             added_environment_variables: Vec::new(),
             stdin: Arc::new(Vec::new()),
-            relay_stdout: true,
-            relay_stderr: true,
+            capture_stdout: false,
+            capture_stderr: false,
             error_on_non_zero_exit_code: true,
         }
     }
