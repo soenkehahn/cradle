@@ -314,6 +314,7 @@ mod run_interface {
     }
 }
 
+#[cfg(target_os = "linux")]
 #[test]
 fn memory_test() {
     use cradle::prelude::*;
