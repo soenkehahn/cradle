@@ -15,7 +15,7 @@ defaults:
     shell: bash
 
 env:
-  CACHE_KEY: 2
+  CACHE_KEY: 3
 
 jobs:
   all:
@@ -72,7 +72,10 @@ jobs:
 
       - name: Install just
         run: |
-          if ! which just; then
+          if ! which just
+          then
+            TEMPDIR=$(mktemp -d)
+            cd $TEMPDIR
             git clone https://github.com/casey/just
             cd just
             git checkout v0.9.3

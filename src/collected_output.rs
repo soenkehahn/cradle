@@ -8,7 +8,7 @@ use std::{
 #[derive(Debug)]
 pub(crate) struct Waiter {
     stdin: JoinHandle<io::Result<()>>,
-    stdout: JoinHandle<io::Result<Vec<u8>>>,
+    stdout: JoinHandle<io::Result<Option<Vec<u8>>>>,
     stderr: JoinHandle<io::Result<Vec<u8>>>,
 }
 
@@ -30,24 +30,30 @@ impl Waiter {
             Ok(())
         });
         let mut context_clone = context.clone();
-        let relay_stdout = config.relay_stdout;
-        let stdout_join_handle = thread::spawn(move || -> io::Result<Vec<u8>> {
-            let mut collected_stdout = Vec::new();
+        let capture_stdout = config.capture_stdout;
+        let stdout_join_handle = thread::spawn(move || -> io::Result<Option<Vec<u8>>> {
+            let mut collected_stdout = if capture_stdout {
+                Some(Vec::new())
+            } else {
+                None
+            };
             let buffer = &mut [0; 256];
             loop {
                 let length = child_stdout.read(buffer)?;
                 if (length) == 0 {
                     break;
                 }
-                if relay_stdout {
+                if let Some(collected_stdout) = &mut collected_stdout {
+                    collected_stdout.extend(&buffer[..length]);
+                }
+                if !capture_stdout {
                     context_clone.stdout.write_all(&buffer[..length])?;
                 }
-                collected_stdout.extend(&buffer[..length]);
             }
             Ok(collected_stdout)
         });
         let mut context_clone = context.clone();
-        let relay_stderr = config.relay_stderr;
+        let capture_stderr = config.capture_stderr;
         let stderr_join_handle = thread::spawn(move || -> io::Result<Vec<u8>> {
             let mut collected_stderr = Vec::new();
             let buffer = &mut [0; 256];
@@ -56,10 +62,10 @@ impl Waiter {
                 if (length) == 0 {
                     break;
                 }
-                if relay_stderr {
+                collected_stderr.extend(&buffer[..length]);
+                if !capture_stderr {
                     context_clone.stderr.write_all(&buffer[..length])?;
                 }
-                collected_stderr.extend(&buffer[..length]);
             }
             Ok(collected_stderr)
         });
@@ -89,6 +95,6 @@ impl Waiter {
 
 #[derive(Debug)]
 pub(crate) struct CollectedOutput {
-    pub(crate) stdout: Vec<u8>,
+    pub(crate) stdout: Option<Vec<u8>>,
     pub(crate) stderr: Vec<u8>,
 }
