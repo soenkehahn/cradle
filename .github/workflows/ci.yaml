@@ -75,7 +75,6 @@ jobs:
           if ! which just
           then
             TEMPDIR=$(mktemp -d)
-            echo $TEMPDIR
             cd $TEMPDIR
             git clone https://github.com/casey/just
             cd just
@@ -86,7 +85,6 @@ jobs:
 
       - name: Install clippy and rustfmt
         run: |
-          pwd
           echo '${{ matrix.rust }}' > rust-toolchain
           rustup component add clippy rustfmt
 
