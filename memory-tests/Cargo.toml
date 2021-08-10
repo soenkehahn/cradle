@@ -1,5 +1,5 @@
 [package]
-name = "memory-test"
+name = "memory-tests"
 version = "0.0.0"
 edition = "2018"
 

@@ -323,7 +323,7 @@ where
 #[derive(Clone, Debug)]
 pub struct RunResult {
     stdout: Option<Vec<u8>>,
-    stderr: Vec<u8>,
+    stderr: Option<Vec<u8>>,
     exit_status: ExitStatus,
 }
 
