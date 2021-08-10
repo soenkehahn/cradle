@@ -27,6 +27,7 @@ pub enum Error {
         source: Arc<FromUtf8Error>,
     },
     Internal {
+        message: String,
         full_command: String,
         config: Config,
     },
@@ -40,8 +41,9 @@ impl Error {
         }
     }
 
-    pub(crate) fn internal(config: &Config) -> Error {
+    pub(crate) fn internal(message: &str, config: &Config) -> Error {
         Error::Internal {
+            message: message.to_string(),
             full_command: config.full_command(),
             config: config.clone(),
         }
