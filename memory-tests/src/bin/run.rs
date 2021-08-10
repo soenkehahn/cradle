@@ -17,7 +17,7 @@ fn test(stream_type: &str) -> Result<()> {
     let allowed_memory_consumption = from_mib(16);
     assert!(
         memory_consumption < allowed_memory_consumption,
-        "stream type: {}, Maximum resident set size: {}, allowed upper limit: {}",
+        "stream type: {}, maximum resident set size: {}, allowed upper limit: {}",
         stream_type,
         memory_consumption,
         allowed_memory_consumption
