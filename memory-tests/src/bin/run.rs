@@ -1,5 +1,4 @@
 use anyhow::Result;
-use cradle::prelude::*;
 use std::process::{Command, Stdio};
 
 fn from_mib(mebibytes: usize) -> usize {
@@ -7,29 +6,36 @@ fn from_mib(mebibytes: usize) -> usize {
 }
 
 fn main() -> Result<()> {
-    Split("cargo build --release").run_unit();
+    test("stdout")?;
+    test("stderr")?;
+    Ok(())
+}
+
+fn test(stream_type: &str) -> Result<()> {
     let bytes = from_mib(64);
-    let memory_consumption = measure_memory_consumption(bytes)?;
+    let memory_consumption = measure_memory_consumption(stream_type, bytes)?;
     let allowed_memory_consumption = from_mib(16);
     assert!(
         memory_consumption < allowed_memory_consumption,
-        "Maximum resident set size: {}, allowed upper limit: {}",
+        "stream type: {}, Maximum resident set size: {}, allowed upper limit: {}",
+        stream_type,
         memory_consumption,
         allowed_memory_consumption
     );
     Ok(())
 }
 
-fn measure_memory_consumption(bytes: usize) -> Result<usize> {
+fn measure_memory_consumption(stream_type: &str, bytes: usize) -> Result<usize> {
     let output = Command::new("/usr/bin/time")
         .arg("-v")
         .arg("./target/release/cradle_user")
+        .arg(stream_type)
         .arg(bytes.to_string())
         .stdout(Stdio::null())
         .output()?;
     let stderr = String::from_utf8(output.stderr)?;
-    eprintln!("{}", stderr);
     if !output.status.success() {
+        eprintln!("{}", stderr);
         panic!("running 'cradle_user' failed");
     }
     let memory_size_prefix = "Maximum resident set size (kbytes): ";
