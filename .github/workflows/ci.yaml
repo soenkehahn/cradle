@@ -80,6 +80,7 @@ jobs:
 
       - name: Info
         run: |
+          just --version
           rustup --version
           cargo --version
           cargo clippy --version
