@@ -30,8 +30,8 @@ impl Waiter {
                 if (length) == 0 {
                     break;
                 }
-                if let Some(collected_stdout) = &mut collected {
-                    collected_stdout.extend(&buffer[..length]);
+                if let Some(collected) = &mut collected {
+                    collected.extend(&buffer[..length]);
                 }
                 if !capture_stream {
                     relay_sink.write_all(&buffer[..length])?;
