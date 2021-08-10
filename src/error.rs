@@ -62,11 +62,51 @@ impl Display for Error {
         use Error::*;
         match self {
             NoArgumentsGiven => write!(f, "no arguments given"),
-            FileNotFoundWhenExecuting { executable, .. } => write!(
-                f,
-                "File not found error when executing '{}'",
-                executable.to_string_lossy()
-            ),
+            FileNotFoundWhenExecuting { executable, .. } => {
+                let executable = executable.to_string_lossy();
+                let mut message = vec![format!(
+                    "File not found error when executing '{}'",
+                    executable
+                )];
+                match executable
+                    .split_whitespace()
+                    .collect::<Vec<&str>>()
+                    .as_slice()
+                {
+                    [intended_executable, intended_arguments @ ..]
+                        if intended_arguments.len() > 0 =>
+                    {
+                        let intended_arguments = {
+                            let mut result = "[".to_string();
+                            let mut first = true;
+                            for argument in intended_arguments {
+                                result.push('\'');
+                                result.push_str(argument);
+                                result.push('\'');
+                                if first {
+                                    first = false;
+                                    result.push_str(", ");
+                                }
+                            }
+                            result.push(']');
+                            result
+                        };
+                        message.extend(vec![
+                            format!(
+                                "note: Given executable name '{}' contains whitespace.",
+                                executable
+                            ),
+                            format!(
+                                "  Did you mean to run '{}', with {} as arguments?",
+                                intended_executable, intended_arguments
+                            ),
+                            "  Consider using Split: https://docs.rs/cradle/latest/cradle/input/struct.Split.html".to_string(),
+                        ]);
+                    }
+                    _ => {}
+                }
+                write!(f, "{}", message.join("\n"))
+            }
             CommandIoError { message, .. } => write!(f, "{}", message),
             NonZeroExitCode {
                 full_command,

@@ -667,8 +667,8 @@ mod tests {
                     result.unwrap_err().to_string(),
                     vec![
                         "File not found error when executing 'does not exist'",
-                        "note: Executable name 'does not exist' includes spaces.",
-                        "  Did you mean to run 'does', with [\"not\", \"exist\"] as arguments?",
+                        "note: Given executable name 'does not exist' contains whitespace.",
+                        "  Did you mean to run 'does', with ['not', 'exist'] as arguments?",
                         "  Consider using Split: https://docs.rs/cradle/latest/cradle/input/struct.Split.html",
                     ]
                     .join("\n")
