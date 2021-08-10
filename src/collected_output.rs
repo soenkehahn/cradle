@@ -9,7 +9,7 @@ use std::{
 pub(crate) struct Waiter {
     stdin: JoinHandle<io::Result<()>>,
     stdout: JoinHandle<io::Result<Option<Vec<u8>>>>,
-    stderr: JoinHandle<io::Result<Vec<u8>>>,
+    stderr: JoinHandle<io::Result<Option<Vec<u8>>>>,
 }
 
 impl Waiter {
@@ -54,15 +54,21 @@ impl Waiter {
         });
         let mut context_clone = context.clone();
         let capture_stderr = config.capture_stderr;
-        let stderr_join_handle = thread::spawn(move || -> io::Result<Vec<u8>> {
-            let mut collected_stderr = Vec::new();
+        let stderr_join_handle = thread::spawn(move || -> io::Result<Option<Vec<u8>>> {
+            let mut collected_stderr = if capture_stderr {
+                Some(Vec::new())
+            } else {
+                None
+            };
             let buffer = &mut [0; 256];
             loop {
                 let length = child_stderr.read(buffer)?;
                 if (length) == 0 {
                     break;
                 }
-                collected_stderr.extend(&buffer[..length]);
+                if let Some(collected_stderr) = &mut collected_stderr {
+                    collected_stderr.extend(&buffer[..length]);
+                }
                 if !capture_stderr {
                     context_clone.stderr.write_all(&buffer[..length])?;
                 }
@@ -96,5 +102,5 @@ impl Waiter {
 #[derive(Debug)]
 pub(crate) struct CollectedOutput {
     pub(crate) stdout: Option<Vec<u8>>,
-    pub(crate) stderr: Vec<u8>,
+    pub(crate) stderr: Option<Vec<u8>>,
 }

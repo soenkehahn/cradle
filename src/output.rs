@@ -170,8 +170,7 @@ impl Output for StdoutUntrimmed {
 
     #[doc(hidden)]
     fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-        let result = result?;
-        let stdout = result.stdout.ok_or_else(|| Error::internal(config))?;
+        let stdout = result?.stdout.ok_or_else(|| Error::internal(config))?;
         Ok(StdoutUntrimmed(String::from_utf8(stdout).map_err(
             |source| Error::InvalidUtf8ToStdout {
                 full_command: config.full_command(),
@@ -209,12 +208,13 @@ impl Output for Stderr {
 
     #[doc(hidden)]
     fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
-        Ok(Stderr(String::from_utf8(result?.stderr).map_err(
-            |source| Error::InvalidUtf8ToStderr {
+        let stderr = result?.stderr.ok_or_else(|| Error::internal(config))?;
+        Ok(Stderr(String::from_utf8(stderr).map_err(|source| {
+            Error::InvalidUtf8ToStderr {
                 full_command: config.full_command(),
                 source: Arc::new(source),
-            },
-        )?))
+            }
+        })?))
     }
 }
 
