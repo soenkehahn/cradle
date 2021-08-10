@@ -661,6 +661,21 @@ mod tests {
             }
 
             #[test]
+            fn missing_executable_file_with_spaces_includes_hint() {
+                let result: Result<(), Error> = cmd_result!("does not exist");
+                assert_eq!(
+                    result.unwrap_err().to_string(),
+                    vec![
+                        "File not found error when executing 'does not exist'",
+                        "note: Executable name 'does not exist' includes spaces.",
+                        "  Did you mean to run 'does', with [\"not\", \"exist\"] as arguments?",
+                        "  Consider using Split: https://docs.rs/cradle/latest/cradle/input/struct.Split.html",
+                    ]
+                    .join("\n")
+                );
+            }
+
+            #[test]
             fn no_executable() {
                 let vector: Vec<String> = Vec::new();
                 let result: Result<(), Error> = cmd_result!(vector);
