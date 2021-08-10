@@ -76,7 +76,7 @@ impl Display for Error {
                     .as_slice()
                 {
                     [intended_executable, intended_arguments @ ..]
-                        if intended_arguments.len() > 0 =>
+                        if !intended_arguments.is_empty() =>
                     {
                         let intended_arguments = {
                             let mut result = "[".to_string();
