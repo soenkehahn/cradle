@@ -15,7 +15,7 @@ defaults:
     shell: bash
 
 env:
-  CACHE_KEY: 3
+  CACHE_KEY: 4
 
 jobs:
   all:
@@ -71,17 +71,9 @@ jobs:
           key: cargo-${{ env.CACHE_KEY }}-${{ runner.os }}-${{ matrix.rust }}-${{ hashFiles('Cargo.toml') }}
 
       - name: Install just
-        run: |
-          if ! which just
-          then
-            TEMPDIR=$(mktemp -d)
-            cd $TEMPDIR
-            git clone https://github.com/casey/just
-            cd just
-            git checkout v0.9.3
-            echo '1.51.0' > rust-toolchain
-            cargo install --path .
-          fi
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install clippy and rustfmt
         run: |
@@ -90,6 +82,7 @@ jobs:
 
       - name: Info
         run: |
+          just --version
           rustup --version
           cargo --version
           cargo clippy --version
