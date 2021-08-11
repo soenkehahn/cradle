@@ -110,15 +110,12 @@ impl Display for Error {
             NoArgumentsGiven => write!(f, "no arguments given"),
             FileNotFoundWhenExecuting { executable, .. } => {
                 let executable = executable.to_string_lossy();
-                let mut message = vec![format!(
-                    "File not found error when executing '{}'",
-                    executable
-                )];
+                write!(f, "File not found error when executing '{}'", executable)?;
                 if let Some(whitespace_note) = executable_with_whitespace_note(executable.as_ref())
                 {
-                    message.push(whitespace_note);
+                    write!(f, "\n{}", whitespace_note)?;
                 }
-                write!(f, "{}", message.join("\n"))
+                Ok(())
             }
             CommandIoError { message, .. } => write!(f, "{}", message),
             NonZeroExitCode {
