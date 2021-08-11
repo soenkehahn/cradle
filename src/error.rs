@@ -48,26 +48,6 @@ impl Error {
             config: config.clone(),
         }
     }
-
-    fn render_argument_list(arguments: &[&str]) -> String {
-        let mut result = if arguments.len() == 1 {
-            "argument "
-        } else {
-            "arguments "
-        }
-        .to_string();
-        for (i, argument) in arguments.iter().enumerate() {
-            let first = i == 0;
-            let last = i == arguments.len() - 1;
-            if !first {
-                result.push_str(if last { " and " } else { ", " });
-            }
-            result.push('\'');
-            result.push_str(argument);
-            result.push('\'');
-        }
-        result
-    }
 }
 
 #[doc(hidden)]
@@ -76,6 +56,50 @@ pub fn panic_on_error<T>(result: Result<T, Error>) -> T {
     match result {
         Ok(t) => t,
         Err(error) => panic!("cmd!: {}", error),
+    }
+}
+
+fn executable_with_whitespace_hint(executable: &str) -> Option<String> {
+    let arguments = executable.split_whitespace().collect::<Vec<&str>>();
+    if arguments.len() >= 2 {
+        let intended_executable = arguments[0];
+        let intended_arguments = &arguments[1..];
+        let mut intended_arguments_snippet = if intended_arguments.len() == 1 {
+            "argument "
+        } else {
+            "arguments "
+        }
+        .to_string();
+        for (i, argument) in intended_arguments.iter().enumerate() {
+            let first = i == 0;
+            let last = i == intended_arguments.len() - 1;
+            if !first {
+                intended_arguments_snippet.push_str(if last { " and " } else { ", " });
+            }
+            intended_arguments_snippet.push('\'');
+            intended_arguments_snippet.push_str(argument);
+            intended_arguments_snippet.push('\'');
+        }
+        Some(
+            vec![
+                format!(
+                    "note: Given executable name '{}' contains whitespace.",
+                    executable
+                ),
+                format!(
+                    "  Did you mean to run '{}', with the {}?",
+                    intended_executable, intended_arguments_snippet
+                ),
+                concat!(
+                    "  Consider using Split: ",
+                    "https://docs.rs/cradle/latest/cradle/input/struct.Split.html"
+                )
+                .to_string(),
+            ]
+            .join("\n"),
+        )
+    } else {
+        None
     }
 }
 
@@ -90,32 +114,9 @@ impl Display for Error {
                     "File not found error when executing '{}'",
                     executable
                 )];
-                match executable
-                    .split_whitespace()
-                    .collect::<Vec<&str>>()
-                    .as_slice()
+                if let Some(whitespace_hint) = executable_with_whitespace_hint(executable.as_ref())
                 {
-                    [intended_executable, intended_arguments @ ..]
-                        if !intended_arguments.is_empty() =>
-                    {
-                        message.extend(vec![
-                            format!(
-                                "note: Given executable name '{}' contains whitespace.",
-                                executable
-                            ),
-                            format!(
-                                "  Did you mean to run '{}', with the {}?",
-                                intended_executable,
-                                Error::render_argument_list(intended_arguments)
-                            ),
-                            concat!(
-                                "  Consider using Split: ",
-                                "https://docs.rs/cradle/latest/cradle/input/struct.Split.html"
-                            )
-                            .to_string(),
-                        ]);
-                    }
-                    _ => {}
+                    message.push(whitespace_hint);
                 }
                 write!(f, "{}", message.join("\n"))
             }
@@ -169,6 +170,7 @@ impl std::error::Error for Error {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::prelude::*;
     use executable_path::executable_path;
 
@@ -192,34 +194,44 @@ mod tests {
 
     mod render_argument_list {
         use super::*;
+        use pretty_assertions::assert_eq;
+        use unindent::Unindent;
 
-        #[test]
-        fn one() {
-            assert_eq!(Error::render_argument_list(&["foo"]), "argument 'foo'");
+        macro_rules! test {
+            ($name:ident, $input:expr, $expected:expr) => {
+                #[test]
+                fn $name() {
+                    let hint = executable_with_whitespace_hint($input);
+                    let expected_hint = $expected.map(|snippet: &str| {
+                        let intended_executable = $input.split_whitespace().next().unwrap();
+                        format!(
+                          "
+                            note: Given executable name '{}' contains whitespace.
+                              Did you mean to run '{}', with the {}?
+                              Consider using Split: https://docs.rs/cradle/latest/cradle/input/struct.Split.html
+                          ",
+                          $input,
+                          intended_executable,
+                          snippet,
+                        ).unindent().trim().to_string()
+                    });
+                    assert_eq!(hint, expected_hint);
+                }
+            };
         }
 
-        #[test]
-        fn two() {
-            assert_eq!(
-                Error::render_argument_list(&["foo", "bar"]),
-                "arguments 'foo' and 'bar'"
-            );
-        }
-
-        #[test]
-        fn three() {
-            assert_eq!(
-                Error::render_argument_list(&["foo", "bar", "baz"]),
-                "arguments 'foo', 'bar' and 'baz'"
-            );
-        }
-
-        #[test]
-        fn four() {
-            assert_eq!(
-                Error::render_argument_list(&["foo", "bar", "baz", "boo"]),
-                "arguments 'foo', 'bar', 'baz' and 'boo'"
-            );
-        }
+        test!(one, "foo", None);
+        test!(two, "foo bar", Some("argument 'bar'"));
+        test!(three, "foo bar baz", Some("arguments 'bar' and 'baz'"));
+        test!(
+            four,
+            "foo bar baz boo",
+            Some("arguments 'bar', 'baz' and 'boo'")
+        );
+        test!(
+            five,
+            "foo bar baz boo huhu",
+            Some("arguments 'bar', 'baz', 'boo' and 'huhu'")
+        );
     }
 }
