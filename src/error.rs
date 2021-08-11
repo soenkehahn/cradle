@@ -195,43 +195,23 @@ mod tests {
     mod render_argument_list {
         use super::*;
         use pretty_assertions::assert_eq;
-        use unindent::Unindent;
 
         macro_rules! test {
             ($name:ident, $input:expr, $expected:expr) => {
                 #[test]
                 fn $name() {
-                    let note = executable_with_whitespace_note($input);
-                    let expected_note = $expected.map(|snippet: &str| {
-                        let intended_executable = $input.split_whitespace().next().unwrap();
-                        format!(
-                          "
-                            note: Given executable name '{}' contains whitespace.
-                              Did you mean to run '{}', with {}?
-                              Consider using Split: https://docs.rs/cradle/latest/cradle/input/struct.Split.html
-                          ",
-                          $input,
-                          intended_executable,
-                          snippet,
-                        ).unindent().trim().to_string()
-                    });
-                    assert_eq!(note, expected_note);
+                    assert_eq!(english_list($input), $expected);
                 }
             };
         }
 
-        test!(one, "foo", None);
-        test!(two, "foo bar", Some("'bar' as the argument"));
-        test!(three, "foo bar baz", Some("'bar' and 'baz' as arguments"));
+        test!(one, &["foo"], "'foo'");
+        test!(two, &["foo", "bar"], "'foo' and 'bar'");
+        test!(three, &["foo", "bar", "baz"], "'foo', 'bar' and 'baz'");
         test!(
             four,
-            "foo bar baz boo",
-            Some("'bar', 'baz' and 'boo' as arguments")
-        );
-        test!(
-            five,
-            "foo bar baz boo huhu",
-            Some("'bar', 'baz', 'boo' and 'huhu' as arguments")
+            &["foo", "bar", "baz", "boo"],
+            "'foo', 'bar', 'baz' and 'boo'"
         );
     }
 }

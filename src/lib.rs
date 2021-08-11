@@ -701,6 +701,22 @@ mod tests {
                 .join("\n");
                 assert_eq!(result.unwrap_err().to_string(), expected);
             }
+
+            #[test]
+            fn single_argument() {
+                let result: Result<(), Error> = cmd_result!("foo bar");
+                let expected = vec![
+                    "File not found error when executing 'foo bar'",
+                    "note: Given executable name 'foo bar' contains whitespace.",
+                    "  Did you mean to run 'foo', with 'bar' as the argument?",
+                    concat!(
+                        "  Consider using Split: ",
+                        "https://docs.rs/cradle/latest/cradle/input/struct.Split.html"
+                    ),
+                ]
+                .join("\n");
+                assert_eq!(result.unwrap_err().to_string(), expected);
+            }
         }
     }
 
