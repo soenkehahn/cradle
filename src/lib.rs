@@ -685,36 +685,35 @@ mod tests {
         mod whitespace_in_executable_note {
             use super::*;
             use pretty_assertions::assert_eq;
+            use unindent::Unindent;
 
             #[test]
             fn missing_executable_file_with_whitespace_includes_note() {
                 let result: Result<(), Error> = cmd_result!("does not exist");
-                let expected = vec![
-                    "File not found error when executing 'does not exist'",
-                    "note: Given executable name 'does not exist' contains whitespace.",
-                    "  Did you mean to run 'does', with 'not' and 'exist' as arguments?",
-                    concat!(
-                        "  Consider using Split: ",
-                        "https://docs.rs/cradle/latest/cradle/input/struct.Split.html"
-                    ),
-                ]
-                .join("\n");
+                let expected = "
+                    File not found error when executing 'does not exist'
+                    note: Given executable name 'does not exist' contains whitespace.
+                      Did you mean to run 'does', with 'not' and 'exist' as arguments?
+                      Consider using Split: https://docs.rs/cradle/latest/cradle/input/struct.Split.html
+                "
+                .unindent()
+                .trim()
+                .to_string();
                 assert_eq!(result.unwrap_err().to_string(), expected);
             }
 
             #[test]
             fn single_argument() {
                 let result: Result<(), Error> = cmd_result!("foo bar");
-                let expected = vec![
-                    "File not found error when executing 'foo bar'",
-                    "note: Given executable name 'foo bar' contains whitespace.",
-                    "  Did you mean to run 'foo', with 'bar' as the argument?",
-                    concat!(
-                        "  Consider using Split: ",
-                        "https://docs.rs/cradle/latest/cradle/input/struct.Split.html"
-                    ),
-                ]
-                .join("\n");
+                let expected = "
+                    File not found error when executing 'foo bar'
+                    note: Given executable name 'foo bar' contains whitespace.
+                      Did you mean to run 'foo', with 'bar' as the argument?
+                      Consider using Split: https://docs.rs/cradle/latest/cradle/input/struct.Split.html
+                "
+                .unindent()
+                .trim()
+                .to_string();
                 assert_eq!(result.unwrap_err().to_string(), expected);
             }
         }
