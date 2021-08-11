@@ -192,7 +192,7 @@ mod tests {
         assert!(std::error::Error::source(&result.unwrap_err()).is_some());
     }
 
-    mod render_argument_list {
+    mod english_list {
         use super::*;
         use pretty_assertions::assert_eq;
 
