@@ -59,38 +59,39 @@ pub fn panic_on_error<T>(result: Result<T, Error>) -> T {
     }
 }
 
-fn executable_with_whitespace_note(executable: &str) -> Option<String> {
-    let arguments = executable.split_whitespace().collect::<Vec<&str>>();
-    if arguments.len() >= 2 {
-        let intended_executable = arguments[0];
-        let intended_arguments = &arguments[1..];
-        let arguments_word = if intended_arguments.len() == 1 {
-            "the argument"
-        } else {
-            "arguments"
+fn english_list(list: &[&str]) -> String {
+    let mut result = String::new();
+    for (i, word) in list.iter().enumerate() {
+        let is_first = i == 0;
+        let is_last = i == list.len() - 1;
+        if !is_first {
+            result.push_str(if is_last { " and " } else { ", " });
         }
-        .to_string();
-        let arguments_list = {
-            let mut result = String::new();
-            for (i, argument) in intended_arguments.iter().enumerate() {
-                let first = i == 0;
-                let last = i == intended_arguments.len() - 1;
-                if !first {
-                    result.push_str(if last { " and " } else { ", " });
-                }
-                result.push('\'');
-                result.push_str(argument);
-                result.push('\'');
-            }
-            result
-        };
+        result.push('\'');
+        result.push_str(word);
+        result.push('\'');
+    }
+    result
+}
+
+fn executable_with_whitespace_note(executable: &str) -> Option<String> {
+    let words = executable.split_whitespace().collect::<Vec<&str>>();
+    if words.len() >= 2 {
+        let intended_executable = words[0];
+        let intended_arguments = &words[1..];
         let mut result = format!(
             "note: Given executable name '{}' contains whitespace.\n",
             executable
         );
         result.push_str(&format!(
             "  Did you mean to run '{}', with {} as {}?\n",
-            intended_executable, arguments_list, arguments_word,
+            intended_executable,
+            english_list(intended_arguments),
+            if intended_arguments.len() == 1 {
+                "the argument"
+            } else {
+                "arguments"
+            },
         ));
         result.push_str(concat!(
             "  Consider using Split: ",
