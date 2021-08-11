@@ -48,6 +48,26 @@ impl Error {
             config: config.clone(),
         }
     }
+
+    fn render_argument_list(arguments: &[&str]) -> String {
+        let mut result = if arguments.len() == 1 {
+            "argument "
+        } else {
+            "arguments "
+        }
+        .to_string();
+        for (i, argument) in arguments.iter().enumerate() {
+            let first = i == 0;
+            let last = i == arguments.len() - 1;
+            if !first {
+                result.push_str(if last { " and " } else { ", " });
+            }
+            result.push('\'');
+            result.push_str(argument);
+            result.push('\'');
+        }
+        result
+    }
 }
 
 #[doc(hidden)]
@@ -78,31 +98,21 @@ impl Display for Error {
                     [intended_executable, intended_arguments @ ..]
                         if !intended_arguments.is_empty() =>
                     {
-                        let intended_arguments = {
-                            let mut result = "[".to_string();
-                            let mut first = true;
-                            for argument in intended_arguments {
-                                result.push('\'');
-                                result.push_str(argument);
-                                result.push('\'');
-                                if first {
-                                    first = false;
-                                    result.push_str(", ");
-                                }
-                            }
-                            result.push(']');
-                            result
-                        };
                         message.extend(vec![
                             format!(
                                 "note: Given executable name '{}' contains whitespace.",
                                 executable
                             ),
                             format!(
-                                "  Did you mean to run '{}', with {} as arguments?",
-                                intended_executable, intended_arguments
+                                "  Did you mean to run '{}', with the {}?",
+                                intended_executable,
+                                Error::render_argument_list(intended_arguments)
                             ),
-                            "  Consider using Split: https://docs.rs/cradle/latest/cradle/input/struct.Split.html".to_string(),
+                            concat!(
+                                "  Consider using Split: ",
+                                "https://docs.rs/cradle/latest/cradle/input/struct.Split.html"
+                            )
+                            .to_string(),
                         ]);
                     }
                     _ => {}
@@ -161,7 +171,6 @@ impl std::error::Error for Error {
 mod tests {
     use crate::prelude::*;
     use executable_path::executable_path;
-    use std::error::Error;
 
     #[test]
     fn invalid_utf8_to_stdout_has_source() {
@@ -169,7 +178,7 @@ mod tests {
             executable_path("cradle_test_helper").to_str().unwrap(),
             "invalid utf-8 stdout"
         );
-        assert!(result.unwrap_err().source().is_some());
+        assert!(std::error::Error::source(&result.unwrap_err()).is_some());
     }
 
     #[test]
@@ -178,6 +187,39 @@ mod tests {
             executable_path("cradle_test_helper").to_str().unwrap(),
             "invalid utf-8 stderr"
         );
-        assert!(result.unwrap_err().source().is_some());
+        assert!(std::error::Error::source(&result.unwrap_err()).is_some());
+    }
+
+    mod render_argument_list {
+        use super::*;
+
+        #[test]
+        fn one() {
+            assert_eq!(Error::render_argument_list(&["foo"]), "argument 'foo'");
+        }
+
+        #[test]
+        fn two() {
+            assert_eq!(
+                Error::render_argument_list(&["foo", "bar"]),
+                "arguments 'foo' and 'bar'"
+            );
+        }
+
+        #[test]
+        fn three() {
+            assert_eq!(
+                Error::render_argument_list(&["foo", "bar", "baz"]),
+                "arguments 'foo', 'bar' and 'baz'"
+            );
+        }
+
+        #[test]
+        fn four() {
+            assert_eq!(
+                Error::render_argument_list(&["foo", "bar", "baz", "boo"]),
+                "arguments 'foo', 'bar', 'baz' and 'boo'"
+            );
+        }
     }
 }

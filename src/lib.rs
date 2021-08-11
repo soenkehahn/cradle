@@ -661,21 +661,6 @@ mod tests {
             }
 
             #[test]
-            fn missing_executable_file_with_spaces_includes_hint() {
-                let result: Result<(), Error> = cmd_result!("does not exist");
-                assert_eq!(
-                    result.unwrap_err().to_string(),
-                    vec![
-                        "File not found error when executing 'does not exist'",
-                        "note: Given executable name 'does not exist' contains whitespace.",
-                        "  Did you mean to run 'does', with ['not', 'exist'] as arguments?",
-                        "  Consider using Split: https://docs.rs/cradle/latest/cradle/input/struct.Split.html",
-                    ]
-                    .join("\n")
-                );
-            }
-
-            #[test]
             fn no_executable() {
                 let vector: Vec<String> = Vec::new();
                 let result: Result<(), Error> = cmd_result!(vector);
@@ -694,6 +679,27 @@ mod tests {
                         test_helper.display()
                     )
                 );
+            }
+        }
+
+        mod whitespace_in_executable_note {
+            use super::*;
+            use pretty_assertions::assert_eq;
+
+            #[test]
+            fn missing_executable_file_with_whitespace_includes_note() {
+                let result: Result<(), Error> = cmd_result!("does not exist");
+                let expected = vec![
+                    "File not found error when executing 'does not exist'",
+                    "note: Given executable name 'does not exist' contains whitespace.",
+                    "  Did you mean to run 'does', with the arguments 'not' and 'exist'?",
+                    concat!(
+                        "  Consider using Split: ",
+                        "https://docs.rs/cradle/latest/cradle/input/struct.Split.html"
+                    ),
+                ]
+                .join("\n");
+                assert_eq!(result.unwrap_err().to_string(), expected);
             }
         }
     }
