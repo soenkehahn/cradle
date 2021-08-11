@@ -64,40 +64,39 @@ fn executable_with_whitespace_hint(executable: &str) -> Option<String> {
     if arguments.len() >= 2 {
         let intended_executable = arguments[0];
         let intended_arguments = &arguments[1..];
-        let mut intended_arguments_snippet = if intended_arguments.len() == 1 {
-            "argument "
+        let arguments_word = if intended_arguments.len() == 1 {
+            "argument"
         } else {
-            "arguments "
+            "arguments"
         }
         .to_string();
-        for (i, argument) in intended_arguments.iter().enumerate() {
-            let first = i == 0;
-            let last = i == intended_arguments.len() - 1;
-            if !first {
-                intended_arguments_snippet.push_str(if last { " and " } else { ", " });
+        let arguments_list = {
+            let mut result = String::new();
+            for (i, argument) in intended_arguments.iter().enumerate() {
+                let first = i == 0;
+                let last = i == intended_arguments.len() - 1;
+                if !first {
+                    result.push_str(if last { " and " } else { ", " });
+                }
+                result.push('\'');
+                result.push_str(argument);
+                result.push('\'');
             }
-            intended_arguments_snippet.push('\'');
-            intended_arguments_snippet.push_str(argument);
-            intended_arguments_snippet.push('\'');
-        }
-        Some(
-            vec![
-                format!(
-                    "note: Given executable name '{}' contains whitespace.",
-                    executable
-                ),
-                format!(
-                    "  Did you mean to run '{}', with the {}?",
-                    intended_executable, intended_arguments_snippet
-                ),
-                concat!(
-                    "  Consider using Split: ",
-                    "https://docs.rs/cradle/latest/cradle/input/struct.Split.html"
-                )
-                .to_string(),
-            ]
-            .join("\n"),
-        )
+            result
+        };
+        let mut result = format!(
+            "note: Given executable name '{}' contains whitespace.\n",
+            executable
+        );
+        result.push_str(&format!(
+            "  Did you mean to run '{}', with the {} {}?\n",
+            intended_executable, arguments_word, arguments_list
+        ));
+        result.push_str(concat!(
+            "  Consider using Split: ",
+            "https://docs.rs/cradle/latest/cradle/input/struct.Split.html"
+        ));
+        Some(result)
     } else {
         None
     }
