@@ -59,13 +59,13 @@ pub fn panic_on_error<T>(result: Result<T, Error>) -> T {
     }
 }
 
-fn executable_with_whitespace_hint(executable: &str) -> Option<String> {
+fn executable_with_whitespace_note(executable: &str) -> Option<String> {
     let arguments = executable.split_whitespace().collect::<Vec<&str>>();
     if arguments.len() >= 2 {
         let intended_executable = arguments[0];
         let intended_arguments = &arguments[1..];
         let arguments_word = if intended_arguments.len() == 1 {
-            "argument"
+            "the argument"
         } else {
             "arguments"
         }
@@ -89,8 +89,8 @@ fn executable_with_whitespace_hint(executable: &str) -> Option<String> {
             executable
         );
         result.push_str(&format!(
-            "  Did you mean to run '{}', with the {} {}?\n",
-            intended_executable, arguments_word, arguments_list
+            "  Did you mean to run '{}', with {} as {}?\n",
+            intended_executable, arguments_list, arguments_word,
         ));
         result.push_str(concat!(
             "  Consider using Split: ",
@@ -113,9 +113,9 @@ impl Display for Error {
                     "File not found error when executing '{}'",
                     executable
                 )];
-                if let Some(whitespace_hint) = executable_with_whitespace_hint(executable.as_ref())
+                if let Some(whitespace_note) = executable_with_whitespace_note(executable.as_ref())
                 {
-                    message.push(whitespace_hint);
+                    message.push(whitespace_note);
                 }
                 write!(f, "{}", message.join("\n"))
             }
@@ -200,13 +200,13 @@ mod tests {
             ($name:ident, $input:expr, $expected:expr) => {
                 #[test]
                 fn $name() {
-                    let hint = executable_with_whitespace_hint($input);
-                    let expected_hint = $expected.map(|snippet: &str| {
+                    let note = executable_with_whitespace_note($input);
+                    let expected_note = $expected.map(|snippet: &str| {
                         let intended_executable = $input.split_whitespace().next().unwrap();
                         format!(
                           "
                             note: Given executable name '{}' contains whitespace.
-                              Did you mean to run '{}', with the {}?
+                              Did you mean to run '{}', with {}?
                               Consider using Split: https://docs.rs/cradle/latest/cradle/input/struct.Split.html
                           ",
                           $input,
@@ -214,23 +214,23 @@ mod tests {
                           snippet,
                         ).unindent().trim().to_string()
                     });
-                    assert_eq!(hint, expected_hint);
+                    assert_eq!(note, expected_note);
                 }
             };
         }
 
         test!(one, "foo", None);
-        test!(two, "foo bar", Some("argument 'bar'"));
-        test!(three, "foo bar baz", Some("arguments 'bar' and 'baz'"));
+        test!(two, "foo bar", Some("'bar' as the argument"));
+        test!(three, "foo bar baz", Some("'bar' and 'baz' as arguments"));
         test!(
             four,
             "foo bar baz boo",
-            Some("arguments 'bar', 'baz' and 'boo'")
+            Some("'bar', 'baz' and 'boo' as arguments")
         );
         test!(
             five,
             "foo bar baz boo huhu",
-            Some("arguments 'bar', 'baz', 'boo' and 'huhu'")
+            Some("'bar', 'baz', 'boo' and 'huhu' as arguments")
         );
     }
 }

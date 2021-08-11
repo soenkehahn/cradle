@@ -692,7 +692,7 @@ mod tests {
                 let expected = vec![
                     "File not found error when executing 'does not exist'",
                     "note: Given executable name 'does not exist' contains whitespace.",
-                    "  Did you mean to run 'does', with the arguments 'not' and 'exist'?",
+                    "  Did you mean to run 'does', with 'not' and 'exist' as arguments?",
                     concat!(
                         "  Consider using Split: ",
                         "https://docs.rs/cradle/latest/cradle/input/struct.Split.html"
