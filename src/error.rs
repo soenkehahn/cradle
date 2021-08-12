@@ -59,16 +59,64 @@ pub fn panic_on_error<T>(result: Result<T, Error>) -> T {
     }
 }
 
+fn english_list(list: &[&str]) -> String {
+    let mut result = String::new();
+    for (i, word) in list.iter().enumerate() {
+        let is_first = i == 0;
+        let is_last = i == list.len() - 1;
+        if !is_first {
+            result.push_str(if is_last { " and " } else { ", " });
+        }
+        result.push('\'');
+        result.push_str(word);
+        result.push('\'');
+    }
+    result
+}
+
+fn executable_with_whitespace_note(executable: &str) -> Option<String> {
+    let words = executable.split_whitespace().collect::<Vec<&str>>();
+    if words.len() >= 2 {
+        let intended_executable = words[0];
+        let intended_arguments = &words[1..];
+        let mut result = format!(
+            "note: Given executable name '{}' contains whitespace.\n",
+            executable
+        );
+        result.push_str(&format!(
+            "  Did you mean to run '{}', with {} as {}?\n",
+            intended_executable,
+            english_list(intended_arguments),
+            if intended_arguments.len() == 1 {
+                "the argument"
+            } else {
+                "arguments"
+            },
+        ));
+        result.push_str(concat!(
+            "  Consider using Split: ",
+            "https://docs.rs/cradle/latest/cradle/input/struct.Split.html"
+        ));
+        Some(result)
+    } else {
+        None
+    }
+}
+
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use Error::*;
         match self {
             NoArgumentsGiven => write!(f, "no arguments given"),
-            FileNotFoundWhenExecuting { executable, .. } => write!(
-                f,
-                "File not found error when executing '{}'",
-                executable.to_string_lossy()
-            ),
+            FileNotFoundWhenExecuting { executable, .. } => {
+                let executable = executable.to_string_lossy();
+                write!(f, "File not found error when executing '{}'", executable)?;
+                if let Some(whitespace_note) = executable_with_whitespace_note(executable.as_ref())
+                {
+                    write!(f, "\n{}", whitespace_note)?;
+                }
+                Ok(())
+            }
             CommandIoError { message, .. } => write!(f, "{}", message),
             NonZeroExitCode {
                 full_command,
@@ -119,9 +167,9 @@ impl std::error::Error for Error {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::prelude::*;
     use executable_path::executable_path;
-    use std::error::Error;
 
     #[test]
     fn invalid_utf8_to_stdout_has_source() {
@@ -129,7 +177,7 @@ mod tests {
             executable_path("cradle_test_helper").to_str().unwrap(),
             "invalid utf-8 stdout"
         );
-        assert!(result.unwrap_err().source().is_some());
+        assert!(std::error::Error::source(&result.unwrap_err()).is_some());
     }
 
     #[test]
@@ -138,6 +186,29 @@ mod tests {
             executable_path("cradle_test_helper").to_str().unwrap(),
             "invalid utf-8 stderr"
         );
-        assert!(result.unwrap_err().source().is_some());
+        assert!(std::error::Error::source(&result.unwrap_err()).is_some());
+    }
+
+    mod english_list {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        macro_rules! test {
+            ($name:ident, $input:expr, $expected:expr) => {
+                #[test]
+                fn $name() {
+                    assert_eq!(english_list($input), $expected);
+                }
+            };
+        }
+
+        test!(one, &["foo"], "'foo'");
+        test!(two, &["foo", "bar"], "'foo' and 'bar'");
+        test!(three, &["foo", "bar", "baz"], "'foo', 'bar' and 'baz'");
+        test!(
+            four,
+            &["foo", "bar", "baz", "boo"],
+            "'foo', 'bar', 'baz' and 'boo'"
+        );
     }
 }
