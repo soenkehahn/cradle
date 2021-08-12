@@ -69,7 +69,7 @@
 //! # Output
 //!
 //! You can choose which return type you want [`cmd!`] to return,
-//! as long as the chosen return type implements [`Output`].
+//! as long as the chosen return type implements [`output::Output`].
 //! For example you can use e.g. [`StdoutTrimmed`](output::StdoutTrimmed)
 //! to collect what the child process writes to `stdout`,
 //! trimmed of leading and trailing whitespace:
@@ -107,7 +107,7 @@
 //! cmd_unit!(%"touch foo");
 //! ```
 //!
-//! See the implementations for [`Output`] for all the supported types.
+//! See the implementations for [`output::Output`] for all the supported types.
 //!
 //! # Error Handling
 //!
@@ -139,7 +139,7 @@
 //! You can also turn **all** panics into [`std::result::Result::Err`]s
 //! by using [`cmd_result!`]. This will return a value of type
 //! [`Result<T, cradle::Error>`], where
-//! `T` is any type that implements [`Output`].
+//! `T` is any type that implements [`output::Output`].
 //! Here's some examples:
 //!
 //! ```
@@ -230,26 +230,10 @@ pub mod input;
 mod macros;
 pub mod output;
 pub mod prelude;
+#[doc(hidden)]
 pub mod run_result;
 
 pub use crate::error::Error;
-use crate::{config::Config, context::Context, output::Output, run_result::RunResult};
-use std::io::Write;
-
-#[doc(hidden)]
-pub fn run_cmd<Stdout, Stderr, T>(
-    context: Context<Stdout, Stderr>,
-    mut config: Config,
-) -> Result<T, Error>
-where
-    Stdout: Write + Clone + Send + 'static,
-    Stderr: Write + Clone + Send + 'static,
-    T: Output,
-{
-    <T as Output>::configure(&mut config);
-    let result = RunResult::run_cmd_safe(context, &config);
-    T::from_run_result(&config, result)
-}
 
 #[cfg(test)]
 mod tests {

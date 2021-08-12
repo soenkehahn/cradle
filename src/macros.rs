@@ -40,7 +40,7 @@ macro_rules! cmd_result_with_context {
     ($context:expr, $($args:tt)*) => {{
         let mut config = $crate::config::Config::default();
         $crate::configure!(config: config, args: $($args)*);
-        $crate::run_cmd($context, config)
+        $crate::run_result::RunResult::run_cmd($context, config)
     }}
 }
 

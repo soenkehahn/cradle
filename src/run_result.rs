@@ -1,4 +1,6 @@
-use crate::{collected_output::Waiter, config::Config, context::Context, error::Error};
+use crate::{
+    collected_output::Waiter, config::Config, context::Context, error::Error, output::Output,
+};
 use std::{
     ffi::OsString,
     io::Write,
@@ -15,6 +17,20 @@ pub struct RunResult {
 }
 
 impl RunResult {
+    pub fn run_cmd<Stdout, Stderr, T>(
+        context: Context<Stdout, Stderr>,
+        mut config: Config,
+    ) -> Result<T, Error>
+    where
+        Stdout: Write + Clone + Send + 'static,
+        Stderr: Write + Clone + Send + 'static,
+        T: Output,
+    {
+        <T as Output>::configure(&mut config);
+        let result = RunResult::run_cmd_safe(context, &config);
+        T::from_run_result(&config, result)
+    }
+
     pub(crate) fn run_cmd_safe<Stdout, Stderr>(
         mut context: Context<Stdout, Stderr>,
         config: &Config,
