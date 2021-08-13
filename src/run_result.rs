@@ -31,7 +31,7 @@ impl RunResult {
         T::from_run_result(&config, result)
     }
 
-    pub(crate) fn run_child_process<Stdout, Stderr>(
+    fn run_child_process<Stdout, Stderr>(
         mut context: Context<Stdout, Stderr>,
         config: &Config,
     ) -> Result<Self, Error>
