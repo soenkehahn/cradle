@@ -175,7 +175,7 @@
 //!
 //! `cradle` also provides an alternative interface to execute commands
 //! through methods on the [`Input`](input::Input) trait:
-//! [`.run()`](input::Input::run), [`.run_unit()`](input::Input::run_unit)
+//! [`.run_output()`](input::Input::run_output), [`.run_unit()`](input::Input::run_unit)
 //! and [`.run_result()`](input::Input::run_result).
 //! These methods can be invoked on all values whose types implement
 //! [`Input`](input::Input).
@@ -189,7 +189,7 @@
 //! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
 //!
-//! let StdoutTrimmed(output) = ("echo", "foo").run();
+//! let StdoutTrimmed(output) = ("echo", "foo").run_output();
 //! assert_eq!(output, "foo");
 //!
 //! ("touch", "foo").run_unit();
@@ -1468,19 +1468,19 @@ mod tests {
 
         #[test]
         fn allows_to_run_commands_with_dot_run() {
-            let StdoutTrimmed(output) = Split("echo foo").run();
+            let StdoutTrimmed(output) = Split("echo foo").run_output();
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn allows_to_bundle_arguments_up_in_tuples() {
-            let StdoutTrimmed(output) = ("echo", "foo").run();
+            let StdoutTrimmed(output) = ("echo", "foo").run_output();
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn works_for_different_output_types() {
-            let Status(status) = "false".run();
+            let Status(status) = "false".run_output();
             assert!(!status.success());
         }
 

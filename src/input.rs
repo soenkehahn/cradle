@@ -116,10 +116,10 @@ pub trait Input {
     /// ```
     /// use cradle::prelude::*;
     ///
-    /// let StdoutTrimmed(output) = ("echo", "foo").run();
+    /// let StdoutTrimmed(output) = ("echo", "foo").run_output();
     /// assert_eq!(output, "foo");
     /// ```
-    fn run<O>(self) -> O
+    fn run_output<O>(self) -> O
     where
         Self: Sized,
         O: Output,
