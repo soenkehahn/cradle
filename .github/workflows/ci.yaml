@@ -14,9 +14,6 @@ defaults:
   run:
     shell: bash
 
-env:
-  CACHE_KEY: 4
-
 jobs:
   all:
     name: All
@@ -51,24 +48,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
-      # An issue with BSD Tar causes sporadic failures on macOS.
-      # c.f https://github.com/actions/cache/issues/403
-      - name: Install GNU Tar
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install gnu-tar
-          echo /usr/local/opt/gnu-tar/libexec/gnubin > $GITHUB_PATH
-
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ~/.cargo/bin
-            target
-          key: cargo-${{ env.CACHE_KEY }}-${{ runner.os }}-${{ matrix.rust }}-${{ hashFiles('Cargo.toml') }}
 
       - name: Install just
         uses: extractions/setup-just@v1
