@@ -1,4 +1,4 @@
-//! The [`Error`] type used in the return type of [`cmd_result!`].
+//! The [`Error`] type used in the return type of [`run_result!`].
 
 use crate::config::Config;
 use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8Error, sync::Arc};
@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn invalid_utf8_to_stdout_has_source() {
-        let result: Result<StdoutUntrimmed, crate::Error> = cmd_result!(
+        let result: Result<StdoutUntrimmed, crate::Error> = run_result!(
             executable_path("cradle_test_helper").to_str().unwrap(),
             "invalid utf-8 stdout"
         );
@@ -182,7 +182,7 @@ mod tests {
 
     #[test]
     fn invalid_utf8_to_stderr_has_source() {
-        let result: Result<Stderr, crate::Error> = cmd_result!(
+        let result: Result<Stderr, crate::Error> = run_result!(
             executable_path("cradle_test_helper").to_str().unwrap(),
             "invalid utf-8 stderr"
         );

@@ -1,5 +1,5 @@
 //! The [`Input`] trait that defines all possible inputs to [`run_output!`],
-//! [`run!`] and [`cmd_result!`].
+//! [`run!`] and [`run_result!`].
 
 use crate::{config::Config, output::Output};
 use std::{
@@ -9,7 +9,7 @@ use std::{
 };
 
 /// All types that are possible arguments to [`run_output!`], [`run!`] or
-/// [`cmd_result!`] must implement this trait.
+/// [`run_result!`] must implement this trait.
 /// This makes `cradle` very flexible.
 /// For example you can pass in an executable as a String,
 /// and a variable number of arguments as a [`Vec`]:
@@ -128,17 +128,17 @@ pub trait Input {
     }
 
     /// `input.run_result()` runs `input` as a child process.
-    /// It's equivalent to `cmd_result!(input)`.
+    /// It's equivalent to `run_result!(input)`.
     ///
     /// ```
     /// use cradle::prelude::*;
     ///
     /// # fn build() -> Result<(), Error> {
     /// // make sure build tools are installed
-    /// cmd_result!(%"which make")?;
-    /// cmd_result!(%"which gcc")?;
-    /// cmd_result!(%"which ld")?;
-    /// cmd_result!(%"make build")?;
+    /// run_result!(%"which make")?;
+    /// run_result!(%"which gcc")?;
+    /// run_result!(%"which ld")?;
+    /// run_result!(%"make build")?;
     /// # Ok(())
     /// # }
     /// ```
@@ -147,7 +147,7 @@ pub trait Input {
         Self: Sized,
         O: Output,
     {
-        crate::cmd_result!(self)
+        crate::run_result!(self)
     }
 }
 

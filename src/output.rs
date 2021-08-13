@@ -1,11 +1,11 @@
 //! The [`Output`] trait that defines all possible outputs of [`run_output!`],
-//! [`run!`] and [`cmd_result!`].
+//! [`run!`] and [`run_result!`].
 
 use crate::{config::Config, error::Error, run_result::RunResult};
 use std::{process::ExitStatus, sync::Arc};
 
 /// All possible return types of [`run_output!`], [`run!`] or
-/// [`cmd_result!`] must implement this trait.
+/// [`run_result!`] must implement this trait.
 /// This return-type polymorphism makes cradle very flexible.
 /// For example, if you want to capture what a command writes
 /// to `stdout` you can do that using [`StdoutUntrimmed`]:
@@ -70,7 +70,7 @@ pub trait Output: Sized {
 /// let () = run_output!(%"touch ./foo");
 /// ```
 ///
-/// Since [`run_output!`] (and [`cmd_result`]) use return type polymorphism,
+/// Since [`run_output!`] (and [`run_result`]) use return type polymorphism,
 /// you have to make sure the compiler can figure out which return type you want to use.
 /// In this example that happens through the `let () =`.
 /// So you can't just omit that.
@@ -240,7 +240,7 @@ impl Output for Stderr {
 ///
 /// let Status(exit_status) = run_output!("false");
 /// assert_eq!(exit_status.code(), Some(1));
-/// let result: Result<Status, cradle::Error> = cmd_result!("false");
+/// let result: Result<Status, cradle::Error> = run_result!("false");
 /// assert!(result.is_ok());
 /// assert_eq!(result.unwrap().0.code(), Some(1));
 /// ```
@@ -282,7 +282,7 @@ impl Output for Status {
 ///
 /// let success: bool = run_output!("false");
 /// assert!(!success);
-/// let result: Result<bool, cradle::Error> = cmd_result!("false");
+/// let result: Result<bool, cradle::Error> = run_result!("false");
 /// assert!(result.is_ok());
 /// assert_eq!(result.unwrap(), false);
 /// ```

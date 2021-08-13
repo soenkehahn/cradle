@@ -136,7 +136,7 @@
 //! ```
 //!
 //! You can also turn **all** panics into [`std::result::Result::Err`]s
-//! by using [`cmd_result!`]. This will return a value of type
+//! by using [`run_result!`]. This will return a value of type
 //! [`Result<T, cradle::Error>`], where
 //! `T` is any type that implements [`output::Output`].
 //! Here's some examples:
@@ -144,29 +144,29 @@
 //! ```
 //! use cradle::prelude::*;
 //!
-//! let result: Result<(), cradle::Error> = cmd_result!("false");
+//! let result: Result<(), cradle::Error> = run_result!("false");
 //! let error_message = format!("{}", result.unwrap_err());
 //! assert_eq!(
 //!     error_message,
 //!     "false:\n  exited with exit code: 1"
 //! );
 //!
-//! let result = cmd_result!(%"echo foo");
+//! let result = run_result!(%"echo foo");
 //! let StdoutTrimmed(output) = result.unwrap();
 //! assert_eq!(output, "foo".to_string());
 //! ```
 //!
-//! [`cmd_result`] can also be combined with `?` to handle errors in an
+//! [`run_result!`] can also be combined with `?` to handle errors in an
 //! idiomatic way, for example:
 //!
 //! ```
 //! use cradle::prelude::*;
 //!
 //! fn build() -> Result<(), Error> {
-//!     cmd_result!(%"which make")?;
-//!     cmd_result!(%"which gcc")?;
-//!     cmd_result!(%"which ld")?;
-//!     cmd_result!(%"make build")?;
+//!     run_result!(%"which make")?;
+//!     run_result!(%"which gcc")?;
+//!     run_result!(%"which ld")?;
+//!     run_result!(%"make build")?;
 //!     Ok(())
 //! }
 //! ```
@@ -181,7 +181,7 @@
 //! [`Input`](input::Input).
 //! When using these methods, it's especially useful that
 //! [`Input`](input::Input) is implemented by tuples.
-//! They work analog to [`run_output!`], [`run!`] and [`cmd_result!`].
+//! They work analog to [`run_output!`], [`run!`] and [`run_result!`].
 //! Here are some examples:
 //!
 //! ```
@@ -405,7 +405,7 @@ mod tests {
 
             #[test]
             fn non_zero_exit_codes() {
-                let result: Result<(), Error> = cmd_result!("false");
+                let result: Result<(), Error> = run_result!("false");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false:\n  exited with exit code: 1"
@@ -414,19 +414,19 @@ mod tests {
 
             #[test]
             fn no_errors() {
-                let result: Result<(), Error> = cmd_result!("true");
+                let result: Result<(), Error> = run_result!("true");
                 result.unwrap();
             }
 
             #[test]
             fn combine_ok_with_other_outputs() {
-                let StdoutTrimmed(output) = cmd_result!(%"echo foo").unwrap();
+                let StdoutTrimmed(output) = run_result!(%"echo foo").unwrap();
                 assert_eq!(output, "foo".to_string());
             }
 
             #[test]
             fn combine_err_with_other_outputs() {
-                let result: Result<StdoutTrimmed, Error> = cmd_result!("false");
+                let result: Result<StdoutTrimmed, Error> = run_result!("false");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false:\n  exited with exit code: 1"
@@ -435,7 +435,7 @@ mod tests {
 
             #[test]
             fn includes_full_command_on_non_zero_exit_codes() {
-                let result: Result<(), Error> = cmd_result!(%"false foo bar");
+                let result: Result<(), Error> = run_result!(%"false foo bar");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "false foo bar:\n  exited with exit code: 1"
@@ -447,7 +447,7 @@ mod tests {
                 in_temporary_directory(|| {
                     fs::write("without-executable-bit", "").unwrap();
                     let result: Result<(), Error> =
-                        cmd_result!(%"./without-executable-bit foo bar");
+                        run_result!(%"./without-executable-bit foo bar");
                     assert_eq!(
                         result.unwrap_err().to_string(),
                         if cfg!(windows) {
@@ -461,7 +461,7 @@ mod tests {
 
             #[test]
             fn other_exit_codes() {
-                let result: Result<(), Error> = cmd_result!(test_helper(), "exit code 42");
+                let result: Result<(), Error> = run_result!(test_helper(), "exit code 42");
                 assert!(result
                     .unwrap_err()
                     .to_string()
@@ -470,7 +470,7 @@ mod tests {
 
             #[test]
             fn missing_executable_file_error_message() {
-                let result: Result<(), Error> = cmd_result!("does-not-exist");
+                let result: Result<(), Error> = run_result!("does-not-exist");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     "File not found error when executing 'does-not-exist'"
@@ -479,7 +479,7 @@ mod tests {
 
             #[test]
             fn missing_executable_file_error_can_be_matched_against() {
-                let result: Result<(), Error> = cmd_result!("does-not-exist");
+                let result: Result<(), Error> = run_result!("does-not-exist");
                 match result {
                     Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
                         assert_eq!(executable, "does-not-exist");
@@ -490,7 +490,7 @@ mod tests {
 
             #[test]
             fn missing_executable_file_error_can_be_caused_by_relative_paths() {
-                let result: Result<(), Error> = cmd_result!("./does-not-exist");
+                let result: Result<(), Error> = run_result!("./does-not-exist");
                 match result {
                     Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
                         assert_eq!(executable, "./does-not-exist");
@@ -502,7 +502,7 @@ mod tests {
             #[test]
             fn no_executable() {
                 let vector: Vec<String> = Vec::new();
-                let result: Result<(), Error> = cmd_result!(vector);
+                let result: Result<(), Error> = run_result!(vector);
                 assert_eq!(result.unwrap_err().to_string(), "no arguments given");
             }
 
@@ -510,7 +510,7 @@ mod tests {
             fn invalid_utf8_stdout() {
                 let test_helper = test_helper();
                 let result: Result<StdoutTrimmed, Error> =
-                    cmd_result!(&test_helper, "invalid utf-8 stdout");
+                    run_result!(&test_helper, "invalid utf-8 stdout");
                 assert_eq!(
                     result.unwrap_err().to_string(),
                     format!(
@@ -528,7 +528,7 @@ mod tests {
 
             #[test]
             fn missing_executable_file_with_whitespace_includes_note() {
-                let result: Result<(), Error> = cmd_result!("does not exist");
+                let result: Result<(), Error> = run_result!("does not exist");
                 let expected = "
                     File not found error when executing 'does not exist'
                     note: Given executable name 'does not exist' contains whitespace.
@@ -543,7 +543,7 @@ mod tests {
 
             #[test]
             fn single_argument() {
-                let result: Result<(), Error> = cmd_result!("foo bar");
+                let result: Result<(), Error> = run_result!("foo bar");
                 let expected = "
                     File not found error when executing 'foo bar'
                     note: Given executable name 'foo bar' contains whitespace.
@@ -857,7 +857,7 @@ mod tests {
 
         #[test]
         fn assumes_stderr_is_utf_8() {
-            let result: Result<Stderr, Error> = cmd_result!(test_helper(), "invalid utf-8 stderr");
+            let result: Result<Stderr, Error> = run_result!(test_helper(), "invalid utf-8 stderr");
             assert_eq!(
                 result.unwrap_err().to_string(),
                 format!(
@@ -957,7 +957,7 @@ mod tests {
 
         #[test]
         fn failing_commands_return_oks_when_exit_status_is_captured() {
-            let Status(exit_status) = cmd_result!("false").unwrap();
+            let Status(exit_status) = run_result!("false").unwrap();
             assert!(!exit_status.success());
         }
     }
@@ -1032,14 +1032,14 @@ mod tests {
 
         #[test]
         fn result_of_tuple() {
-            let (StdoutTrimmed(output), Status(exit_status)) = cmd_result!(%"echo foo").unwrap();
+            let (StdoutTrimmed(output), Status(exit_status)) = run_result!(%"echo foo").unwrap();
             assert_eq!(output, "foo");
             assert!(exit_status.success());
         }
 
         #[test]
         fn result_of_tuple_when_erroring() {
-            let (StdoutTrimmed(output), Status(exit_status)) = cmd_result!("false").unwrap();
+            let (StdoutTrimmed(output), Status(exit_status)) = run_result!("false").unwrap();
             assert_eq!(output, "");
             assert_eq!(exit_status.code(), Some(1));
         }
@@ -1231,7 +1231,7 @@ mod tests {
 
             #[test]
             fn in_cmd_result() {
-                let StdoutTrimmed(_) = cmd_result!(%"echo foo").unwrap();
+                let StdoutTrimmed(_) = run_result!(%"echo foo").unwrap();
             }
         }
     }
@@ -1342,7 +1342,7 @@ mod tests {
         #[test]
         fn writing_too_many_bytes_into_a_non_reading_child_may_error() {
             let big_string = String::from_utf8(vec![b'a'; 2_usize.pow(16) + 1]).unwrap();
-            let result: Result<(), crate::Error> = cmd_result!("true", Stdin(big_string));
+            let result: Result<(), crate::Error> = run_result!("true", Stdin(big_string));
             let message = result.unwrap_err().to_string();
             assert!(if cfg!(unix) {
                 message == "true:\n  Broken pipe (os error 32)"
@@ -1377,14 +1377,14 @@ mod tests {
         fn trailing_comma_is_accepted_after_normal_argument() {
             run!("echo", "foo",);
             let StdoutUntrimmed(_) = run_output!("echo", "foo",);
-            let _result: Result<(), Error> = cmd_result!("echo", "foo",);
+            let _result: Result<(), Error> = run_result!("echo", "foo",);
         }
 
         #[test]
         fn trailing_comma_is_accepted_after_split_argument() {
             run!("echo", %"foo",);
             let StdoutUntrimmed(_) = run_output!("echo", %"foo",);
-            let _result: Result<(), Error> = cmd_result!("echo", %"foo",);
+            let _result: Result<(), Error> = run_result!("echo", %"foo",);
         }
     }
 

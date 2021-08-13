@@ -25,7 +25,7 @@ fn result_succeeding() {
 
     fn test() -> Result<(), Error> {
         // make sure 'ls' is installed
-        cmd_result!(WHICH, "ls")?;
+        run_result!(WHICH, "ls")?;
         Ok(())
     }
 
@@ -37,7 +37,7 @@ fn result_failing() {
     use cradle::prelude::*;
 
     fn test() -> Result<(), Error> {
-        cmd_result!(WHICH, "does-not-exist")?;
+        run_result!(WHICH, "does-not-exist")?;
         Ok(())
     }
 
@@ -72,7 +72,7 @@ fn trimmed_stdout_and_results() {
     use std::path::PathBuf;
 
     fn test() -> Result<(), Error> {
-        let StdoutTrimmed(ls_path) = cmd_result!(WHICH, "ls")?;
+        let StdoutTrimmed(ls_path) = run_result!(WHICH, "ls")?;
         assert!(
             PathBuf::from(&ls_path).exists(),
             "{:?} does not exist",
@@ -91,7 +91,7 @@ fn box_dyn_errors_succeeding() {
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
     fn test() -> MyResult<()> {
-        cmd_result!(WHICH, "ls")?;
+        run_result!(WHICH, "ls")?;
         Ok(())
     }
 
@@ -105,7 +105,7 @@ fn box_dyn_errors_failing() {
     type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
     fn test() -> MyResult<()> {
-        cmd_result!(WHICH, "does-not-exist")?;
+        run_result!(WHICH, "does-not-exist")?;
         Ok(())
     }
 
@@ -135,7 +135,7 @@ fn user_supplied_errors_succeeding() {
     }
 
     fn test() -> Result<(), Error> {
-        cmd_result!(WHICH, "ls")?;
+        run_result!(WHICH, "ls")?;
         Ok(())
     }
 
@@ -167,7 +167,7 @@ fn user_supplied_errors_failing() {
     }
 
     fn test() -> Result<(), Error> {
-        cmd_result!(WHICH, "does-not-exist")?;
+        run_result!(WHICH, "does-not-exist")?;
         Ok(())
     }
 
