@@ -69,7 +69,7 @@
 //! # Output
 //!
 //! You can choose which return type you want [`cmd!`] to return,
-//! as long as the chosen return type implements [`Output`].
+//! as long as the chosen return type implements [`output::Output`].
 //! For example you can use e.g. [`StdoutTrimmed`](output::StdoutTrimmed)
 //! to collect what the child process writes to `stdout`,
 //! trimmed of leading and trailing whitespace:
@@ -107,7 +107,7 @@
 //! cmd_unit!(%"touch foo");
 //! ```
 //!
-//! See the implementations for [`Output`] for all the supported types.
+//! See the implementations for [`output::Output`] for all the supported types.
 //!
 //! # Error Handling
 //!
@@ -139,7 +139,7 @@
 //! You can also turn **all** panics into [`std::result::Result::Err`]s
 //! by using [`cmd_result!`]. This will return a value of type
 //! [`Result<T, cradle::Error>`], where
-//! `T` is any type that implements [`Output`].
+//! `T` is any type that implements [`output::Output`].
 //! Here's some examples:
 //!
 //! ```
@@ -227,188 +227,13 @@ pub mod config;
 pub mod context;
 pub mod error;
 pub mod input;
+mod macros;
 pub mod output;
 pub mod prelude;
-
-use crate::{collected_output::Waiter, config::Config, context::Context, output::Output};
-pub use error::Error;
-use std::{
-    ffi::OsString,
-    io::Write,
-    process::{Command, ExitStatus, Stdio},
-    sync::Arc,
-};
-
-/// Execute child processes. See the module documentation on how to use it.
-#[macro_export]
-macro_rules! cmd {
-    ($($args:tt)*) => {{
-        let context = $crate::context::Context::production();
-        $crate::error::panic_on_error($crate::cmd_result_with_context!(context, $($args)*))
-    }}
-}
-
-/// Like [`cmd!`], but fixes the return type to `()`.
-/// It's named after [the unit type `()`](https://doc.rust-lang.org/std/primitive.unit.html).
-///
-/// ```
-/// # let temp_dir = tempfile::TempDir::new().unwrap();
-/// # std::env::set_current_dir(&temp_dir).unwrap();
-/// use cradle::prelude::*;
-///
-/// cmd_unit!(%"touch ./foo");
-/// ```
-#[macro_export]
-macro_rules! cmd_unit {
-    ($($args:tt)*) => {{
-        let () = $crate::cmd!($($args)*);
-    }}
-}
-
-/// Like [`cmd!`], but fixes the return type to [`Result<T, Error>`],
-/// where `T` is any type that implements [`Output`](output::Output).
-#[macro_export]
-macro_rules! cmd_result {
-    ($($args:tt)*) => {{
-        let context = $crate::context::Context::production();
-        $crate::cmd_result_with_context!(context, $($args)*)
-    }}
-}
-
 #[doc(hidden)]
-#[macro_export]
-macro_rules! cmd_result_with_context {
-    ($context:expr, $($args:tt)*) => {{
-        let mut config = $crate::config::Config::default();
-        $crate::configure!(config: config, args: $($args)*);
-        $crate::run_cmd($context, config)
-    }}
-}
+pub mod run_result;
 
-#[doc(hidden)]
-#[macro_export]
-macro_rules! configure {
-    (config: $config:ident, args: % $head:expr $(,)?) => {
-        $crate::input::Input::configure($crate::input::Split($head), &mut $config);
-    };
-    (config: $config:ident, args: $head:expr $(,)?) => {
-        $crate::input::Input::configure($head, &mut $config);
-    };
-    (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
-        $crate::input::Input::configure($crate::input::Split($head), &mut $config);
-        $crate::configure!(config: $config, args: $($tail)*);
-    };
-    (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
-        $crate::input::Input::configure($head, &mut $config);
-        $crate::configure!(config: $config, args: $($tail)*);
-    };
-}
-
-#[doc(hidden)]
-pub fn run_cmd<Stdout, Stderr, T>(
-    context: Context<Stdout, Stderr>,
-    mut config: Config,
-) -> Result<T, Error>
-where
-    Stdout: Write + Clone + Send + 'static,
-    Stderr: Write + Clone + Send + 'static,
-    T: Output,
-{
-    <T as Output>::configure(&mut config);
-    let result = run_cmd_safe(context, &config);
-    T::from_run_result(&config, result)
-}
-
-#[doc(hidden)]
-#[derive(Clone, Debug)]
-pub struct RunResult {
-    stdout: Option<Vec<u8>>,
-    stderr: Option<Vec<u8>>,
-    exit_status: ExitStatus,
-}
-
-fn run_cmd_safe<Stdout, Stderr>(
-    mut context: Context<Stdout, Stderr>,
-    config: &Config,
-) -> Result<RunResult, Error>
-where
-    Stdout: Write + Clone + Send + 'static,
-    Stderr: Write + Clone + Send + 'static,
-{
-    let (executable, arguments) = parse_input(config.arguments.clone())?;
-    if config.log_command {
-        writeln!(context.stderr, "+ {}", config.full_command())
-            .map_err(|error| Error::command_io_error(config, error))?;
-    }
-    let mut command = Command::new(&executable);
-    command.args(arguments);
-    for (key, value) in &config.added_environment_variables {
-        command.env(key, value);
-    }
-    command
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
-    if let Some(working_directory) = &config.working_directory {
-        command.current_dir(working_directory);
-    }
-    let mut child = command.spawn().map_err(|error| {
-        if error.kind() == std::io::ErrorKind::NotFound {
-            Error::FileNotFoundWhenExecuting {
-                executable,
-                source: Arc::new(error),
-            }
-        } else {
-            Error::command_io_error(config, error)
-        }
-    })?;
-    let waiter = Waiter::spawn_standard_stream_relaying(
-        &context,
-        config,
-        child.stdin.take().expect("child process should have stdin"),
-        child
-            .stdout
-            .take()
-            .expect("child process should have stdout"),
-        child
-            .stderr
-            .take()
-            .expect("child process should have stderr"),
-    );
-    let exit_status = child
-        .wait()
-        .map_err(|error| Error::command_io_error(config, error))?;
-    let collected_output = waiter
-        .join()
-        .map_err(|error| Error::command_io_error(config, error))?;
-    check_exit_status(config, exit_status)?;
-    Ok(RunResult {
-        stdout: collected_output.stdout,
-        stderr: collected_output.stderr,
-        exit_status,
-    })
-}
-
-fn parse_input(input: Vec<OsString>) -> Result<(OsString, impl Iterator<Item = OsString>), Error> {
-    let mut words = input.into_iter();
-    {
-        match words.next() {
-            None => Err(Error::NoArgumentsGiven),
-            Some(command) => Ok((command, words)),
-        }
-    }
-}
-
-fn check_exit_status(config: &Config, exit_status: ExitStatus) -> Result<(), Error> {
-    if config.error_on_non_zero_exit_code && !exit_status.success() {
-        Err(Error::NonZeroExitCode {
-            full_command: config.full_command(),
-            exit_status,
-        })
-    } else {
-        Ok(())
-    }
-}
+pub use crate::error::Error;
 
 #[cfg(test)]
 mod tests {
@@ -773,7 +598,7 @@ mod tests {
             let context = Context::test();
             let config: Vec<LogCommand> = vec![LogCommand];
             let StdoutTrimmed(stdout) =
-                cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
+                crate::cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -792,7 +617,7 @@ mod tests {
             let context = Context::test();
             let config: [LogCommand; 1] = [LogCommand];
             let StdoutTrimmed(stdout) =
-                cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
+                crate::cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -837,7 +662,7 @@ mod tests {
             let context = Context::test();
             let config: &[LogCommand] = &[LogCommand];
             let StdoutTrimmed(stdout) =
-                cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
+                crate::cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -920,7 +745,7 @@ mod tests {
         #[test]
         fn relays_stdout_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<(), Error> = cmd_result_with_context!(
+            let _: Result<(), Error> = crate::cmd_result_with_context!(
                 context.clone(),
                 test_helper(),
                 "output foo and exit with 42"
@@ -952,7 +777,8 @@ mod tests {
         #[test]
         fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
-            let StdoutTrimmed(_) = cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
+            let StdoutTrimmed(_) =
+                crate::cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
             assert_eq!(context.stdout(), "");
         }
 
@@ -960,7 +786,7 @@ mod tests {
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
             let _: Result<StdoutTrimmed, Error> =
-                cmd_result_with_context!(context.clone(), %"echo foo");
+                crate::cmd_result_with_context!(context.clone(), %"echo foo");
             assert_eq!(context.stdout(), "");
         }
     }
@@ -981,7 +807,7 @@ mod tests {
         #[test]
         fn relays_stderr_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<(), Error> = cmd_result_with_context!(
+            let _: Result<(), Error> = crate::cmd_result_with_context!(
                 context.clone(),
                 test_helper(),
                 "write to stderr and exit with 42"
@@ -1049,7 +875,7 @@ mod tests {
         fn does_not_relay_stderr_when_catpuring() {
             let context = Context::test();
             let Stderr(_) =
-                cmd_result_with_context!(context.clone(), test_helper(), "write to stderr")
+                crate::cmd_result_with_context!(context.clone(), test_helper(), "write to stderr")
                     .unwrap();
             assert_eq!(context.stderr(), "");
         }
@@ -1135,6 +961,8 @@ mod tests {
     }
 
     mod bool_output {
+        use super::*;
+
         #[test]
         fn success_exit_status_is_true() {
             assert!(cmd!("true"));
@@ -1302,7 +1130,7 @@ mod tests {
             fn does_not_relay_stdout() {
                 let context = Context::test();
                 let StdoutTrimmed(_) =
-                    cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
+                    crate::cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
                 assert_eq!(context.stdout(), "");
             }
         }
@@ -1326,7 +1154,7 @@ mod tests {
             fn does_not_relay_stdout() {
                 let context = Context::test();
                 let StdoutUntrimmed(_) =
-                    cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
+                    crate::cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
                 assert_eq!(context.stdout(), "");
             }
         }
