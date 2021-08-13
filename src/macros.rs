@@ -5,15 +5,15 @@
 /// # std::env::set_current_dir(&temp_dir).unwrap();
 /// use cradle::prelude::*;
 ///
-/// cmd_unit!(%"touch ./foo");
+/// run!(%"touch ./foo");
 /// ```
 ///
-/// If an error occurs, `cmd_unit!` will panic.
+/// If an error occurs, `run!` will panic.
 /// See [`crate::error::Error`] for possible errors.
 ///
 /// For capturing output from child processes, see [`crate::cmd!`].
 #[macro_export]
-macro_rules! cmd_unit {
+macro_rules! run {
     ($($args:tt)*) => {{
         let () = $crate::cmd!($($args)*);
     }}

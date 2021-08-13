@@ -7,8 +7,9 @@
 //! see the documentation in the [crate root](crate).
 
 pub use crate::{
-    cmd, cmd_result, cmd_unit,
+    cmd, cmd_result,
     error::Error,
     input::{CurrentDir, Env, Input, LogCommand, Split, Stdin},
     output::{Output, Status, Stderr, StdoutTrimmed, StdoutUntrimmed},
+    run,
 };

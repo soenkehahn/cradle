@@ -3,7 +3,7 @@ fn main() {
     {
         {
             use cradle::prelude::*;
-            cmd_unit!(
+            run!(
                 LogCommand,
                 %"cargo build --bin test_executables_helper --features test_executables",
             );

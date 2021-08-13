@@ -1,5 +1,5 @@
 //! The [`Input`] trait that defines all possible inputs to [`cmd!`],
-//! [`cmd_unit!`] and [`cmd_result!`].
+//! [`run!`] and [`cmd_result!`].
 
 use crate::{config::Config, output::Output};
 use std::{
@@ -8,7 +8,7 @@ use std::{
     sync::Arc,
 };
 
-/// All types that are possible arguments to [`cmd!`], [`cmd_unit!`] or
+/// All types that are possible arguments to [`cmd!`], [`run!`] or
 /// [`cmd_result!`] must implement this trait.
 /// This makes `cradle` very flexible.
 /// For example you can pass in an executable as a String,
@@ -94,7 +94,7 @@ pub trait Input {
     fn configure(self, config: &mut Config);
 
     /// `input.run_unit()` runs `input` as a child process.
-    /// It's equivalent to `cmd_unit!(input)`.
+    /// It's equivalent to `run!(input)`.
     ///
     /// ```
     /// # let temp_dir = tempfile::TempDir::new().unwrap();
@@ -107,7 +107,7 @@ pub trait Input {
     where
         Self: Sized,
     {
-        crate::cmd_unit!(self);
+        crate::run!(self);
     }
 
     /// `input.run()` runs `input` as a child process.
@@ -168,7 +168,7 @@ where
 /// ```
 /// use cradle::prelude::*;
 ///
-/// cmd_unit!("ls", std::env::var_os("HOME").unwrap());
+/// run!("ls", std::env::var_os("HOME").unwrap());
 /// ```
 impl Input for OsString {
     #[doc(hidden)]
@@ -183,7 +183,7 @@ impl Input for OsString {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// cmd_unit!("echo", std::env::current_dir().unwrap().file_name().unwrap());
+/// run!("echo", std::env::current_dir().unwrap().file_name().unwrap());
 /// ```
 ///
 /// [`&OsStr`]: std::ffi::OsStr
@@ -414,7 +414,7 @@ where
 /// ```
 /// use cradle::prelude::*;
 ///
-/// cmd_unit!(LogCommand, %"echo foo");
+/// run!(LogCommand, %"echo foo");
 /// // writes '+ echo foo' to stderr
 /// ```
 #[derive(Clone, Debug)]
@@ -462,7 +462,7 @@ where
 /// use std::path::PathBuf;
 ///
 /// let current_dir: PathBuf = std::env::current_dir().unwrap();
-/// cmd_unit!("ls", current_dir);
+/// run!("ls", current_dir);
 /// ```
 impl Input for PathBuf {
     #[doc(hidden)]
@@ -481,7 +481,7 @@ impl Input for PathBuf {
 /// use std::path::Path;
 ///
 /// let file: &Path = Path::new("./foo");
-/// cmd_unit!("touch", file);
+/// run!("touch", file);
 /// ```
 ///
 /// [`&Path`]: std::path::Path

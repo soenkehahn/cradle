@@ -1,10 +1,10 @@
 //! The [`Output`] trait that defines all possible outputs of [`cmd!`],
-//! [`cmd_unit!`] and [`cmd_result!`].
+//! [`run!`] and [`cmd_result!`].
 
 use crate::{config::Config, error::Error, run_result::RunResult};
 use std::{process::ExitStatus, sync::Arc};
 
-/// All possible return types of [`cmd!`], [`cmd_unit!`] or
+/// All possible return types of [`cmd!`], [`run!`] or
 /// [`cmd_result!`] must implement this trait.
 /// This return-type polymorphism makes cradle very flexible.
 /// For example, if you want to capture what a command writes
@@ -31,7 +31,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// see the documentation for the individual impls of [`Output`].
 /// Here's a non-exhaustive list of the more commonly used return types to get you started:
 ///
-/// - [`()`]: In case you don't want to capture anything. See also [`cmd_unit`].
+/// - [`()`]: In case you don't want to capture anything. See also [`run`].
 /// - To capture output streams:
 ///   - [`StdoutTrimmed`]: To capture `stdout`, trimmed of whitespace.
 ///   - [`StdoutUntrimmed`]: To capture `stdout` untrimmed.
@@ -75,7 +75,7 @@ pub trait Output: Sized {
 /// In this example that happens through the `let () =`.
 /// So you can't just omit that.
 ///
-/// See also [`cmd_unit!`] for a more convenient way to use `()` as the return type.
+/// See also [`run!`] for a more convenient way to use `()` as the return type.
 impl Output for () {
     #[doc(hidden)]
     fn configure(_config: &mut Config) {}

@@ -95,8 +95,7 @@
 //! let () = cmd!(%"touch foo");
 //! ```
 //!
-//! Since that's a very common case, `cradle` provides the [`cmd_unit!`] shortcut.
-//! It's named after [the unit type `()`](https://doc.rust-lang.org/std/primitive.unit.html).
+//! Since that's a very common case, `cradle` provides the [`run!`] shortcut.
 //! It behaves exactly like [`cmd!`] but always returns `()`.
 //!
 //! ```
@@ -104,7 +103,7 @@
 //! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
 //!
-//! cmd_unit!(%"touch foo");
+//! run!(%"touch foo");
 //! ```
 //!
 //! See the implementations for [`output::Output`] for all the supported types.
@@ -123,7 +122,7 @@
 //! use cradle::prelude::*;
 //!
 //! // panics with "false:\n  exited with exit code: 1"
-//! cmd_unit!("false");
+//! run!("false");
 //! ```
 //!
 //! You can suppress panics caused by non-zero exit codes by using the
@@ -182,7 +181,7 @@
 //! [`Input`](input::Input).
 //! When using these methods, it's especially useful that
 //! [`Input`](input::Input) is implemented by tuples.
-//! They work analog to [`cmd!`], [`cmd_unit!`] and [`cmd_result!`].
+//! They work analog to [`cmd!`], [`run!`] and [`cmd_result!`].
 //! Here are some examples:
 //!
 //! ```
@@ -287,7 +286,7 @@ mod tests {
         };
         if !set.contains(name) {
             set.insert(name.to_owned());
-            cmd_unit!(
+            run!(
                 LogCommand,
                 CurrentDir(std::env::var("CARGO_MANIFEST_DIR").unwrap()),
                 %"cargo build",
@@ -313,7 +312,7 @@ mod tests {
     #[test]
     fn allows_to_execute_a_command() {
         in_temporary_directory(|| {
-            cmd_unit!(%"touch foo");
+            run!(%"touch foo");
             assert!(PathBuf::from("foo").exists());
         })
     }
@@ -327,7 +326,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "cmd!: false:\n  exited with exit code: 1")]
             fn non_zero_exit_codes() {
-                cmd_unit!("false");
+                run!("false");
             }
 
             #[test]
@@ -339,19 +338,19 @@ mod tests {
             #[test]
             #[should_panic(expected = "cmd!: false foo bar:\n  exited with exit code: 1")]
             fn includes_full_command_on_non_zero_exit_codes() {
-                cmd_unit!(%"false foo bar");
+                run!(%"false foo bar");
             }
 
             #[test]
             #[should_panic(expected = "exited with exit code: 42")]
             fn other_exit_codes() {
-                cmd_unit!(test_helper(), "exit code 42");
+                run!(test_helper(), "exit code 42");
             }
 
             #[test]
             #[should_panic(expected = "cmd!: File not found error when executing 'does-not-exist'")]
             fn executable_cannot_be_found() {
-                cmd_unit!("does-not-exist");
+                run!("does-not-exist");
             }
 
             #[test]
@@ -361,7 +360,7 @@ mod tests {
                 let temp_dir = TempDir::new().unwrap();
                 let without_executable_bit = temp_dir.path().join("file");
                 fs::write(&without_executable_bit, "").unwrap();
-                cmd_unit!(without_executable_bit, %"foo bar");
+                run!(without_executable_bit, %"foo bar");
             }
 
             #[rustversion::since(1.46)]
@@ -381,7 +380,7 @@ mod tests {
             #[should_panic(expected = "cmd!: no arguments given")]
             fn no_executable() {
                 let vector: Vec<String> = Vec::new();
-                cmd_unit!(vector);
+                run!(vector);
             }
 
             #[test]
@@ -393,7 +392,7 @@ mod tests {
             #[test]
             #[cfg(not(windows))]
             fn invalid_utf8_to_stdout_is_allowed_when_not_captured() {
-                cmd_unit!(test_helper(), "invalid utf-8 stdout");
+                run!(test_helper(), "invalid utf-8 stdout");
             }
         }
 
@@ -627,7 +626,7 @@ mod tests {
         fn elements_in_arrays_are_not_split_by_whitespace() {
             in_temporary_directory(|| {
                 let args: [&str; 1] = ["foo bar"];
-                cmd_unit!("touch", args);
+                run!("touch", args);
                 assert!(PathBuf::from("foo bar").exists());
             });
         }
@@ -645,7 +644,7 @@ mod tests {
         fn elements_in_array_refs_are_not_split_by_whitespace() {
             in_temporary_directory(|| {
                 let args: &[&str; 1] = &["foo bar"];
-                cmd_unit!("touch", args);
+                run!("touch", args);
                 assert!(PathBuf::from("foo bar").exists());
             });
         }
@@ -671,7 +670,7 @@ mod tests {
         fn elements_in_slices_are_not_split_by_whitespace() {
             in_temporary_directory(|| {
                 let args: &[&str] = &["foo bar"];
-                cmd_unit!("touch", args);
+                run!("touch", args);
                 assert!(PathBuf::from("foo bar").exists());
             });
         }
@@ -689,7 +688,7 @@ mod tests {
         #[test]
         fn works_for_string() {
             let command: String = "true".to_string();
-            cmd_unit!(command);
+            run!(command);
         }
 
         #[test]
@@ -711,7 +710,7 @@ mod tests {
         fn does_not_split_strings_in_vectors() {
             in_temporary_directory(|| {
                 let argument: Vec<String> = vec!["filename with spaces".to_string()];
-                cmd_unit!("touch", argument);
+                run!("touch", argument);
                 assert!(PathBuf::from("filename with spaces").exists());
             });
         }
@@ -722,12 +721,12 @@ mod tests {
 
         #[test]
         fn works_for_os_string() {
-            cmd_unit!(OsString::from("true"));
+            run!(OsString::from("true"));
         }
 
         #[test]
         fn works_for_os_str() {
-            cmd_unit!(OsStr::new("true"));
+            run!(OsStr::new("true"));
         }
     }
 
@@ -769,7 +768,7 @@ mod tests {
                 while (context.stdout()) != "foo\n" {
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
-                cmd_unit!(%"touch file");
+                run!(%"touch file");
                 thread.join().unwrap();
             });
         }
@@ -842,7 +841,7 @@ mod tests {
                     );
                     thread::sleep(Duration::from_secs_f32(0.05));
                 }
-                cmd_unit!(%"touch file");
+                run!(%"touch file");
                 thread.join().unwrap();
             });
         }
@@ -868,7 +867,7 @@ mod tests {
         #[test]
         #[cfg(not(windows))]
         fn does_allow_invalid_utf_8_to_stderr_when_not_captured() {
-            cmd_unit!(test_helper(), "invalid utf-8 stderr");
+            run!(test_helper(), "invalid utf-8 stderr");
         }
 
         #[test]
@@ -1087,11 +1086,11 @@ mod tests {
             in_temporary_directory(|| {
                 fs::create_dir("dir").unwrap();
                 let dir: String = "dir".to_string();
-                cmd_unit!("true", CurrentDir(dir));
+                run!("true", CurrentDir(dir));
                 let dir: PathBuf = PathBuf::from("dir");
-                cmd_unit!("true", CurrentDir(dir));
+                run!("true", CurrentDir(dir));
                 let dir: &Path = Path::new("dir");
-                cmd_unit!("true", CurrentDir(dir));
+                run!("true", CurrentDir(dir));
             });
         }
     }
@@ -1222,8 +1221,8 @@ mod tests {
             }
 
             #[test]
-            fn in_cmd_unit() {
-                cmd_unit!(%"echo foo");
+            fn in_run() {
+                run!(%"echo foo");
             }
 
             #[test]
@@ -1265,7 +1264,7 @@ mod tests {
                 let file = PathBuf::from("./test-script");
                 let script = "#!/usr/bin/env bash\necho test-output\n";
                 fs::write(&file, script).unwrap();
-                cmd_unit!(%"chmod +x test-script");
+                run!(%"chmod +x test-script");
                 file
             } else {
                 let file = PathBuf::from("./test-script.bat");
@@ -1372,14 +1371,14 @@ mod tests {
 
         #[test]
         fn trailing_comma_is_accepted_after_normal_argument() {
-            cmd_unit!("echo", "foo",);
+            run!("echo", "foo",);
             let StdoutUntrimmed(_) = cmd!("echo", "foo",);
             let _result: Result<(), Error> = cmd_result!("echo", "foo",);
         }
 
         #[test]
         fn trailing_comma_is_accepted_after_split_argument() {
-            cmd_unit!("echo", %"foo",);
+            run!("echo", %"foo",);
             let StdoutUntrimmed(_) = cmd!("echo", %"foo",);
             let _result: Result<(), Error> = cmd_result!("echo", %"foo",);
         }

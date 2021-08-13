@@ -16,7 +16,7 @@ fn capturing_stdout() {
 fn panics_on_non_zero_exit_codes() {
     use cradle::prelude::*;
 
-    cmd_unit!("false");
+    run!("false");
 }
 
 #[test]
@@ -318,6 +318,6 @@ mod run_interface {
 #[test]
 fn memory_test() {
     use cradle::prelude::*;
-    cmd_unit!(%"cargo build -p memory-tests --release");
-    cmd_unit!(%"cargo run -p memory-tests --bin run");
+    run!(%"cargo build -p memory-tests --release");
+    run!(%"cargo run -p memory-tests --bin run");
 }
