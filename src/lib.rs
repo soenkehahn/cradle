@@ -367,7 +367,7 @@ mod tests {
 
             #[rustversion::since(1.46)]
             #[test]
-            fn includes_source_location_of_cmd_call() {
+            fn includes_source_location_of_run_run_call() {
                 let (Status(_), Stderr(stderr)) =
                     run_output!(test_executable("test_executables_panic"));
                 let expected = "src/test_executables/panic.rs:4:5";
@@ -1230,7 +1230,7 @@ mod tests {
             }
 
             #[test]
-            fn in_cmd_result() {
+            fn in_run_result() {
                 let StdoutTrimmed(_) = run_result!(%"echo foo").unwrap();
             }
         }
