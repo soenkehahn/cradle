@@ -245,6 +245,7 @@ mod tests {
         env::{current_dir, set_current_dir},
         ffi::{OsStr, OsString},
         fs,
+        io::Write,
         path::PathBuf,
         sync::{Arc, Mutex},
     };
@@ -272,7 +273,18 @@ mod tests {
         lazy_static! {
             static ref BUILT: Arc<Mutex<BTreeSet<String>>> = Arc::new(Mutex::new(BTreeSet::new()));
         }
-        let mut set = BUILT.lock().unwrap();
+        let mut set = match BUILT.lock() {
+            Ok(set) => set,
+            Err(error) => {
+                let _ = write!(
+                    std::io::stderr(),
+                    "test_executable: BUILT poisoned: {}",
+                    error
+                );
+                let _ = std::io::stderr().flush();
+                std::process::exit(1)
+            }
+        };
         if !set.contains(name) {
             set.insert(name.to_owned());
             cmd_unit!(
