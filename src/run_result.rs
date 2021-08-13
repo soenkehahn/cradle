@@ -17,7 +17,7 @@ pub struct RunResult {
 }
 
 impl RunResult {
-    pub fn run_cmd<Stdout, Stderr, T>(
+    pub fn run_child_process_output<Stdout, Stderr, T>(
         context: Context<Stdout, Stderr>,
         mut config: Config,
     ) -> Result<T, Error>
@@ -27,11 +27,11 @@ impl RunResult {
         T: Output,
     {
         <T as Output>::configure(&mut config);
-        let result = RunResult::run_cmd_safe(context, &config);
+        let result = RunResult::run_child_process(context, &config);
         T::from_run_result(&config, result)
     }
 
-    pub(crate) fn run_cmd_safe<Stdout, Stderr>(
+    pub(crate) fn run_child_process<Stdout, Stderr>(
         mut context: Context<Stdout, Stderr>,
         config: &Config,
     ) -> Result<Self, Error>
