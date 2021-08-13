@@ -93,23 +93,6 @@ pub trait Input {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
 
-    /// `input.run()` runs `input` as a child process.
-    /// It's equivalent to `cmd!(input)`.
-    ///
-    /// ```
-    /// use cradle::prelude::*;
-    ///
-    /// let StdoutTrimmed(output) = ("echo", "foo").run();
-    /// assert_eq!(output, "foo");
-    /// ```
-    fn run<O>(self) -> O
-    where
-        Self: Sized,
-        O: Output,
-    {
-        crate::cmd!(self)
-    }
-
     /// `input.run_unit()` runs `input` as a child process.
     /// It's equivalent to `cmd_unit!(input)`.
     ///
@@ -125,6 +108,23 @@ pub trait Input {
         Self: Sized,
     {
         crate::cmd_unit!(self);
+    }
+
+    /// `input.run()` runs `input` as a child process.
+    /// It's equivalent to `cmd!(input)`.
+    ///
+    /// ```
+    /// use cradle::prelude::*;
+    ///
+    /// let StdoutTrimmed(output) = ("echo", "foo").run();
+    /// assert_eq!(output, "foo");
+    /// ```
+    fn run<O>(self) -> O
+    where
+        Self: Sized,
+        O: Output,
+    {
+        crate::cmd!(self)
     }
 
     /// `input.run_result()` runs `input` as a child process.

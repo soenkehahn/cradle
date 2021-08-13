@@ -1,14 +1,4 @@
-/// Execute child processes. See the module documentation on how to use it.
-#[macro_export]
-macro_rules! cmd {
-    ($($args:tt)*) => {{
-        let context = $crate::context::Context::production();
-        $crate::error::panic_on_error($crate::cmd_result_with_context!(context, $($args)*))
-    }}
-}
-
-/// Like [`cmd!`], but fixes the return type to `()`.
-/// It's named after [the unit type `()`](https://doc.rust-lang.org/std/primitive.unit.html).
+/// Executes a child process without capturing any output.
 ///
 /// ```
 /// # let temp_dir = tempfile::TempDir::new().unwrap();
@@ -17,10 +7,47 @@ macro_rules! cmd {
 ///
 /// cmd_unit!(%"touch ./foo");
 /// ```
+///
+/// If an error occurs, `cmd_unit!` will panic.
+/// See [`crate::error::Error`] for possible errors.
+///
+/// For capturing output from child processes, see [`crate::cmd!`].
 #[macro_export]
 macro_rules! cmd_unit {
     ($($args:tt)*) => {{
         let () = $crate::cmd!($($args)*);
+    }}
+}
+
+/// Execute child processes, and capture some output.
+/// For example you can capture what the child process writes to stdout:
+///
+/// ```
+/// use cradle::prelude::*;
+///
+/// let StdoutUntrimmed(output) = cmd!(%"echo foo");
+/// assert_eq!(output, "foo\n");
+/// ```
+///
+/// [`cmd!`] uses return-type polymorphism.
+/// So by using a different return type,
+/// you can control what outputs of child processes you want to capture.
+/// Here's an example to capture an exit code:
+///
+/// ```
+/// use cradle::prelude::*;
+///
+/// let Status(status) = cmd!("false");
+/// assert_eq!(status.code(), Some(1));
+/// ```
+///
+/// You can use any type that implements [`crate::output::Output`] as the return type.
+/// See the module documentation for more comprehensive documentation.
+#[macro_export]
+macro_rules! cmd {
+    ($($args:tt)*) => {{
+        let context = $crate::context::Context::production();
+        $crate::error::panic_on_error($crate::cmd_result_with_context!(context, $($args)*))
     }}
 }
 
