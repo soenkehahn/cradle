@@ -93,7 +93,7 @@ pub trait Input {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
 
-    /// `input.run_unit()` runs `input` as a child process.
+    /// `input.run()` runs `input` as a child process.
     /// It's equivalent to `run!(input)`.
     ///
     /// ```
@@ -101,9 +101,9 @@ pub trait Input {
     /// # std::env::set_current_dir(&temp_dir).unwrap();
     /// use cradle::prelude::*;
     ///
-    /// ("touch", "foo").run_unit();
+    /// ("touch", "foo").run();
     /// ```
-    fn run_unit(self)
+    fn run(self)
     where
         Self: Sized,
     {

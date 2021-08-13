@@ -175,7 +175,7 @@
 //!
 //! `cradle` also provides an alternative interface to execute commands
 //! through methods on the [`Input`](input::Input) trait:
-//! [`.run_output()`](input::Input::run_output), [`.run_unit()`](input::Input::run_unit)
+//! [`.run_output()`](input::Input::run_output), [`.run()`](input::Input::run)
 //! and [`.run_result()`](input::Input::run_result).
 //! These methods can be invoked on all values whose types implement
 //! [`Input`](input::Input).
@@ -192,7 +192,7 @@
 //! let StdoutTrimmed(output) = ("echo", "foo").run_output();
 //! assert_eq!(output, "foo");
 //!
-//! ("touch", "foo").run_unit();
+//! ("touch", "foo").run();
 //!
 //! let result: Result<(), cradle::Error> = "false".run_result();
 //! let error_message = format!("{}", result.unwrap_err());
@@ -208,8 +208,8 @@
 //! ```
 //! use cradle::prelude::*;
 //!
-//! ("echo", "foo").run_unit();
-//! Split("echo foo").run_unit();
+//! ("echo", "foo").run();
+//! Split("echo foo").run();
 //! ```
 //!
 //! # Prior Art
@@ -1485,9 +1485,9 @@ mod tests {
         }
 
         #[test]
-        fn run_unit() {
+        fn run() {
             in_temporary_directory(|| {
-                ("touch", "foo").run_unit();
+                ("touch", "foo").run();
                 assert!(Path::new("foo").exists());
             });
         }
