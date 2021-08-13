@@ -17,6 +17,7 @@ members = [".", "memory-tests"]
 rustversion = "1.0.4"
 
 [dev-dependencies]
+bitflags = "=1.2.1"
 executable-path = "1.0.0"
 lazy_static = "1.4.0"
 pretty_assertions = "0.7.2"
