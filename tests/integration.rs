@@ -125,12 +125,12 @@ fn user_supplied_errors_succeeding() {
 
     #[derive(Debug)]
     enum Error {
-        CmdError(cradle::Error),
+        CradleError(cradle::Error),
     }
 
     impl From<cradle::Error> for Error {
         fn from(error: cradle::Error) -> Self {
-            Error::CmdError(error)
+            Error::CradleError(error)
         }
     }
 
@@ -149,19 +149,19 @@ fn user_supplied_errors_failing() {
 
     #[derive(Debug)]
     enum Error {
-        CmdError(cradle::Error),
+        CradleError(cradle::Error),
     }
 
     impl From<cradle::Error> for Error {
         fn from(error: cradle::Error) -> Self {
-            Error::CmdError(error)
+            Error::CradleError(error)
         }
     }
 
     impl Display for Error {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
-                Error::CmdError(error) => write!(f, "cmd-error: {}", error),
+                Error::CradleError(error) => write!(f, "cradle error: {}", error),
             }
         }
     }
@@ -174,9 +174,9 @@ fn user_supplied_errors_failing() {
     assert_eq!(
         test().unwrap_err().to_string(),
         if cfg!(unix) {
-            "cmd-error: which does-not-exist:\n  exited with exit code: 1"
+            "cradle error: which does-not-exist:\n  exited with exit code: 1"
         } else {
-            "cmd-error: where does-not-exist:\n  exited with exit code: 1"
+            "cradle error: where does-not-exist:\n  exited with exit code: 1"
         }
     );
 }
@@ -257,12 +257,12 @@ mod run_interface {
 
         #[derive(Debug)]
         enum Error {
-            CmdError(cradle::Error),
+            CradleError(cradle::Error),
         }
 
         impl From<cradle::Error> for Error {
             fn from(error: cradle::Error) -> Self {
-                Error::CmdError(error)
+                Error::CradleError(error)
             }
         }
 
@@ -281,19 +281,19 @@ mod run_interface {
 
         #[derive(Debug)]
         enum Error {
-            CmdError(cradle::Error),
+            CradleError(cradle::Error),
         }
 
         impl From<cradle::Error> for Error {
             fn from(error: cradle::Error) -> Self {
-                Error::CmdError(error)
+                Error::CradleError(error)
             }
         }
 
         impl Display for Error {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match self {
-                    Error::CmdError(error) => write!(f, "cmd-error: {}", error),
+                    Error::CradleError(error) => write!(f, "cradle error: {}", error),
                 }
             }
         }
@@ -306,9 +306,9 @@ mod run_interface {
         assert_eq!(
             test().unwrap_err().to_string(),
             if cfg!(unix) {
-                "cmd-error: which does-not-exist:\n  exited with exit code: 1"
+                "cradle error: which does-not-exist:\n  exited with exit code: 1"
             } else {
-                "cmd-error: where does-not-exist:\n  exited with exit code: 1"
+                "cradle error: where does-not-exist:\n  exited with exit code: 1"
             }
         );
     }
