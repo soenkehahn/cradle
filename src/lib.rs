@@ -304,7 +304,7 @@ mod tests {
     macro_rules! cmd_result_with_context_unit {
         ($context:expr, $($args:tt)*) => {{
             let result: std::result::Result<(), $crate::Error> =
-              $crate::cmd_result_with_context!($context, $($args)*);
+              $crate::run_result_with_context!($context, $($args)*);
             result
         }}
     }
@@ -600,7 +600,7 @@ mod tests {
             let context = Context::test();
             let config: Vec<LogCommand> = vec![LogCommand];
             let StdoutTrimmed(stdout) =
-                crate::cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
+                crate::run_result_with_context!(context.clone(), config, %"echo foo").unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -619,7 +619,7 @@ mod tests {
             let context = Context::test();
             let config: [LogCommand; 1] = [LogCommand];
             let StdoutTrimmed(stdout) =
-                crate::cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
+                crate::run_result_with_context!(context.clone(), config, %"echo foo").unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -664,7 +664,7 @@ mod tests {
             let context = Context::test();
             let config: &[LogCommand] = &[LogCommand];
             let StdoutTrimmed(stdout) =
-                crate::cmd_result_with_context!(context.clone(), config, %"echo foo").unwrap();
+                crate::run_result_with_context!(context.clone(), config, %"echo foo").unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -747,7 +747,7 @@ mod tests {
         #[test]
         fn relays_stdout_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<(), Error> = crate::cmd_result_with_context!(
+            let _: Result<(), Error> = crate::run_result_with_context!(
                 context.clone(),
                 test_helper(),
                 "output foo and exit with 42"
@@ -780,7 +780,7 @@ mod tests {
         fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
             let StdoutTrimmed(_) =
-                crate::cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
+                crate::run_result_with_context!(context.clone(), %"echo foo").unwrap();
             assert_eq!(context.stdout(), "");
         }
 
@@ -788,7 +788,7 @@ mod tests {
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
             let _: Result<StdoutTrimmed, Error> =
-                crate::cmd_result_with_context!(context.clone(), %"echo foo");
+                crate::run_result_with_context!(context.clone(), %"echo foo");
             assert_eq!(context.stdout(), "");
         }
     }
@@ -809,7 +809,7 @@ mod tests {
         #[test]
         fn relays_stderr_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<(), Error> = crate::cmd_result_with_context!(
+            let _: Result<(), Error> = crate::run_result_with_context!(
                 context.clone(),
                 test_helper(),
                 "write to stderr and exit with 42"
@@ -877,7 +877,7 @@ mod tests {
         fn does_not_relay_stderr_when_catpuring() {
             let context = Context::test();
             let Stderr(_) =
-                crate::cmd_result_with_context!(context.clone(), test_helper(), "write to stderr")
+                crate::run_result_with_context!(context.clone(), test_helper(), "write to stderr")
                     .unwrap();
             assert_eq!(context.stderr(), "");
         }
@@ -1133,7 +1133,7 @@ mod tests {
             fn does_not_relay_stdout() {
                 let context = Context::test();
                 let StdoutTrimmed(_) =
-                    crate::cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
+                    crate::run_result_with_context!(context.clone(), %"echo foo").unwrap();
                 assert_eq!(context.stdout(), "");
             }
         }
@@ -1157,7 +1157,7 @@ mod tests {
             fn does_not_relay_stdout() {
                 let context = Context::test();
                 let StdoutUntrimmed(_) =
-                    crate::cmd_result_with_context!(context.clone(), %"echo foo").unwrap();
+                    crate::run_result_with_context!(context.clone(), %"echo foo").unwrap();
                 assert_eq!(context.stdout(), "");
             }
         }

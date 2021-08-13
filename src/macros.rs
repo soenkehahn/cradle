@@ -47,7 +47,7 @@ macro_rules! run {
 macro_rules! run_output {
     ($($args:tt)*) => {{
         let context = $crate::context::Context::production();
-        $crate::error::panic_on_error($crate::cmd_result_with_context!(context, $($args)*))
+        $crate::error::panic_on_error($crate::run_result_with_context!(context, $($args)*))
     }}
 }
 
@@ -57,13 +57,13 @@ macro_rules! run_output {
 macro_rules! run_result {
     ($($args:tt)*) => {{
         let context = $crate::context::Context::production();
-        $crate::cmd_result_with_context!(context, $($args)*)
+        $crate::run_result_with_context!(context, $($args)*)
     }}
 }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! cmd_result_with_context {
+macro_rules! run_result_with_context {
     ($context:expr, $($args:tt)*) => {{
         let mut config = $crate::config::Config::default();
         $crate::configure!(config: config, args: $($args)*);
