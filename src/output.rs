@@ -1,10 +1,10 @@
-//! The [`Output`] trait that defines all possible outputs of [`cmd!`],
+//! The [`Output`] trait that defines all possible outputs of [`run_output!`],
 //! [`run!`] and [`cmd_result!`].
 
 use crate::{config::Config, error::Error, run_result::RunResult};
 use std::{process::ExitStatus, sync::Arc};
 
-/// All possible return types of [`cmd!`], [`run!`] or
+/// All possible return types of [`run_output!`], [`run!`] or
 /// [`cmd_result!`] must implement this trait.
 /// This return-type polymorphism makes cradle very flexible.
 /// For example, if you want to capture what a command writes
@@ -13,7 +13,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutUntrimmed(output) = cmd!(%"echo foo");
+/// let StdoutUntrimmed(output) = run_output!(%"echo foo");
 /// assert_eq!(output, "foo\n");
 /// ```
 ///
@@ -23,7 +23,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let Status(exit_status) = cmd!("false");
+/// let Status(exit_status) = run_output!("false");
 /// assert_eq!(exit_status.code(), Some(1));
 /// ```
 ///
@@ -46,7 +46,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let (Status(exit_status), StdoutUntrimmed(stdout)) = cmd!(%"echo foo");
+/// let (Status(exit_status), StdoutUntrimmed(stdout)) = run_output!(%"echo foo");
 /// assert!(exit_status.success());
 /// assert_eq!(stdout, "foo\n");
 /// ```
@@ -67,10 +67,10 @@ pub trait Output: Sized {
 /// # std::env::set_current_dir(&temp_dir).unwrap();
 /// use cradle::prelude::*;
 ///
-/// let () = cmd!(%"touch ./foo");
+/// let () = run_output!(%"touch ./foo");
 /// ```
 ///
-/// Since [`cmd!`] (and [`cmd_result`]) use return type polymorphism,
+/// Since [`run_output!`] (and [`cmd_result`]) use return type polymorphism,
 /// you have to make sure the compiler can figure out which return type you want to use.
 /// In this example that happens through the `let () =`.
 /// So you can't just omit that.
@@ -131,7 +131,7 @@ tuple_impl!(A, B, C, D, E, F,);
 ///
 /// # #[cfg(unix)]
 /// # {
-/// let StdoutTrimmed(output) = cmd!(%"which ls");
+/// let StdoutTrimmed(output) = run_output!(%"which ls");
 /// assert!(Path::new(&output).exists());
 /// # }
 /// ```
@@ -156,7 +156,7 @@ impl Output for StdoutTrimmed {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutUntrimmed(output) = cmd!(%"echo foo");
+/// let StdoutUntrimmed(output) = run_output!(%"echo foo");
 /// assert_eq!(output, "foo\n");
 /// ```
 #[derive(Debug, PartialEq, Clone)]
@@ -189,7 +189,7 @@ impl Output for StdoutUntrimmed {
 ///
 /// // (`Status` is used here to suppress panics caused by `ls`
 /// // terminating with a non-zero exit code.)
-/// let (Stderr(stderr), Status(_)) = cmd!(%"ls does-not-exist");
+/// let (Stderr(stderr), Status(_)) = run_output!(%"ls does-not-exist");
 /// assert!(stderr.contains("No such file or directory"));
 /// ```
 ///
@@ -222,13 +222,13 @@ impl Output for Stderr {
     }
 }
 
-/// Use [`Status`] as the return type for [`cmd!`] to retrieve the
+/// Use [`Status`] as the return type for [`run_output!`] to retrieve the
 /// [`ExitStatus`] of the child process:
 ///
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let Status(exit_status) = cmd!(%"echo foo");
+/// let Status(exit_status) = run_output!(%"echo foo");
 /// assert!(exit_status.success());
 /// ```
 ///
@@ -238,7 +238,7 @@ impl Output for Stderr {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let Status(exit_status) = cmd!("false");
+/// let Status(exit_status) = run_output!("false");
 /// assert_eq!(exit_status.code(), Some(1));
 /// let result: Result<Status, cradle::Error> = cmd_result!("false");
 /// assert!(result.is_ok());
@@ -263,13 +263,13 @@ impl Output for Status {
     }
 }
 
-/// Using [`bool`] as the return type for [`cmd!`] will return `true` if
+/// Using [`bool`] as the return type for [`run_output!`] will return `true` if
 /// the command returned successfully, and `false` otherwise:
 ///
 /// ```
 /// use cradle::prelude::*;
 ///
-/// if !cmd!(%"which cargo") {
+/// if !run_output!(%"which cargo") {
 ///     panic!("Cargo is not installed!");
 /// }
 /// ```
@@ -280,7 +280,7 @@ impl Output for Status {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let success: bool = cmd!("false");
+/// let success: bool = run_output!("false");
 /// assert!(!success);
 /// let result: Result<bool, cradle::Error> = cmd_result!("false");
 /// assert!(result.is_ok());

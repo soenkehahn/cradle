@@ -55,7 +55,7 @@ impl Error {
 pub fn panic_on_error<T>(result: Result<T, Error>) -> T {
     match result {
         Ok(t) => t,
-        Err(error) => panic!("cmd!: {}", error),
+        Err(error) => panic!("run_output!: {}", error),
     }
 }
 

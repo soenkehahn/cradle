@@ -11,11 +11,11 @@
 /// If an error occurs, `run!` will panic.
 /// See [`crate::error::Error`] for possible errors.
 ///
-/// For capturing output from child processes, see [`crate::cmd!`].
+/// For capturing output from child processes, see [`crate::run_output!`].
 #[macro_export]
 macro_rules! run {
     ($($args:tt)*) => {{
-        let () = $crate::cmd!($($args)*);
+        let () = $crate::run_output!($($args)*);
     }}
 }
 
@@ -25,11 +25,11 @@ macro_rules! run {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutUntrimmed(output) = cmd!(%"echo foo");
+/// let StdoutUntrimmed(output) = run_output!(%"echo foo");
 /// assert_eq!(output, "foo\n");
 /// ```
 ///
-/// [`cmd!`] uses return-type polymorphism.
+/// [`run_output!`] uses return-type polymorphism.
 /// So by using a different return type,
 /// you can control what outputs of child processes you want to capture.
 /// Here's an example to capture an exit code:
@@ -37,21 +37,21 @@ macro_rules! run {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let Status(status) = cmd!("false");
+/// let Status(status) = run_output!("false");
 /// assert_eq!(status.code(), Some(1));
 /// ```
 ///
 /// You can use any type that implements [`crate::output::Output`] as the return type.
 /// See the module documentation for more comprehensive documentation.
 #[macro_export]
-macro_rules! cmd {
+macro_rules! run_output {
     ($($args:tt)*) => {{
         let context = $crate::context::Context::production();
         $crate::error::panic_on_error($crate::cmd_result_with_context!(context, $($args)*))
     }}
 }
 
-/// Like [`cmd!`], but fixes the return type to [`Result<T, Error>`],
+/// Like [`run_output!`], but fixes the return type to [`Result<T, Error>`],
 /// where `T` is any type that implements [`Output`](crate::output::Output).
 #[macro_export]
 macro_rules! cmd_result {

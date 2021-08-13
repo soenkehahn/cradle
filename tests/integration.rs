@@ -7,7 +7,7 @@ const WHICH: &str = "where";
 fn capturing_stdout() {
     use cradle::prelude::*;
 
-    let StdoutTrimmed(output) = cmd!(%"echo foo");
+    let StdoutTrimmed(output) = run_output!(%"echo foo");
     assert_eq!(output, "foo");
 }
 
@@ -57,7 +57,7 @@ fn trimmed_stdout() {
     use std::path::PathBuf;
 
     {
-        let StdoutTrimmed(ls_path) = cmd!(WHICH, "ls");
+        let StdoutTrimmed(ls_path) = run_output!(WHICH, "ls");
         assert!(
             PathBuf::from(&ls_path).exists(),
             "{:?} does not exist",

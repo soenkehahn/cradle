@@ -1,4 +1,4 @@
-//! The [`Input`] trait that defines all possible inputs to [`cmd!`],
+//! The [`Input`] trait that defines all possible inputs to [`run_output!`],
 //! [`run!`] and [`cmd_result!`].
 
 use crate::{config::Config, output::Output};
@@ -8,7 +8,7 @@ use std::{
     sync::Arc,
 };
 
-/// All types that are possible arguments to [`cmd!`], [`run!`] or
+/// All types that are possible arguments to [`run_output!`], [`run!`] or
 /// [`cmd_result!`] must implement this trait.
 /// This makes `cradle` very flexible.
 /// For example you can pass in an executable as a String,
@@ -19,7 +19,7 @@ use std::{
 ///
 /// let executable = "echo";
 /// let arguments = vec!["foo", "bar"];
-/// let StdoutUntrimmed(output) = cmd!(executable, arguments);
+/// let StdoutUntrimmed(output) = run_output!(executable, arguments);
 /// assert_eq!(output, "foo bar\n");
 /// ```
 ///
@@ -47,13 +47,13 @@ use std::{
 /// ## Tuples
 ///
 /// `cradle` also implements [`Input`] for tuples of types that themselves implement [`Input`].
-/// Instead of passing multiple arguments to [`cmd!`], they can be passed in a single tuple:
+/// Instead of passing multiple arguments to [`run_output!`], they can be passed in a single tuple:
 ///
 /// ```
 /// use cradle::prelude::*;
 ///
 /// let args = ("echo", "foo");
-/// let StdoutTrimmed(output) = cmd!(args);
+/// let StdoutTrimmed(output) = run_output!(args);
 /// assert_eq!(output, "foo");
 /// ```
 ///
@@ -63,17 +63,17 @@ use std::{
 /// use cradle::prelude::*;
 ///
 /// let to_hex_command = ("xxd", "-ps", "-u", LogCommand);
-/// let StdoutTrimmed(output) = cmd!(to_hex_command, Stdin(&[14, 15, 16]));
+/// let StdoutTrimmed(output) = run_output!(to_hex_command, Stdin(&[14, 15, 16]));
 /// assert_eq!(output, "0E0F10");
 /// ```
 ///
-/// Also, tuples make it possible to write wrappers around [`cmd!`] without requiring the use of macros:
+/// Also, tuples make it possible to write wrappers around [`run_output!`] without requiring the use of macros:
 ///
 /// ```
 /// use cradle::prelude::*;
 ///
 /// fn to_hex<I: Input>(input: I) -> String {
-///   let StdoutTrimmed(hex) = cmd!(%"xxd -ps -u", input);
+///   let StdoutTrimmed(hex) = run_output!(%"xxd -ps -u", input);
 ///   hex
 /// }
 ///
@@ -111,7 +111,7 @@ pub trait Input {
     }
 
     /// `input.run()` runs `input` as a child process.
-    /// It's equivalent to `cmd!(input)`.
+    /// It's equivalent to `run_output!(input)`.
     ///
     /// ```
     /// use cradle::prelude::*;
@@ -124,7 +124,7 @@ pub trait Input {
         Self: Sized,
         O: Output,
     {
-        crate::cmd!(self)
+        crate::run_output!(self)
     }
 
     /// `input.run_result()` runs `input` as a child process.
@@ -200,7 +200,7 @@ impl Input for &OsStr {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutTrimmed(output) = cmd!("echo", "foo");
+/// let StdoutTrimmed(output) = run_output!("echo", "foo");
 /// assert_eq!(output, "foo");
 /// ```
 impl Input for &str {
@@ -218,7 +218,7 @@ impl Input for &str {
 ///
 /// let executable: String = "echo".to_string();
 /// let argument: String = "foo".to_string();
-/// let StdoutTrimmed(output) = cmd!(executable, argument);
+/// let StdoutTrimmed(output) = run_output!(executable, argument);
 /// assert_eq!(output, "foo");
 /// ```
 impl Input for String {
@@ -234,10 +234,10 @@ impl Input for String {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+/// let StdoutTrimmed(output) = run_output!(Split("echo foo"));
 /// assert_eq!(output, "foo");
 ///
-/// let StdoutTrimmed(output) = cmd!(Split(format!("echo {}", 100)));
+/// let StdoutTrimmed(output) = run_output!(Split(format!("echo {}", 100)));
 /// assert_eq!(output, "100");
 /// ```
 ///
@@ -247,7 +247,7 @@ impl Input for String {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutTrimmed(output) = cmd!(%"echo foo");
+/// let StdoutTrimmed(output) = run_output!(%"echo foo");
 /// assert_eq!(output, "foo");
 /// ```
 ///
@@ -269,7 +269,7 @@ impl<T: AsRef<str>> Input for crate::input::Split<T> {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutTrimmed(output) = cmd!("echo foo".split(' '));
+/// let StdoutTrimmed(output) = run_output!("echo foo".split(' '));
 /// assert_eq!(output, "foo");
 /// ```
 ///
@@ -290,7 +290,7 @@ impl<'a> Input for std::str::Split<'a, char> {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutTrimmed(output) = cmd!("echo foo".split_whitespace());
+/// let StdoutTrimmed(output) = run_output!("echo foo".split_whitespace());
 /// assert_eq!(output, "foo");
 /// ```
 ///
@@ -309,7 +309,7 @@ impl<'a> Input for std::str::SplitWhitespace<'a> {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutTrimmed(output) = cmd!("echo foo".split_ascii_whitespace());
+/// let StdoutTrimmed(output) = run_output!("echo foo".split_ascii_whitespace());
 /// assert_eq!(output, "foo");
 /// ```
 ///
@@ -350,13 +350,13 @@ tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E,);
 tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F,);
 tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G,);
 
-/// All elements of the given [`Vec`] are used as arguments to [`cmd!`].
+/// All elements of the given [`Vec`] are used as arguments to [`run_output!`].
 /// Same as passing in the elements separately.
 ///
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutTrimmed(output) = cmd!(vec!["echo", "foo"]);
+/// let StdoutTrimmed(output) = run_output!(vec!["echo", "foo"]);
 /// assert_eq!(output, "foo");
 /// ```
 impl<T> Input for Vec<T>
@@ -377,7 +377,7 @@ where
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutTrimmed(output) = cmd!(["echo", "foo"]);
+/// let StdoutTrimmed(output) = run_output!(["echo", "foo"]);
 /// assert_eq!(output, "foo");
 /// ```
 ///
@@ -407,7 +407,7 @@ where
     }
 }
 
-/// Passing in [`LogCommand`] as an argument to [`cmd!`] will cause it
+/// Passing in [`LogCommand`] as an argument to [`run_output!`] will cause it
 /// to log the commands (including all arguments) to `stderr`.
 /// (This is similar `bash`'s `-x` option.)
 ///
@@ -435,7 +435,7 @@ impl Input for LogCommand {
 ///
 /// # #[cfg(linux)]
 /// # {
-/// let StdoutTrimmed(output) = cmd!("pwd", CurrentDir("/tmp"));
+/// let StdoutTrimmed(output) = run_output!("pwd", CurrentDir("/tmp"));
 /// assert_eq!(output, "/tmp");
 /// # }
 /// ```
@@ -499,7 +499,7 @@ impl Input for &Path {
 ///
 /// # #[cfg(linux)]
 /// # {
-/// let StdoutUntrimmed(output) = cmd!("sort", Stdin("foo\nbar\n"));
+/// let StdoutUntrimmed(output) = run_output!("sort", Stdin("foo\nbar\n"));
 /// assert_eq!(output, "bar\nfoo\n");
 /// # }
 /// ```
@@ -524,7 +524,7 @@ where
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutUntrimmed(output) = cmd!("env", Env("FOO", "bar"));
+/// let StdoutUntrimmed(output) = run_output!("env", Env("FOO", "bar"));
 /// assert!(output.contains("FOO=bar\n"));
 /// ```
 ///

@@ -4,30 +4,30 @@
 //! APIs may change drastically!
 //! Use at your own risk!)
 //!
-//! `cradle` provides the [`cmd!`] macro, that makes
+//! `cradle` provides the [`run_output!`] macro, that makes
 //! it easy to run child processes from rust programs.
 //!
 //! ```
 //! use cradle::prelude::*;
 //!
-//! let StdoutTrimmed(stdout) = cmd!(%"echo foo");
+//! let StdoutTrimmed(stdout) = run_output!(%"echo foo");
 //! assert_eq!(stdout, "foo");
 //! ```
 //!
 //! # Arguments
 //!
-//! You can pass in multiple arguments (of different types) to [`cmd!`]
+//! You can pass in multiple arguments (of different types) to [`run_output!`]
 //! to specify arguments, as long as they implement the [`Input`](input::Input)
 //! trait:
 //!
 //! ```
 //! use cradle::prelude::*;
 //!
-//! let StdoutTrimmed(stdout) = cmd!("echo", "foo", "bar");
+//! let StdoutTrimmed(stdout) = run_output!("echo", "foo", "bar");
 //! assert_eq!(stdout, "foo bar");
 //! ```
 //!
-//! For all possible inputs to [`cmd!`], see the documentation of [`Input`](input::Input).
+//! For all possible inputs to [`run_output!`], see the documentation of [`Input`](input::Input).
 //!
 //! ## Whitespace Splitting
 //!
@@ -37,7 +37,7 @@
 //! ``` should_panic
 //! use cradle::prelude::*;
 //!
-//! let StdoutTrimmed(_) = cmd!("echo foo");
+//! let StdoutTrimmed(_) = run_output!("echo foo");
 //! ```
 //!
 //! In this code `cradle` tries to run a process from an executable called
@@ -48,13 +48,13 @@
 //! ```
 //! use cradle::prelude::*;
 //!
-//! let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+//! let StdoutTrimmed(output) = run_output!(Split("echo foo"));
 //! assert_eq!(output, "foo");
 //! ```
 //!
 //! Wrapping an argument of type `&str` in [`Split`](input::Split) will cause `cradle` to first
 //! split it by whitespace and then use the resulting words as if they were passed
-//! into [`cmd!`] as separate arguments.
+//! into [`run_output!`] as separate arguments.
 //!
 //! And -- since this is such a common case -- `cradle` provides a syntactic shortcut
 //! for [`Split`](input::Split), the `%` symbol:
@@ -62,13 +62,13 @@
 //! ```
 //! use cradle::prelude::*;
 //!
-//! let StdoutTrimmed(output) = cmd!(%"echo foo");
+//! let StdoutTrimmed(output) = run_output!(%"echo foo");
 //! assert_eq!(output, "foo");
 //! ```
 //!
 //! # Output
 //!
-//! You can choose which return type you want [`cmd!`] to return,
+//! You can choose which return type you want [`run_output!`] to return,
 //! as long as the chosen return type implements [`output::Output`].
 //! For example you can use e.g. [`StdoutTrimmed`](output::StdoutTrimmed)
 //! to collect what the child process writes to `stdout`,
@@ -77,14 +77,14 @@
 //! ```
 //! use cradle::prelude::*;
 //!
-//! let StdoutTrimmed(output) = cmd!(%"echo foo");
+//! let StdoutTrimmed(output) = run_output!(%"echo foo");
 //! assert_eq!(output, "foo");
 //! ```
 //!
 //! (By default, the child's `stdout` is written to the parent's `stdout`.
 //! Using `StdoutTrimmed` as the return type suppresses that.)
 //!
-//! If you don't want any result from [`cmd!`], you can use `()`
+//! If you don't want any result from [`run_output!`], you can use `()`
 //! as the return value:
 //!
 //! ```
@@ -92,11 +92,11 @@
 //! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
 //!
-//! let () = cmd!(%"touch foo");
+//! let () = run_output!(%"touch foo");
 //! ```
 //!
 //! Since that's a very common case, `cradle` provides the [`run!`] shortcut.
-//! It behaves exactly like [`cmd!`] but always returns `()`.
+//! It behaves exactly like [`run_output!`] but always returns `()`.
 //!
 //! ```
 //! # let temp_dir = tempfile::TempDir::new().unwrap();
@@ -110,11 +110,11 @@
 //!
 //! # Error Handling
 //!
-//! By default [`cmd!`] panics for a few reasons, e.g.:
+//! By default [`run_output!`] panics for a few reasons, e.g.:
 //!
 //! - when the child process exits with a non-zero exitcode,
 //! - when the given executable cannot be found,
-//! - when no strings are given as arguments to [`cmd!`].
+//! - when no strings are given as arguments to [`run_output!`].
 //!
 //! For example:
 //!
@@ -126,12 +126,12 @@
 //! ```
 //!
 //! You can suppress panics caused by non-zero exit codes by using the
-//! [`Status`](output::Status) type as a return type of [`cmd!`]:
+//! [`Status`](output::Status) type as a return type of [`run_output!`]:
 //!
 //! ```
 //! use cradle::prelude::*;
 //!
-//! let Status(exit_status) = cmd!("false");
+//! let Status(exit_status) = run_output!("false");
 //! assert_eq!(exit_status.code(), Some(1));
 //! ```
 //!
@@ -181,7 +181,7 @@
 //! [`Input`](input::Input).
 //! When using these methods, it's especially useful that
 //! [`Input`](input::Input) is implemented by tuples.
-//! They work analog to [`cmd!`], [`run!`] and [`cmd_result!`].
+//! They work analog to [`run_output!`], [`run!`] and [`cmd_result!`].
 //! Here are some examples:
 //!
 //! ```
@@ -324,19 +324,19 @@ mod tests {
             use super::*;
 
             #[test]
-            #[should_panic(expected = "cmd!: false:\n  exited with exit code: 1")]
+            #[should_panic(expected = "run_output!: false:\n  exited with exit code: 1")]
             fn non_zero_exit_codes() {
                 run!("false");
             }
 
             #[test]
-            #[should_panic(expected = "cmd!: false:\n  exited with exit code: 1")]
+            #[should_panic(expected = "run_output!: false:\n  exited with exit code: 1")]
             fn combine_panics_with_other_outputs() {
-                let StdoutTrimmed(_) = cmd!("false");
+                let StdoutTrimmed(_) = run_output!("false");
             }
 
             #[test]
-            #[should_panic(expected = "cmd!: false foo bar:\n  exited with exit code: 1")]
+            #[should_panic(expected = "run_output!: false foo bar:\n  exited with exit code: 1")]
             fn includes_full_command_on_non_zero_exit_codes() {
                 run!(%"false foo bar");
             }
@@ -348,7 +348,9 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(expected = "cmd!: File not found error when executing 'does-not-exist'")]
+            #[should_panic(
+                expected = "run_output!: File not found error when executing 'does-not-exist'"
+            )]
             fn executable_cannot_be_found() {
                 run!("does-not-exist");
             }
@@ -366,7 +368,8 @@ mod tests {
             #[rustversion::since(1.46)]
             #[test]
             fn includes_source_location_of_cmd_call() {
-                let (Status(_), Stderr(stderr)) = cmd!(test_executable("test_executables_panic"));
+                let (Status(_), Stderr(stderr)) =
+                    run_output!(test_executable("test_executables_panic"));
                 let expected = "src/test_executables/panic.rs:4:5";
                 assert!(
                     stderr.contains(expected),
@@ -377,7 +380,7 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(expected = "cmd!: no arguments given")]
+            #[should_panic(expected = "run_output!: no arguments given")]
             fn no_executable() {
                 let vector: Vec<String> = Vec::new();
                 run!(vector);
@@ -386,7 +389,7 @@ mod tests {
             #[test]
             #[should_panic(expected = "invalid utf-8 written to stdout")]
             fn invalid_utf8_stdout() {
-                let StdoutTrimmed(_) = cmd!(test_helper(), "invalid utf-8 stdout");
+                let StdoutTrimmed(_) = run_output!(test_helper(), "invalid utf-8 stdout");
             }
 
             #[test]
@@ -557,19 +560,19 @@ mod tests {
 
     #[test]
     fn allows_to_retrieve_stdout() {
-        let StdoutTrimmed(stdout) = cmd!(%"echo foo");
+        let StdoutTrimmed(stdout) = run_output!(%"echo foo");
         assert_eq!(stdout, "foo");
     }
 
     #[test]
     fn command_and_argument_as_separate_ref_str() {
-        let StdoutTrimmed(stdout) = cmd!("echo", "foo");
+        let StdoutTrimmed(stdout) = run_output!("echo", "foo");
         assert_eq!(stdout, "foo");
     }
 
     #[test]
     fn multiple_arguments_as_ref_str() {
-        let StdoutTrimmed(stdout) = cmd!("echo", "foo", "bar");
+        let StdoutTrimmed(stdout) = run_output!("echo", "foo", "bar");
         assert_eq!(stdout, "foo bar");
     }
 
@@ -578,7 +581,7 @@ mod tests {
         let reference: &LogCommand = &LogCommand;
         let executable: &String = &"echo".to_string();
         let argument: &String = &"foo".to_string();
-        let StdoutTrimmed(stdout) = cmd!(reference, executable, argument);
+        let StdoutTrimmed(stdout) = run_output!(reference, executable, argument);
         assert_eq!(stdout, "foo");
     }
 
@@ -588,7 +591,7 @@ mod tests {
         #[test]
         fn allows_to_pass_in_arguments_as_a_vec_of_ref_str() {
             let args: Vec<&str> = vec!["foo"];
-            let StdoutTrimmed(stdout) = cmd!("echo", args);
+            let StdoutTrimmed(stdout) = run_output!("echo", args);
             assert_eq!(stdout, "foo");
         }
 
@@ -606,7 +609,7 @@ mod tests {
         #[test]
         fn arrays_as_arguments() {
             let args: [&str; 2] = ["echo", "foo"];
-            let StdoutTrimmed(stdout) = cmd!(args);
+            let StdoutTrimmed(stdout) = run_output!(args);
             assert_eq!(stdout, "foo");
         }
 
@@ -635,7 +638,7 @@ mod tests {
         #[test]
         fn array_refs_as_arguments() {
             let args: &[&str; 2] = &["echo", "foo"];
-            let StdoutTrimmed(stdout) = cmd!(args);
+            let StdoutTrimmed(stdout) = run_output!(args);
             assert_eq!(stdout, "foo");
         }
 
@@ -652,7 +655,7 @@ mod tests {
         #[test]
         fn slices_as_arguments() {
             let args: &[&str] = &["echo", "foo"];
-            let StdoutTrimmed(stdout) = cmd!(args);
+            let StdoutTrimmed(stdout) = run_output!(args);
             assert_eq!(stdout, "foo");
         }
 
@@ -677,7 +680,7 @@ mod tests {
 
         #[test]
         fn vector_of_vectors() {
-            let StdoutTrimmed(output) = cmd!(vec![vec!["echo"], vec!["foo", "bar"]]);
+            let StdoutTrimmed(output) = run_output!(vec![vec!["echo"], vec!["foo", "bar"]]);
             assert_eq!(output, "foo bar");
         }
     }
@@ -695,14 +698,14 @@ mod tests {
         fn multiple_strings() {
             let command: String = "echo".to_string();
             let argument: String = "foo".to_string();
-            let StdoutTrimmed(output) = cmd!(command, argument);
+            let StdoutTrimmed(output) = run_output!(command, argument);
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn mix_ref_str_and_string() {
             let argument: String = "foo".to_string();
-            let StdoutTrimmed(output) = cmd!("echo", argument);
+            let StdoutTrimmed(output) = run_output!("echo", argument);
             assert_eq!(output, "foo");
         }
 
@@ -848,7 +851,7 @@ mod tests {
 
         #[test]
         fn capture_stderr() {
-            let Stderr(stderr) = cmd!(test_helper(), "write to stderr");
+            let Stderr(stderr) = run_output!(test_helper(), "write to stderr");
             assert_eq!(stderr, "foo\n");
         }
 
@@ -935,19 +938,19 @@ mod tests {
 
         #[test]
         fn zero() {
-            let Status(exit_status) = cmd!("true");
+            let Status(exit_status) = run_output!("true");
             assert!(exit_status.success());
         }
 
         #[test]
         fn one() {
-            let Status(exit_status) = cmd!("false");
+            let Status(exit_status) = run_output!("false");
             assert!(!exit_status.success());
         }
 
         #[test]
         fn forty_two() {
-            let Status(exit_status) = cmd!(test_helper(), "exit code 42");
+            let Status(exit_status) = run_output!(test_helper(), "exit code 42");
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
         }
@@ -964,18 +967,18 @@ mod tests {
 
         #[test]
         fn success_exit_status_is_true() {
-            assert!(cmd!("true"));
+            assert!(run_output!("true"));
         }
 
         #[test]
         fn failure_exit_status_is_false() {
-            assert!(!cmd!("false"));
+            assert!(!run_output!("false"));
         }
 
         #[test]
         #[should_panic]
         fn io_error_panics() {
-            assert!(cmd!("/"));
+            assert!(run_output!("/"));
         }
     }
 
@@ -985,25 +988,25 @@ mod tests {
 
         #[test]
         fn two_tuple() {
-            let StdoutTrimmed(output) = cmd!(("echo", "foo"));
+            let StdoutTrimmed(output) = run_output!(("echo", "foo"));
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn three_tuples() {
-            let StdoutTrimmed(output) = cmd!(("echo", "foo", "bar"));
+            let StdoutTrimmed(output) = run_output!(("echo", "foo", "bar"));
             assert_eq!(output, "foo bar");
         }
 
         #[test]
         fn nested_tuples() {
-            let StdoutTrimmed(output) = cmd!(("echo", ("foo", "bar")));
+            let StdoutTrimmed(output) = run_output!(("echo", ("foo", "bar")));
             assert_eq!(output, "foo bar");
         }
 
         #[test]
         fn unit_input() {
-            let StdoutTrimmed(output) = cmd!(("echo", ()));
+            let StdoutTrimmed(output) = run_output!(("echo", ()));
             assert_eq!(output, "");
         }
     }
@@ -1014,7 +1017,7 @@ mod tests {
         #[test]
         fn two_tuple_1() {
             let (StdoutTrimmed(output), Status(exit_status)) =
-                cmd!(test_helper(), "output foo and exit with 42");
+                run_output!(test_helper(), "output foo and exit with 42");
             assert_eq!(output, "foo");
             assert_eq!(exit_status.code(), Some(42));
         }
@@ -1022,7 +1025,7 @@ mod tests {
         #[test]
         fn two_tuple_2() {
             let (Status(exit_status), StdoutTrimmed(output)) =
-                cmd!(test_helper(), "output foo and exit with 42");
+                run_output!(test_helper(), "output foo and exit with 42");
             assert_eq!(output, "foo");
             assert_eq!(exit_status.code(), Some(42));
         }
@@ -1043,7 +1046,8 @@ mod tests {
 
         #[test]
         fn three_tuples() {
-            let (Stderr(stderr), StdoutTrimmed(stdout), Status(exit_status)) = cmd!(%"echo foo");
+            let (Stderr(stderr), StdoutTrimmed(stdout), Status(exit_status)) =
+                run_output!(%"echo foo");
             assert_eq!(stderr, "");
             assert_eq!(stdout, "foo");
             assert_eq!(exit_status.code(), Some(0));
@@ -1052,7 +1056,7 @@ mod tests {
         #[test]
         fn capturing_stdout_on_errors() {
             let (StdoutTrimmed(output), Status(exit_status)) =
-                cmd!(test_helper(), "output foo and exit with 42");
+                run_output!(test_helper(), "output foo and exit with 42");
             assert!(!exit_status.success());
             assert_eq!(output, "foo");
         }
@@ -1060,7 +1064,7 @@ mod tests {
         #[test]
         fn capturing_stderr_on_errors() {
             let (Stderr(output), Status(exit_status)) =
-                cmd!(test_helper(), "write to stderr and exit with 42");
+                run_output!(test_helper(), "write to stderr and exit with 42");
             assert!(!exit_status.success());
             assert_eq!(output, "foo\n");
         }
@@ -1076,7 +1080,7 @@ mod tests {
                 fs::create_dir("dir").unwrap();
                 fs::write("dir/file", "foo").unwrap();
                 fs::write("file", "wrong file").unwrap();
-                let StdoutUntrimmed(output) = cmd!(%"cat file", CurrentDir("dir"));
+                let StdoutUntrimmed(output) = run_output!(%"cat file", CurrentDir("dir"));
                 assert_eq!(output, "foo");
             });
         }
@@ -1103,25 +1107,25 @@ mod tests {
 
             #[test]
             fn trims_trailing_whitespace() {
-                let StdoutTrimmed(output) = cmd!(%"echo foo");
+                let StdoutTrimmed(output) = run_output!(%"echo foo");
                 assert_eq!(output, "foo");
             }
 
             #[test]
             fn trims_leading_whitespace() {
-                let StdoutTrimmed(output) = cmd!(%"echo -n", " foo");
+                let StdoutTrimmed(output) = run_output!(%"echo -n", " foo");
                 assert_eq!(output, "foo");
             }
 
             #[test]
             fn does_not_remove_whitespace_within_output() {
-                let StdoutTrimmed(output) = cmd!(%"echo -n", "foo bar");
+                let StdoutTrimmed(output) = run_output!(%"echo -n", "foo bar");
                 assert_eq!(output, "foo bar");
             }
 
             #[test]
             fn does_not_modify_output_without_whitespace() {
-                let StdoutTrimmed(output) = cmd!(%"echo -n", "foo");
+                let StdoutTrimmed(output) = run_output!(%"echo -n", "foo");
                 assert_eq!(output, "foo");
             }
 
@@ -1139,13 +1143,13 @@ mod tests {
 
             #[test]
             fn does_not_trim_trailing_newline() {
-                let StdoutUntrimmed(output) = cmd!(%"echo foo");
+                let StdoutUntrimmed(output) = run_output!(%"echo foo");
                 assert_eq!(output, "foo\n");
             }
 
             #[test]
             fn does_not_trim_leading_whitespace() {
-                let StdoutUntrimmed(output) = cmd!(%"echo -n", " foo");
+                let StdoutUntrimmed(output) = run_output!(%"echo -n", " foo");
                 assert_eq!(output, " foo");
             }
 
@@ -1164,31 +1168,31 @@ mod tests {
 
         #[test]
         fn splits_words_by_whitespace() {
-            let StdoutTrimmed(output) = cmd!(Split("echo foo"));
+            let StdoutTrimmed(output) = run_output!(Split("echo foo"));
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn splits_owned_strings() {
-            let StdoutTrimmed(output) = cmd!(Split("echo foo".to_string()));
+            let StdoutTrimmed(output) = run_output!(Split("echo foo".to_string()));
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn skips_multiple_whitespace_characters() {
-            let StdoutUntrimmed(output) = cmd!("echo", Split("foo  bar"));
+            let StdoutUntrimmed(output) = run_output!("echo", Split("foo  bar"));
             assert_eq!(output, "foo bar\n");
         }
 
         #[test]
         fn trims_leading_whitespace() {
-            let StdoutTrimmed(output) = cmd!(Split(" echo foo"));
+            let StdoutTrimmed(output) = run_output!(Split(" echo foo"));
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn trims_trailing_whitespace() {
-            let StdoutUntrimmed(output) = cmd!("echo", Split("foo "));
+            let StdoutUntrimmed(output) = run_output!("echo", Split("foo "));
             assert_eq!(output, "foo\n");
         }
 
@@ -1197,26 +1201,26 @@ mod tests {
 
             #[test]
             fn splits_words() {
-                let StdoutUntrimmed(output) = cmd!(%"echo foo");
+                let StdoutUntrimmed(output) = run_output!(%"echo foo");
                 assert_eq!(output, "foo\n");
             }
 
             #[test]
             fn works_for_later_arguments() {
-                let StdoutUntrimmed(output) = cmd!("echo", %"foo\tbar");
+                let StdoutUntrimmed(output) = run_output!("echo", %"foo\tbar");
                 assert_eq!(output, "foo bar\n");
             }
 
             #[test]
             fn for_first_of_multiple_arguments() {
-                let StdoutUntrimmed(output) = cmd!(%"echo foo", "bar");
+                let StdoutUntrimmed(output) = run_output!(%"echo foo", "bar");
                 assert_eq!(output, "foo bar\n");
             }
 
             #[test]
             fn non_literals() {
                 let command = "echo foo";
-                let StdoutUntrimmed(output) = cmd!(%command);
+                let StdoutUntrimmed(output) = run_output!(%command);
                 assert_eq!(output, "foo\n");
             }
 
@@ -1237,19 +1241,19 @@ mod tests {
 
         #[test]
         fn allow_to_use_split() {
-            let StdoutTrimmed(output) = cmd!("echo foo".split(' '));
+            let StdoutTrimmed(output) = run_output!("echo foo".split(' '));
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn split_whitespace() {
-            let StdoutTrimmed(output) = cmd!("echo foo".split_whitespace());
+            let StdoutTrimmed(output) = run_output!("echo foo".split_whitespace());
             assert_eq!(output, "foo");
         }
 
         #[test]
         fn split_ascii_whitespace() {
-            let StdoutTrimmed(output) = cmd!("echo foo".split_ascii_whitespace());
+            let StdoutTrimmed(output) = run_output!("echo foo".split_ascii_whitespace());
             assert_eq!(output, "foo");
         }
     }
@@ -1279,7 +1283,7 @@ mod tests {
             in_temporary_directory(|| {
                 let file: &Path = Path::new("file");
                 fs::write(file, "test-contents").unwrap();
-                let StdoutUntrimmed(output) = cmd!("cat", file);
+                let StdoutUntrimmed(output) = run_output!("cat", file);
                 assert_eq!(output, "test-contents");
             })
         }
@@ -1288,7 +1292,7 @@ mod tests {
         fn ref_path_as_executable() {
             in_temporary_directory(|| {
                 let file: &Path = &write_test_script();
-                let StdoutTrimmed(output) = cmd!(file);
+                let StdoutTrimmed(output) = run_output!(file);
                 assert_eq!(output, "test-output");
             })
         }
@@ -1298,7 +1302,7 @@ mod tests {
             in_temporary_directory(|| {
                 let file: PathBuf = PathBuf::from("file");
                 fs::write(&file, "test-contents").unwrap();
-                let StdoutUntrimmed(output) = cmd!("cat", file);
+                let StdoutUntrimmed(output) = run_output!("cat", file);
                 assert_eq!(output, "test-contents");
             })
         }
@@ -1307,7 +1311,7 @@ mod tests {
         fn path_buf_as_executable() {
             in_temporary_directory(|| {
                 let file: PathBuf = write_test_script();
-                let StdoutTrimmed(output) = cmd!(file);
+                let StdoutTrimmed(output) = run_output!(file);
                 assert_eq!(output, "test-output");
             })
         }
@@ -1318,20 +1322,20 @@ mod tests {
 
         #[test]
         fn allows_to_pass_in_strings_as_stdin() {
-            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin("foo"));
+            let StdoutUntrimmed(output) = run_output!(test_helper(), "reverse", Stdin("foo"));
             assert_eq!(output, "oof");
         }
 
         #[test]
         fn allows_passing_in_u8_slices_as_stdin() {
-            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin(&[0, 1, 2]));
+            let StdoutUntrimmed(output) = run_output!(test_helper(), "reverse", Stdin(&[0, 1, 2]));
             assert_eq!(output, "\x02\x01\x00");
         }
 
         #[test]
         #[cfg(unix)]
         fn stdin_is_closed_by_default() {
-            let StdoutTrimmed(output) = cmd!(test_helper(), "wait until stdin is closed");
+            let StdoutTrimmed(output) = run_output!(test_helper(), "wait until stdin is closed");
             assert_eq!(output, "stdin is closed");
         }
 
@@ -1354,14 +1358,14 @@ mod tests {
         #[test]
         fn multiple_stdin_arguments_are_all_passed_into_the_child_process() {
             let StdoutUntrimmed(output) =
-                cmd!(test_helper(), "reverse", Stdin("foo"), Stdin("bar"));
+                run_output!(test_helper(), "reverse", Stdin("foo"), Stdin("bar"));
             assert_eq!(output, "raboof");
         }
 
         #[test]
         fn works_for_owned_strings() {
             let argument: String = "foo".to_string();
-            let StdoutUntrimmed(output) = cmd!(test_helper(), "reverse", Stdin(argument));
+            let StdoutUntrimmed(output) = run_output!(test_helper(), "reverse", Stdin(argument));
             assert_eq!(output, "oof");
         }
     }
@@ -1372,14 +1376,14 @@ mod tests {
         #[test]
         fn trailing_comma_is_accepted_after_normal_argument() {
             run!("echo", "foo",);
-            let StdoutUntrimmed(_) = cmd!("echo", "foo",);
+            let StdoutUntrimmed(_) = run_output!("echo", "foo",);
             let _result: Result<(), Error> = cmd_result!("echo", "foo",);
         }
 
         #[test]
         fn trailing_comma_is_accepted_after_split_argument() {
             run!("echo", %"foo",);
-            let StdoutUntrimmed(_) = cmd!("echo", %"foo",);
+            let StdoutUntrimmed(_) = run_output!("echo", %"foo",);
             let _result: Result<(), Error> = cmd_result!("echo", %"foo",);
         }
     }
@@ -1391,7 +1395,7 @@ mod tests {
 
         #[test]
         fn allows_to_add_variables() {
-            let StdoutTrimmed(output) = cmd!(
+            let StdoutTrimmed(output) = run_output!(
                 test_helper(),
                 %"echo FOO",
                 Env("FOO", "bar")
@@ -1401,7 +1405,7 @@ mod tests {
 
         #[test]
         fn works_for_multiple_variables() {
-            let StdoutUntrimmed(output) = cmd!(
+            let StdoutUntrimmed(output) = run_output!(
                 test_helper(),
                 %"echo FOO BAR",
                 Env("FOO", "a"),
@@ -1425,7 +1429,7 @@ mod tests {
         fn child_processes_inherit_the_environment() {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
-            let StdoutTrimmed(output) = cmd!(test_helper(), "echo", unused_key);
+            let StdoutTrimmed(output) = run_output!(test_helper(), "echo", unused_key);
             assert_eq!(output, "foo");
         }
 
@@ -1434,13 +1438,13 @@ mod tests {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
             let StdoutTrimmed(output) =
-                cmd!(test_helper(), "echo", &unused_key, Env(unused_key, "bar"));
+                run_output!(test_helper(), "echo", &unused_key, Env(unused_key, "bar"));
             assert_eq!(output, "bar");
         }
 
         #[test]
         fn variables_are_overwritten_by_subsequent_variables_with_the_same_name() {
-            let StdoutTrimmed(output) = cmd!(
+            let StdoutTrimmed(output) = run_output!(
                 test_helper(),
                 "echo",
                 "FOO",
@@ -1452,7 +1456,8 @@ mod tests {
 
         #[test]
         fn variables_can_be_set_to_the_empty_string() {
-            let StdoutUntrimmed(output) = cmd!(test_helper(), "echo", "FOO", Env("FOO", ""),);
+            let StdoutUntrimmed(output) =
+                run_output!(test_helper(), "echo", "FOO", Env("FOO", ""),);
             assert_eq!(output, "empty variable: FOO\n");
         }
     }
