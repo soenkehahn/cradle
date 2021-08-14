@@ -334,19 +334,19 @@ mod tests {
             use super::*;
 
             #[test]
-            #[should_panic(expected = "run_output!: false:\n  exited with exit code: 1")]
+            #[should_panic(expected = "cradle error: false:\n  exited with exit code: 1")]
             fn non_zero_exit_codes() {
                 run!("false");
             }
 
             #[test]
-            #[should_panic(expected = "run_output!: false:\n  exited with exit code: 1")]
+            #[should_panic(expected = "cradle error: false:\n  exited with exit code: 1")]
             fn combine_panics_with_other_outputs() {
                 let StdoutTrimmed(_) = run_output!("false");
             }
 
             #[test]
-            #[should_panic(expected = "run_output!: false foo bar:\n  exited with exit code: 1")]
+            #[should_panic(expected = "cradle error: false foo bar:\n  exited with exit code: 1")]
             fn includes_full_command_on_non_zero_exit_codes() {
                 run!(%"false foo bar");
             }
@@ -359,7 +359,7 @@ mod tests {
 
             #[test]
             #[should_panic(
-                expected = "run_output!: File not found error when executing 'does-not-exist'"
+                expected = "cradle error: File not found error when executing 'does-not-exist'"
             )]
             fn executable_cannot_be_found() {
                 run!("does-not-exist");
@@ -390,7 +390,7 @@ mod tests {
             }
 
             #[test]
-            #[should_panic(expected = "run_output!: no arguments given")]
+            #[should_panic(expected = "cradle error: no arguments given")]
             fn no_executable() {
                 let vector: Vec<String> = Vec::new();
                 run!(vector);
