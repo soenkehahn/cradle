@@ -4,11 +4,13 @@ const WHICH: &str = "which";
 const WHICH: &str = "where";
 
 #[test]
-fn capturing_stdout() {
+fn runs_child_processes() {
     use cradle::prelude::*;
+    use tempfile::TempDir;
 
-    let StdoutTrimmed(output) = run_output!(%"echo foo");
-    assert_eq!(output, "foo");
+    let temp_dir = TempDir::new().unwrap();
+    run!(CurrentDir(temp_dir.path()), %"touch foo");
+    assert!(temp_dir.path().join("foo").is_file());
 }
 
 #[test]
@@ -17,6 +19,14 @@ fn panics_on_non_zero_exit_codes() {
     use cradle::prelude::*;
 
     run!("false");
+}
+
+#[test]
+fn capturing_stdout() {
+    use cradle::prelude::*;
+
+    let StdoutTrimmed(output) = run_output!(%"echo foo");
+    assert_eq!(output, "foo");
 }
 
 #[test]
