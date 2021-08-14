@@ -9,8 +9,9 @@ Here's an example:
 use cradle::prelude::*;
 
 fn main() {
-    let StdoutTrimmed(git_version) = run_output!(%"git --version");
-    eprintln!("git version: {}", git_version);
+    // output git version
+    run!(%"git --version");
+    // output configured git user
     let (StdoutTrimmed(git_user), Status(status)) = run_output!(%"git config --get user.name");
     if status.success() {
         eprintln!("git user: {}", git_user);

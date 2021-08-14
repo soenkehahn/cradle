@@ -1,5 +1,4 @@
-//! The [`Input`] trait that defines all possible inputs to [`run_output!`],
-//! [`run!`] and [`run_result!`].
+//! The [`Input`] trait that defines all possible inputs to `cradle`.
 
 use crate::{config::Config, output::Output};
 use std::{
@@ -8,7 +7,7 @@ use std::{
     sync::Arc,
 };
 
-/// All types that are possible arguments to [`run_output!`], [`run!`] or
+/// All types that are possible arguments to [`run!`], [`run_output!`] or
 /// [`run_result!`] must implement this trait.
 /// This makes `cradle` very flexible.
 /// For example you can pass in an executable as a String,
@@ -47,7 +46,7 @@ use std::{
 /// ## Tuples
 ///
 /// `cradle` also implements [`Input`] for tuples of types that themselves implement [`Input`].
-/// Instead of passing multiple arguments to [`run_output!`], they can be passed in a single tuple:
+/// Instead of passing multiple arguments to [`run!`], they can be passed in a single tuple:
 ///
 /// ```
 /// use cradle::prelude::*;
@@ -67,7 +66,7 @@ use std::{
 /// assert_eq!(output, "0E0F10");
 /// ```
 ///
-/// Also, tuples make it possible to write wrappers around [`run_output!`] without requiring the use of macros:
+/// Also, tuples make it possible to write wrappers around [`run!`] without requiring the use of macros:
 ///
 /// ```
 /// use cradle::prelude::*;
@@ -350,7 +349,7 @@ tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E,);
 tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F,);
 tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G,);
 
-/// All elements of the given [`Vec`] are used as arguments to [`run_output!`].
+/// All elements of the given [`Vec`] are used as arguments to the child process.
 /// Same as passing in the elements separately.
 ///
 /// ```
@@ -407,7 +406,7 @@ where
     }
 }
 
-/// Passing in [`LogCommand`] as an argument to [`run_output!`] will cause it
+/// Passing in [`LogCommand`] as an argument to `cradle` will cause it
 /// to log the commands (including all arguments) to `stderr`.
 /// (This is similar `bash`'s `-x` option.)
 ///

@@ -4,32 +4,84 @@
 //! APIs may change drastically!
 //! Use at your own risk!)
 //!
-//! `cradle` provides the [`run_output!`] macro, that makes
+//! `cradle` provides the [`run!`] macro, that makes
 //! it easy to run child processes from rust programs.
 //!
 //! ```
+//! # let temp_dir = tempfile::TempDir::new().unwrap();
+//! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
+//! use std::path::Path;
 //!
-//! let StdoutTrimmed(stdout) = run_output!(%"echo foo");
-//! assert_eq!(stdout, "foo");
+//! run!(%"touch foo");
+//! assert!(Path::new("foo").is_file());
 //! ```
 //!
-//! # Arguments
+//! # Input
 //!
-//! You can pass in multiple arguments (of different types) to [`run_output!`]
+//! You can pass in multiple arguments (of different types) to [`run!`]
 //! to specify arguments, as long as they implement the [`Input`](input::Input)
 //! trait:
 //!
 //! ```
+//! # let temp_dir = tempfile::TempDir::new().unwrap();
+//! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
+//! use std::path::Path;
 //!
-//! let StdoutTrimmed(stdout) = run_output!("echo", "foo", "bar");
-//! assert_eq!(stdout, "foo bar");
+//! run!("mkdir", "-p", "foo/bar/baz");
+//! assert!(Path::new("foo/bar/baz").is_dir());
 //! ```
 //!
-//! For all possible inputs to [`run_output!`], see the documentation of [`Input`](input::Input).
+//! For all possible inputs to [`run!`], see the documentation of [`Input`](input::Input).
 //!
-//! ## Whitespace Splitting
+//! # Output
+//!
+//! `cradle` also provides a [`run_output!`] macro.
+//! It allows to capture outputs of the child process.
+//! It uses return-type polymorphism, so you can control which outputs
+//! are captured by choosing the return type of [`run_output!`].
+//! The only constraint is that the chosen return type has to implement [`Output`](output::Output).
+//! For example you can use e.g. [`StdoutTrimmed`](output::StdoutTrimmed)
+//! to collect what the child process writes to `stdout`,
+//! trimmed of leading and trailing whitespace:
+//!
+//! ```
+//! use cradle::prelude::*;
+//!
+//! let StdoutTrimmed(output) = run_output!(%"echo foo");
+//! assert_eq!(output, "foo");
+//! ```
+//!
+//! (By default, the child's `stdout` is written to the parent's `stdout`.
+//! Using `StdoutTrimmed` as the return type suppresses that.)
+//!
+//! If you don't want any result from [`run_output!`], you can use `()`
+//! as the return value:
+//!
+//! ```
+//! # let temp_dir = tempfile::TempDir::new().unwrap();
+//! # std::env::set_current_dir(&temp_dir).unwrap();
+//! use cradle::prelude::*;
+//!
+//! let () = run_output!(%"touch foo");
+//! ```
+//!
+//! Since that's a very common case, `cradle` provides the [`run!`] shortcut,
+//! that we've already seen above.
+//! It behaves exactly like [`run_output!`] but always returns `()`:
+//!
+//! ```
+//! # let temp_dir = tempfile::TempDir::new().unwrap();
+//! # std::env::set_current_dir(&temp_dir).unwrap();
+//! use cradle::prelude::*;
+//!
+//! run!(%"touch foo");
+//! ```
+//!
+//! See the implementations for [`output::Output`] for all the supported types.
+//!
+//! # Whitespace Splitting of Inputs
 //!
 //! `cradle` does *not* split given string arguments on whitespace by default.
 //! So for example this code fails:
@@ -66,55 +118,13 @@
 //! assert_eq!(output, "foo");
 //! ```
 //!
-//! # Output
-//!
-//! You can choose which return type you want [`run_output!`] to return,
-//! as long as the chosen return type implements [`output::Output`].
-//! For example you can use e.g. [`StdoutTrimmed`](output::StdoutTrimmed)
-//! to collect what the child process writes to `stdout`,
-//! trimmed of leading and trailing whitespace:
-//!
-//! ```
-//! use cradle::prelude::*;
-//!
-//! let StdoutTrimmed(output) = run_output!(%"echo foo");
-//! assert_eq!(output, "foo");
-//! ```
-//!
-//! (By default, the child's `stdout` is written to the parent's `stdout`.
-//! Using `StdoutTrimmed` as the return type suppresses that.)
-//!
-//! If you don't want any result from [`run_output!`], you can use `()`
-//! as the return value:
-//!
-//! ```
-//! # let temp_dir = tempfile::TempDir::new().unwrap();
-//! # std::env::set_current_dir(&temp_dir).unwrap();
-//! use cradle::prelude::*;
-//!
-//! let () = run_output!(%"touch foo");
-//! ```
-//!
-//! Since that's a very common case, `cradle` provides the [`run!`] shortcut.
-//! It behaves exactly like [`run_output!`] but always returns `()`.
-//!
-//! ```
-//! # let temp_dir = tempfile::TempDir::new().unwrap();
-//! # std::env::set_current_dir(&temp_dir).unwrap();
-//! use cradle::prelude::*;
-//!
-//! run!(%"touch foo");
-//! ```
-//!
-//! See the implementations for [`output::Output`] for all the supported types.
-//!
 //! # Error Handling
 //!
-//! By default [`run_output!`] panics for a few reasons, e.g.:
+//! By default [`run!`] and [`run_output!`] panic for a few reasons, e.g.:
 //!
 //! - when the child process exits with a non-zero exitcode,
 //! - when the given executable cannot be found,
-//! - when no strings are given as arguments to [`run_output!`].
+//! - when no strings are given as arguments.
 //!
 //! For example:
 //!
@@ -171,17 +181,17 @@
 //! }
 //! ```
 //!
-//! # Alternative interface
+//! # Alternative Interface: Methods on [`input::Input`]
 //!
 //! `cradle` also provides an alternative interface to execute commands
 //! through methods on the [`Input`](input::Input) trait:
-//! [`.run_output()`](input::Input::run_output), [`.run()`](input::Input::run)
+//! [`.run()`](input::Input::run), [`.run_output()`](input::Input::run_output)
 //! and [`.run_result()`](input::Input::run_result).
 //! These methods can be invoked on all values whose types implement
 //! [`Input`](input::Input).
 //! When using these methods, it's especially useful that
 //! [`Input`](input::Input) is implemented by tuples.
-//! They work analog to [`run_output!`], [`run!`] and [`run_result!`].
+//! They work analog to [`run!`], [`run_output!`] and [`run_result!`].
 //! Here are some examples:
 //!
 //! ```
@@ -189,10 +199,10 @@
 //! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
 //!
+//! ("touch", "foo").run();
+//!
 //! let StdoutTrimmed(output) = ("echo", "foo").run_output();
 //! assert_eq!(output, "foo");
-//!
-//! ("touch", "foo").run();
 //!
 //! let result: Result<(), cradle::Error> = "false".run_result();
 //! let error_message = format!("{}", result.unwrap_err());

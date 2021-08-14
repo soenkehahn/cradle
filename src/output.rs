@@ -1,10 +1,9 @@
-//! The [`Output`] trait that defines all possible outputs of [`run_output!`],
-//! [`run!`] and [`run_result!`].
+//! The [`Output`] trait that defines all possible outputs of `cradle`.
 
 use crate::{config::Config, error::Error, run_result::RunResult};
 use std::{process::ExitStatus, sync::Arc};
 
-/// All possible return types of [`run_output!`], [`run!`] or
+/// All possible return types of [`run!`], [`run_output!`] or
 /// [`run_result!`] must implement this trait.
 /// This return-type polymorphism makes cradle very flexible.
 /// For example, if you want to capture what a command writes
