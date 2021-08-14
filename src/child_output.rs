@@ -10,13 +10,13 @@ use std::{
 
 #[doc(hidden)]
 #[derive(Clone, Debug)]
-pub struct RunResult {
+pub struct ChildOutput {
     pub(crate) stdout: Option<Vec<u8>>,
     pub(crate) stderr: Option<Vec<u8>>,
     pub(crate) exit_status: ExitStatus,
 }
 
-impl RunResult {
+impl ChildOutput {
     pub fn run_child_process_output<Stdout, Stderr, T>(
         context: Context<Stdout, Stderr>,
         mut config: Config,
@@ -27,7 +27,7 @@ impl RunResult {
         T: Output,
     {
         <T as Output>::configure(&mut config);
-        let result = RunResult::run_child_process(context, &config);
+        let result = ChildOutput::run_child_process(context, &config);
         T::from_run_result(&config, result)
     }
 

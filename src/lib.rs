@@ -229,6 +229,8 @@
 //! [`cmd`](https://hackage.haskell.org/package/shake-0.19.4/docs/Development-Shake.html#v:cmd)
 //! function.
 
+#[doc(hidden)]
+pub mod child_output;
 mod collected_output;
 #[doc(hidden)]
 pub mod config;
@@ -239,8 +241,6 @@ pub mod input;
 mod macros;
 pub mod output;
 pub mod prelude;
-#[doc(hidden)]
-pub mod run_result;
 
 pub use crate::error::Error;
 

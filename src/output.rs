@@ -1,6 +1,6 @@
 //! The [`Output`] trait that defines all possible outputs of `cradle`.
 
-use crate::{config::Config, error::Error, run_result::RunResult};
+use crate::{child_output::ChildOutput, config::Config, error::Error};
 use std::{process::ExitStatus, sync::Arc};
 
 /// All possible return types of [`run!`], [`run_output!`] or
@@ -56,7 +56,7 @@ pub trait Output: Sized {
     fn configure(config: &mut Config);
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error>;
+    fn from_run_result(config: &Config, result: Result<ChildOutput, Error>) -> Result<Self, Error>;
 }
 
 /// Use this when you don't need any result from the child process.
@@ -80,7 +80,10 @@ impl Output for () {
     fn configure(_config: &mut Config) {}
 
     #[doc(hidden)]
-    fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(
+        _config: &Config,
+        result: Result<ChildOutput, Error>,
+    ) -> Result<Self, Error> {
         result?;
         Ok(())
     }
@@ -98,7 +101,7 @@ macro_rules! tuple_impl {
             }
 
             #[doc(hidden)]
-            fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+            fn from_run_result(config: &Config, result: Result<ChildOutput, Error>) -> Result<Self, Error> {
                 Ok((
                     $(<$generics as Output>::from_run_result(config, result.clone())?,)+
                 ))
@@ -144,7 +147,7 @@ impl Output for StdoutTrimmed {
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(config: &Config, result: Result<ChildOutput, Error>) -> Result<Self, Error> {
         let StdoutUntrimmed(stdout) = StdoutUntrimmed::from_run_result(config, result)?;
         Ok(StdoutTrimmed(stdout.trim().to_owned()))
     }
@@ -168,7 +171,7 @@ impl Output for StdoutUntrimmed {
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(config: &Config, result: Result<ChildOutput, Error>) -> Result<Self, Error> {
         let stdout = result?
             .stdout
             .ok_or_else(|| Error::internal("stdout not captured", config))?;
@@ -208,7 +211,7 @@ impl Output for Stderr {
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(config: &Config, result: Result<ChildOutput, Error>) -> Result<Self, Error> {
         let stderr = result?
             .stderr
             .ok_or_else(|| Error::internal("stderr not captured", config))?;
@@ -257,7 +260,10 @@ impl Output for Status {
     }
 
     #[doc(hidden)]
-    fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(
+        _config: &Config,
+        result: Result<ChildOutput, Error>,
+    ) -> Result<Self, Error> {
         Ok(Status(result?.exit_status))
     }
 }
@@ -296,7 +302,10 @@ impl Output for bool {
     }
 
     #[doc(hidden)]
-    fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(
+        _config: &Config,
+        result: Result<ChildOutput, Error>,
+    ) -> Result<Self, Error> {
         Ok(result?.exit_status.success())
     }
 }
