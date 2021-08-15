@@ -27,7 +27,7 @@ impl ChildOutput {
         T: Output,
     {
         <T as Output>::configure(&mut config);
-        let result = ChildOutput::run_child_process(context, &config);
+        let result = ChildOutput::run_child_process(context, &config)?;
         T::from_run_result(&config, result)
     }
 
