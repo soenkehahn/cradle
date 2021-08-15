@@ -1,5 +1,5 @@
 use cradle::*;
 
 fn main() {
-    cmd_unit!("false");
+    run!("false");
 }

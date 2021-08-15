@@ -1,11 +1,10 @@
-//! The [`Output`] trait that defines all possible outputs of [`cmd!`],
-//! [`cmd_unit!`] and [`cmd_result!`].
+//! The [`Output`] trait that defines all possible outputs of a child process.
 
-use crate::{config::Config, error::Error, run_result::RunResult};
+use crate::{child_output::ChildOutput, config::Config, error::Error};
 use std::{process::ExitStatus, sync::Arc};
 
-/// All possible return types of [`cmd!`], [`cmd_unit!`] or
-/// [`cmd_result!`] must implement this trait.
+/// All possible return types of [`run!`], [`run_output!`] or
+/// [`run_result!`] must implement this trait.
 /// This return-type polymorphism makes cradle very flexible.
 /// For example, if you want to capture what a command writes
 /// to `stdout` you can do that using [`StdoutUntrimmed`]:
@@ -13,7 +12,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutUntrimmed(output) = cmd!(%"echo foo");
+/// let StdoutUntrimmed(output) = run_output!(%"echo foo");
 /// assert_eq!(output, "foo\n");
 /// ```
 ///
@@ -23,7 +22,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let Status(exit_status) = cmd!("false");
+/// let Status(exit_status) = run_output!("false");
 /// assert_eq!(exit_status.code(), Some(1));
 /// ```
 ///
@@ -31,7 +30,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// see the documentation for the individual impls of [`Output`].
 /// Here's a non-exhaustive list of the more commonly used return types to get you started:
 ///
-/// - [`()`]: In case you don't want to capture anything. See also [`cmd_unit`].
+/// - [`()`]: In case you don't want to capture anything. See also [`run`].
 /// - To capture output streams:
 ///   - [`StdoutTrimmed`]: To capture `stdout`, trimmed of whitespace.
 ///   - [`StdoutUntrimmed`]: To capture `stdout` untrimmed.
@@ -46,7 +45,7 @@ use std::{process::ExitStatus, sync::Arc};
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let (Status(exit_status), StdoutUntrimmed(stdout)) = cmd!(%"echo foo");
+/// let (Status(exit_status), StdoutUntrimmed(stdout)) = run_output!(%"echo foo");
 /// assert!(exit_status.success());
 /// assert_eq!(stdout, "foo\n");
 /// ```
@@ -57,7 +56,7 @@ pub trait Output: Sized {
     fn configure(config: &mut Config);
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error>;
+    fn from_run_result(config: &Config, result: Result<ChildOutput, Error>) -> Result<Self, Error>;
 }
 
 /// Use this when you don't need any result from the child process.
@@ -67,21 +66,24 @@ pub trait Output: Sized {
 /// # std::env::set_current_dir(&temp_dir).unwrap();
 /// use cradle::prelude::*;
 ///
-/// let () = cmd!(%"touch ./foo");
+/// let () = run_output!(%"touch ./foo");
 /// ```
 ///
-/// Since [`cmd!`] (and [`cmd_result`]) use return type polymorphism,
+/// Since [`run_output!`] (and [`run_result`]) use return type polymorphism,
 /// you have to make sure the compiler can figure out which return type you want to use.
 /// In this example that happens through the `let () =`.
 /// So you can't just omit that.
 ///
-/// See also [`cmd_unit!`] for a more convenient way to use `()` as the return type.
+/// See also [`run!`] for a more convenient way to use `()` as the return type.
 impl Output for () {
     #[doc(hidden)]
     fn configure(_config: &mut Config) {}
 
     #[doc(hidden)]
-    fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(
+        _config: &Config,
+        result: Result<ChildOutput, Error>,
+    ) -> Result<Self, Error> {
         result?;
         Ok(())
     }
@@ -99,7 +101,7 @@ macro_rules! tuple_impl {
             }
 
             #[doc(hidden)]
-            fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+            fn from_run_result(config: &Config, result: Result<ChildOutput, Error>) -> Result<Self, Error> {
                 Ok((
                     $(<$generics as Output>::from_run_result(config, result.clone())?,)+
                 ))
@@ -131,7 +133,7 @@ tuple_impl!(A, B, C, D, E, F,);
 ///
 /// # #[cfg(unix)]
 /// # {
-/// let StdoutTrimmed(output) = cmd!(%"which ls");
+/// let StdoutTrimmed(output) = run_output!(%"which ls");
 /// assert!(Path::new(&output).exists());
 /// # }
 /// ```
@@ -145,7 +147,7 @@ impl Output for StdoutTrimmed {
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(config: &Config, result: Result<ChildOutput, Error>) -> Result<Self, Error> {
         let StdoutUntrimmed(stdout) = StdoutUntrimmed::from_run_result(config, result)?;
         Ok(StdoutTrimmed(stdout.trim().to_owned()))
     }
@@ -156,7 +158,7 @@ impl Output for StdoutTrimmed {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let StdoutUntrimmed(output) = cmd!(%"echo foo");
+/// let StdoutUntrimmed(output) = run_output!(%"echo foo");
 /// assert_eq!(output, "foo\n");
 /// ```
 #[derive(Debug, PartialEq, Clone)]
@@ -169,7 +171,7 @@ impl Output for StdoutUntrimmed {
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(config: &Config, result: Result<ChildOutput, Error>) -> Result<Self, Error> {
         let stdout = result?
             .stdout
             .ok_or_else(|| Error::internal("stdout not captured", config))?;
@@ -189,7 +191,7 @@ impl Output for StdoutUntrimmed {
 ///
 /// // (`Status` is used here to suppress panics caused by `ls`
 /// // terminating with a non-zero exit code.)
-/// let (Stderr(stderr), Status(_)) = cmd!(%"ls does-not-exist");
+/// let (Stderr(stderr), Status(_)) = run_output!(%"ls does-not-exist");
 /// assert!(stderr.contains("No such file or directory"));
 /// ```
 ///
@@ -209,7 +211,7 @@ impl Output for Stderr {
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(config: &Config, result: Result<ChildOutput, Error>) -> Result<Self, Error> {
         let stderr = result?
             .stderr
             .ok_or_else(|| Error::internal("stderr not captured", config))?;
@@ -222,13 +224,13 @@ impl Output for Stderr {
     }
 }
 
-/// Use [`Status`] as the return type for [`cmd!`] to retrieve the
+/// Use [`Status`] as the return type for [`run_output!`] to retrieve the
 /// [`ExitStatus`] of the child process:
 ///
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let Status(exit_status) = cmd!(%"echo foo");
+/// let Status(exit_status) = run_output!(%"echo foo");
 /// assert!(exit_status.success());
 /// ```
 ///
@@ -238,9 +240,9 @@ impl Output for Stderr {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let Status(exit_status) = cmd!("false");
+/// let Status(exit_status) = run_output!("false");
 /// assert_eq!(exit_status.code(), Some(1));
-/// let result: Result<Status, cradle::Error> = cmd_result!("false");
+/// let result: Result<Status, cradle::Error> = run_result!("false");
 /// assert!(result.is_ok());
 /// assert_eq!(result.unwrap().0.code(), Some(1));
 /// ```
@@ -258,18 +260,21 @@ impl Output for Status {
     }
 
     #[doc(hidden)]
-    fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(
+        _config: &Config,
+        result: Result<ChildOutput, Error>,
+    ) -> Result<Self, Error> {
         Ok(Status(result?.exit_status))
     }
 }
 
-/// Using [`bool`] as the return type for [`cmd!`] will return `true` if
+/// Using [`bool`] as the return type for [`run_output!`] will return `true` if
 /// the command returned successfully, and `false` otherwise:
 ///
 /// ```
 /// use cradle::prelude::*;
 ///
-/// if !cmd!(%"which cargo") {
+/// if !run_output!(%"which cargo") {
 ///     panic!("Cargo is not installed!");
 /// }
 /// ```
@@ -280,9 +285,9 @@ impl Output for Status {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// let success: bool = cmd!("false");
+/// let success: bool = run_output!("false");
 /// assert!(!success);
-/// let result: Result<bool, cradle::Error> = cmd_result!("false");
+/// let result: Result<bool, cradle::Error> = run_result!("false");
 /// assert!(result.is_ok());
 /// assert_eq!(result.unwrap(), false);
 /// ```
@@ -297,7 +302,10 @@ impl Output for bool {
     }
 
     #[doc(hidden)]
-    fn from_run_result(_config: &Config, result: Result<RunResult, Error>) -> Result<Self, Error> {
+    fn from_run_result(
+        _config: &Config,
+        result: Result<ChildOutput, Error>,
+    ) -> Result<Self, Error> {
         Ok(result?.exit_status.success())
     }
 }

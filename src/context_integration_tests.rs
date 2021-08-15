@@ -3,7 +3,7 @@ fn main() {
     {
         {
             use cradle::prelude::*;
-            cmd_unit!(
+            run!(
                 LogCommand,
                 %"cargo build --bin test_executables_helper --features test_executables",
             );
@@ -27,14 +27,14 @@ fn main() {
 
         {
             assert_eq!(
-                with_gag(BufferRedirect::stdout, || cmd!(%"echo foo")),
+                with_gag(BufferRedirect::stdout, || run_output!(%"echo foo")),
                 "foo\n"
             );
         }
 
         {
             assert_eq!(
-                with_gag(BufferRedirect::stderr, || cmd!(
+                with_gag(BufferRedirect::stderr, || run_output!(
                     executable_path("test_executables_helper").to_str().unwrap(),
                     "write to stderr"
                 )),
