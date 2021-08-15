@@ -1,4 +1,4 @@
-//! Cradle's `prelude` module.
+//! `cradle`'s `prelude` module.
 //! It re-exports the most commonly used items from cradle.
 //! We recommend importing cradle like this:
 //! `use cradle::prelude::*;`

@@ -1,4 +1,4 @@
-//! The [`Output`] trait that defines all possible outputs of `cradle`.
+//! The [`Output`] trait that defines all possible outputs of a child process.
 
 use crate::{child_output::ChildOutput, config::Config, error::Error};
 use std::{process::ExitStatus, sync::Arc};

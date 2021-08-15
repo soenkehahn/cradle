@@ -1,4 +1,4 @@
-//! The [`Input`] trait that defines all possible inputs to `cradle`.
+//! The [`Input`] trait that defines all possible inputs to a child process.
 
 use crate::{config::Config, output::Output};
 use std::{
