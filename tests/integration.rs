@@ -135,12 +135,12 @@ fn user_supplied_errors_succeeding() {
 
     #[derive(Debug)]
     enum Error {
-        CradleError(cradle::Error),
+        Cradle(cradle::Error),
     }
 
     impl From<cradle::Error> for Error {
         fn from(error: cradle::Error) -> Self {
-            Error::CradleError(error)
+            Error::Cradle(error)
         }
     }
 
@@ -159,19 +159,19 @@ fn user_supplied_errors_failing() {
 
     #[derive(Debug)]
     enum Error {
-        CradleError(cradle::Error),
+        Cradle(cradle::Error),
     }
 
     impl From<cradle::Error> for Error {
         fn from(error: cradle::Error) -> Self {
-            Error::CradleError(error)
+            Error::Cradle(error)
         }
     }
 
     impl Display for Error {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
-                Error::CradleError(error) => write!(f, "cradle error: {}", error),
+                Error::Cradle(error) => write!(f, "cradle error: {}", error),
             }
         }
     }
@@ -267,12 +267,12 @@ mod run_interface {
 
         #[derive(Debug)]
         enum Error {
-            CradleError(cradle::Error),
+            Cradle(cradle::Error),
         }
 
         impl From<cradle::Error> for Error {
             fn from(error: cradle::Error) -> Self {
-                Error::CradleError(error)
+                Error::Cradle(error)
             }
         }
 
@@ -291,19 +291,19 @@ mod run_interface {
 
         #[derive(Debug)]
         enum Error {
-            CradleError(cradle::Error),
+            Cradle(cradle::Error),
         }
 
         impl From<cradle::Error> for Error {
             fn from(error: cradle::Error) -> Self {
-                Error::CradleError(error)
+                Error::Cradle(error)
             }
         }
 
         impl Display for Error {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match self {
-                    Error::CradleError(error) => write!(f, "cradle error: {}", error),
+                    Error::Cradle(error) => write!(f, "cradle error: {}", error),
                 }
             }
         }
