@@ -88,7 +88,7 @@ use std::{
 /// let hex = to_hex((Stdin(&[14, 15, 16]), Stdin(&[17, 18, 19])));
 /// assert_eq!(hex, "0E0F10111213");
 /// ```
-pub trait Input {
+pub trait Input: Sized {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
 
@@ -102,10 +102,7 @@ pub trait Input {
     ///
     /// ("touch", "foo").run();
     /// ```
-    fn run(self)
-    where
-        Self: Sized,
-    {
+    fn run(self) {
         crate::run!(self);
     }
 
@@ -120,7 +117,6 @@ pub trait Input {
     /// ```
     fn run_output<O>(self) -> O
     where
-        Self: Sized,
         O: Output,
     {
         crate::run_output!(self)
@@ -143,7 +139,6 @@ pub trait Input {
     /// ```
     fn run_result<O>(self) -> Result<O, crate::error::Error>
     where
-        Self: Sized,
         O: Output,
     {
         crate::run_result!(self)
