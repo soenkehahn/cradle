@@ -1,8 +1,15 @@
 //! The [`Input`] trait that defines all possible inputs to a child process.
 
-use crate::{config::Config, output::Output};
+use crate::{
+    child_output::ChildOutput,
+    config::Config,
+    context::Context,
+    error::{panic_on_error, Error},
+    output::Output,
+};
 use std::{
     ffi::{OsStr, OsString},
+    io::Write,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -103,7 +110,7 @@ pub trait Input: Sized {
     /// ("touch", "foo").run();
     /// ```
     fn run(self) {
-        crate::run!(self);
+        let () = self.run_output();
     }
 
     /// `input.run()` runs `input` as a child process.
@@ -119,7 +126,7 @@ pub trait Input: Sized {
     where
         O: Output,
     {
-        crate::run_output!(self)
+        panic_on_error(self.run_result())
     }
 
     /// `input.run_result()` runs `input` as a child process.
@@ -141,7 +148,22 @@ pub trait Input: Sized {
     where
         O: Output,
     {
-        crate::run_result!(self)
+        let context = Context::production();
+        self.run_result_with_context(context)
+    }
+
+    fn run_result_with_context<O, Stdout, Stderr>(
+        self,
+        context: Context<Stdout, Stderr>,
+    ) -> Result<O, Error>
+    where
+        O: Output,
+        Stdout: Write + Clone + Send + 'static,
+        Stderr: Write + Clone + Send + 'static,
+    {
+        let mut config = Config::default();
+        self.configure(&mut config);
+        ChildOutput::run_child_process_output(context, config)
     }
 }
 
