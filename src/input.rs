@@ -268,7 +268,7 @@ impl Input for String {
 /// ```
 ///
 /// [`split_whitespace`]: str::split_whitespace
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Split<T: AsRef<str>>(pub T);
 
 impl<T: AsRef<str>> Input for crate::input::Split<T> {
