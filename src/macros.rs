@@ -15,7 +15,7 @@
 #[macro_export]
 macro_rules! run {
     ($($args:tt)*) => {{
-        let () = $crate::run_output!($($args)*);
+        $crate::input::Input::run($crate::tuple_up!($($args)*))
     }}
 }
 
@@ -46,8 +46,7 @@ macro_rules! run {
 #[macro_export]
 macro_rules! run_output {
     ($($args:tt)*) => {{
-        let context = $crate::context::Context::production();
-        $crate::error::panic_on_error($crate::run_result_with_context!(context, $($args)*))
+      $crate::input::Input::run_output($crate::tuple_up!($($args)*))
     }}
 }
 
@@ -56,38 +55,8 @@ macro_rules! run_output {
 #[macro_export]
 macro_rules! run_result {
     ($($args:tt)*) => {{
-        let context = $crate::context::Context::production();
-        $crate::run_result_with_context!(context, $($args)*)
-    }}
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! run_result_with_context {
-    ($context:expr, $($args:tt)*) => {{
-        let mut config = $crate::config::Config::default();
-        $crate::configure!(config: config, args: $($args)*);
-        $crate::child_output::ChildOutput::run_child_process_output($context, config)
-    }}
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! configure {
-    (config: $config:ident, args: % $last:expr $(,)?) => {
-        $crate::input::Input::configure($crate::input::Split($last), &mut $config);
-    };
-    (config: $config:ident, args: $last:expr $(,)?) => {
-        $crate::input::Input::configure($last, &mut $config);
-    };
-    (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
-        $crate::input::Input::configure($crate::input::Split($head), &mut $config);
-        $crate::configure!(config: $config, args: $($tail)*);
-    };
-    (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
-        $crate::input::Input::configure($head, &mut $config);
-        $crate::configure!(config: $config, args: $($tail)*);
-    };
+        $crate::input::Input::run_result($crate::tuple_up!($($args)*))
+    }};
 }
 
 #[doc(hidden)]
@@ -100,10 +69,10 @@ macro_rules! tuple_up {
         $last
     };
     (% $head:expr, $($tail:tt)*) => {
-        ($crate::input::Split($head), tuple_up!($($tail)*))
+        ($crate::input::Split($head), $crate::tuple_up!($($tail)*))
     };
     ($head:expr, $($tail:tt)*) => {
-        ($head, tuple_up!($($tail)*))
+        ($head, $crate::tuple_up!($($tail)*))
     };
 }
 

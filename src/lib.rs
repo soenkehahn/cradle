@@ -314,7 +314,10 @@ mod tests {
     macro_rules! run_result_with_context_unit {
         ($context:expr, $($args:tt)*) => {{
             let result: std::result::Result<(), $crate::Error> =
-              $crate::run_result_with_context!($context, $($args)*);
+                $crate::input::Input::run_result_with_context(
+                    $crate::tuple_up!($($args)*),
+                    $context,
+                );
             result
         }}
     }
@@ -608,9 +611,10 @@ mod tests {
         #[test]
         fn vector_of_non_strings() {
             let context = Context::test();
-            let config: Vec<LogCommand> = vec![LogCommand];
-            let StdoutTrimmed(stdout) =
-                crate::run_result_with_context!(context.clone(), config, %"echo foo").unwrap();
+            let log_commands: Vec<LogCommand> = vec![LogCommand];
+            let StdoutTrimmed(stdout) = (log_commands, Split("echo foo"))
+                .run_result_with_context(context.clone())
+                .unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -627,9 +631,10 @@ mod tests {
         #[test]
         fn arrays_of_non_strings() {
             let context = Context::test();
-            let config: [LogCommand; 1] = [LogCommand];
-            let StdoutTrimmed(stdout) =
-                crate::run_result_with_context!(context.clone(), config, %"echo foo").unwrap();
+            let log_commands: [LogCommand; 1] = [LogCommand];
+            let StdoutTrimmed(stdout) = (log_commands, Split("echo foo"))
+                .run_result_with_context(context.clone())
+                .unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -672,9 +677,10 @@ mod tests {
         #[test]
         fn slices_of_non_strings() {
             let context = Context::test();
-            let config: &[LogCommand] = &[LogCommand];
-            let StdoutTrimmed(stdout) =
-                crate::run_result_with_context!(context.clone(), config, %"echo foo").unwrap();
+            let log_commands: &[LogCommand] = &[LogCommand];
+            let StdoutTrimmed(stdout) = (log_commands, Split("echo foo"))
+                .run_result_with_context(context.clone())
+                .unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -757,7 +763,7 @@ mod tests {
         #[test]
         fn relays_stdout_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<(), Error> = crate::run_result_with_context!(
+            let _ = run_result_with_context_unit!(
                 context.clone(),
                 test_helper(),
                 "output foo and exit with 42"
@@ -789,8 +795,9 @@ mod tests {
         #[test]
         fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
-            let StdoutTrimmed(_) =
-                crate::run_result_with_context!(context.clone(), %"echo foo").unwrap();
+            let StdoutTrimmed(_) = Split("echo foo")
+                .run_result_with_context(context.clone())
+                .unwrap();
             assert_eq!(context.stdout(), "");
         }
 
@@ -798,7 +805,7 @@ mod tests {
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
             let _: Result<StdoutTrimmed, Error> =
-                crate::run_result_with_context!(context.clone(), %"echo foo");
+                Split("echo foo").run_result_with_context(context.clone());
             assert_eq!(context.stdout(), "");
         }
     }
@@ -819,11 +826,8 @@ mod tests {
         #[test]
         fn relays_stderr_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<(), Error> = crate::run_result_with_context!(
-                context.clone(),
-                test_helper(),
-                "write to stderr and exit with 42"
-            );
+            let _: Result<(), Error> = (test_helper(), "write to stderr and exit with 42")
+                .run_result_with_context(context.clone());
             assert_eq!(context.stderr(), "foo\n");
         }
 
@@ -886,9 +890,9 @@ mod tests {
         #[test]
         fn does_not_relay_stderr_when_catpuring() {
             let context = Context::test();
-            let Stderr(_) =
-                crate::run_result_with_context!(context.clone(), test_helper(), "write to stderr")
-                    .unwrap();
+            let Stderr(_) = (test_helper(), "write to stderr")
+                .run_result_with_context(context.clone())
+                .unwrap();
             assert_eq!(context.stderr(), "");
         }
     }
@@ -1142,8 +1146,9 @@ mod tests {
             #[test]
             fn does_not_relay_stdout() {
                 let context = Context::test();
-                let StdoutTrimmed(_) =
-                    crate::run_result_with_context!(context.clone(), %"echo foo").unwrap();
+                let StdoutTrimmed(_) = Split("echo foo")
+                    .run_result_with_context(context.clone())
+                    .unwrap();
                 assert_eq!(context.stdout(), "");
             }
         }
@@ -1166,8 +1171,9 @@ mod tests {
             #[test]
             fn does_not_relay_stdout() {
                 let context = Context::test();
-                let StdoutUntrimmed(_) =
-                    crate::run_result_with_context!(context.clone(), %"echo foo").unwrap();
+                let StdoutUntrimmed(_) = Split("echo foo")
+                    .run_result_with_context(context.clone())
+                    .unwrap();
                 assert_eq!(context.stdout(), "");
             }
         }
@@ -1448,7 +1454,7 @@ mod tests {
             let unused_key = find_unused_environment_variable();
             env::set_var(&unused_key, "foo");
             let StdoutTrimmed(output) =
-                run_output!(test_helper(), "echo", &unused_key, Env(unused_key, "bar"));
+                run_output!(test_helper(), "echo", &unused_key, Env(&unused_key, "bar"));
             assert_eq!(output, "bar");
         }
 
