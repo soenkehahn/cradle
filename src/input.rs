@@ -109,7 +109,7 @@ pub trait Input: Sized {
     ///
     /// ("touch", "foo").run();
     /// ```
-    #[track_caller]
+    #[rustversion::attr(since(1.46), track_caller)]
     fn run(self) {
         let () = self.run_output();
     }
@@ -123,7 +123,7 @@ pub trait Input: Sized {
     /// let StdoutTrimmed(output) = ("echo", "foo").run_output();
     /// assert_eq!(output, "foo");
     /// ```
-    #[track_caller]
+    #[rustversion::attr(since(1.46), track_caller)]
     fn run_output<O>(self) -> O
     where
         O: Output,
