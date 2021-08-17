@@ -155,19 +155,6 @@ pub trait Input: Sized {
     }
 }
 
-#[cfg(test)]
-pub(crate) fn run_result_with_context_unit<Stdout, Stderr, I>(
-    context: Context<Stdout, Stderr>,
-    input: I,
-) -> Result<(), Error>
-where
-    Stdout: Write + Clone + Send + 'static,
-    Stderr: Write + Clone + Send + 'static,
-    I: Input,
-{
-    run_result_with_context(context, input)
-}
-
 pub(crate) fn run_result_with_context<Stdout, Stderr, I, O>(
     context: Context<Stdout, Stderr>,
     input: I,
@@ -181,6 +168,19 @@ where
     let mut config = Config::default();
     input.configure(&mut config);
     ChildOutput::run_child_process_output(context, config)
+}
+
+#[cfg(test)]
+pub(crate) fn run_result_with_context_unit<Stdout, Stderr, I>(
+    context: Context<Stdout, Stderr>,
+    input: I,
+) -> Result<(), Error>
+where
+    Stdout: Write + Clone + Send + 'static,
+    Stderr: Write + Clone + Send + 'static,
+    I: Input,
+{
+    run_result_with_context(context, input)
 }
 
 /// Blanket implementation for `&_`.
