@@ -311,15 +311,16 @@ mod tests {
         test_executable("test_executables_helper")
     }
 
-    macro_rules! run_result_with_context_unit {
-        ($context:expr, $($args:tt)*) => {{
-            let result: std::result::Result<(), $crate::Error> =
-                $crate::input::Input::run_result_with_context(
-                    $crate::tuple_up!($($args)*),
-                    $context,
-                );
-            result
-        }}
+    fn run_result_with_context_unit<Stdout, Stderr, I>(
+        context: Context<Stdout, Stderr>,
+        input: I,
+    ) -> Result<(), Error>
+    where
+        Stdout: Write + Clone + Send + 'static,
+        Stderr: Write + Clone + Send + 'static,
+        I: Input,
+    {
+        input.run_result_with_context(context)
     }
 
     #[test]
@@ -756,17 +757,16 @@ mod tests {
         #[test]
         fn relays_stdout_by_default() {
             let context = Context::test();
-            run_result_with_context_unit!(context.clone(), %"echo foo").unwrap();
+            run_result_with_context_unit(context.clone(), Split("echo foo")).unwrap();
             assert_eq!(context.stdout(), "foo\n");
         }
 
         #[test]
         fn relays_stdout_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _ = run_result_with_context_unit!(
+            let _ = run_result_with_context_unit(
                 context.clone(),
-                test_helper(),
-                "output foo and exit with 42"
+                (test_helper(), "output foo and exit with 42"),
             );
             assert_eq!(context.stdout(), "foo\n");
         }
@@ -777,10 +777,9 @@ mod tests {
                 let context = Context::test();
                 let context_clone = context.clone();
                 let thread = thread::spawn(|| {
-                    run_result_with_context_unit!(
+                    run_result_with_context_unit(
                         context_clone,
-                        test_helper(),
-                        "stream chunk then wait for file"
+                        (test_helper(), "stream chunk then wait for file"),
                     )
                     .unwrap();
                 });
@@ -818,7 +817,7 @@ mod tests {
         #[test]
         fn relays_stderr_by_default() {
             let context = Context::test();
-            run_result_with_context_unit!(context.clone(), test_helper(), "write to stderr")
+            run_result_with_context_unit(context.clone(), (test_helper(), "write to stderr"))
                 .unwrap();
             assert_eq!(context.stderr(), "foo\n");
         }
@@ -837,10 +836,9 @@ mod tests {
                 let context = Context::test();
                 let context_clone = context.clone();
                 let thread = thread::spawn(|| {
-                    run_result_with_context_unit!(
+                    run_result_with_context_unit(
                         context_clone,
-                        test_helper(),
-                        "stream chunk to stderr then wait for file"
+                        (test_helper(), "stream chunk to stderr then wait for file"),
                     )
                     .unwrap();
                 });
@@ -903,28 +901,28 @@ mod tests {
         #[test]
         fn logs_simple_commands() {
             let context = Context::test();
-            run_result_with_context_unit!(context.clone(), LogCommand, "true").unwrap();
+            run_result_with_context_unit(context.clone(), (LogCommand, "true")).unwrap();
             assert_eq!(context.stderr(), "+ true\n");
         }
 
         #[test]
         fn logs_commands_with_arguments() {
             let context = Context::test();
-            run_result_with_context_unit!(context.clone(), LogCommand, %"echo foo").unwrap();
+            run_result_with_context_unit(context.clone(), (LogCommand, Split("echo foo"))).unwrap();
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
 
         #[test]
         fn quotes_arguments_with_spaces() {
             let context = Context::test();
-            run_result_with_context_unit!(context.clone(), LogCommand, "echo", "foo bar").unwrap();
+            run_result_with_context_unit(context.clone(), (LogCommand, "echo", "foo bar")).unwrap();
             assert_eq!(context.stderr(), "+ echo 'foo bar'\n");
         }
 
         #[test]
         fn quotes_empty_arguments() {
             let context = Context::test();
-            run_result_with_context_unit!(context.clone(), LogCommand, "echo", "").unwrap();
+            run_result_with_context_unit(context.clone(), (LogCommand, "echo", "")).unwrap();
             assert_eq!(context.stderr(), "+ echo ''\n");
         }
 
@@ -936,11 +934,9 @@ mod tests {
             let argument_with_invalid_utf8: &OsStr =
                 OsStrExt::from_bytes(&[102, 111, 111, 0x80, 98, 97, 114]);
             let argument_with_invalid_utf8: &Path = argument_with_invalid_utf8.as_ref();
-            run_result_with_context_unit!(
+            run_result_with_context_unit(
                 context.clone(),
-                LogCommand,
-                "echo",
-                argument_with_invalid_utf8
+                (LogCommand, "echo", argument_with_invalid_utf8),
             )
             .unwrap();
             assert_eq!(context.stderr(), "+ echo foo�bar\n");
