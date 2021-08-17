@@ -151,22 +151,23 @@ pub trait Input: Sized {
         O: Output,
     {
         let context = Context::production();
-        self.run_result_with_context(context)
+        run_result_with_context(self, context)
     }
+}
 
-    fn run_result_with_context<O, Stdout, Stderr>(
-        self,
-        context: Context<Stdout, Stderr>,
-    ) -> Result<O, Error>
-    where
-        O: Output,
-        Stdout: Write + Clone + Send + 'static,
-        Stderr: Write + Clone + Send + 'static,
-    {
-        let mut config = Config::default();
-        self.configure(&mut config);
-        ChildOutput::run_child_process_output(context, config)
-    }
+pub(crate) fn run_result_with_context<I, O, Stdout, Stderr>(
+    input: I,
+    context: Context<Stdout, Stderr>,
+) -> Result<O, Error>
+where
+    I: Input,
+    O: Output,
+    Stdout: Write + Clone + Send + 'static,
+    Stderr: Write + Clone + Send + 'static,
+{
+    let mut config = Config::default();
+    input.configure(&mut config);
+    ChildOutput::run_child_process_output(context, config)
 }
 
 /// Blanket implementation for `&_`.

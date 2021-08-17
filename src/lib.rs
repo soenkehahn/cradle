@@ -246,8 +246,7 @@ pub use crate::error::Error;
 
 #[cfg(test)]
 mod tests {
-    use crate::context::Context;
-    use crate::prelude::*;
+    use crate::{context::Context, input::run_result_with_context, prelude::*};
     use lazy_static::lazy_static;
     use std::{
         collections::BTreeSet,
@@ -320,7 +319,7 @@ mod tests {
         Stderr: Write + Clone + Send + 'static,
         I: Input,
     {
-        input.run_result_with_context(context)
+        run_result_with_context(input, context)
     }
 
     #[test]
@@ -613,9 +612,9 @@ mod tests {
         fn vector_of_non_strings() {
             let context = Context::test();
             let log_commands: Vec<LogCommand> = vec![LogCommand];
-            let StdoutTrimmed(stdout) = (log_commands, Split("echo foo"))
-                .run_result_with_context(context.clone())
-                .unwrap();
+            let StdoutTrimmed(stdout) =
+                run_result_with_context((log_commands, Split("echo foo")), context.clone())
+                    .unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -633,9 +632,9 @@ mod tests {
         fn arrays_of_non_strings() {
             let context = Context::test();
             let log_commands: [LogCommand; 1] = [LogCommand];
-            let StdoutTrimmed(stdout) = (log_commands, Split("echo foo"))
-                .run_result_with_context(context.clone())
-                .unwrap();
+            let StdoutTrimmed(stdout) =
+                run_result_with_context((log_commands, Split("echo foo")), context.clone())
+                    .unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -679,9 +678,9 @@ mod tests {
         fn slices_of_non_strings() {
             let context = Context::test();
             let log_commands: &[LogCommand] = &[LogCommand];
-            let StdoutTrimmed(stdout) = (log_commands, Split("echo foo"))
-                .run_result_with_context(context.clone())
-                .unwrap();
+            let StdoutTrimmed(stdout) =
+                run_result_with_context((log_commands, Split("echo foo")), context.clone())
+                    .unwrap();
             assert_eq!(stdout, "foo");
             assert_eq!(context.stderr(), "+ echo foo\n");
         }
@@ -794,9 +793,8 @@ mod tests {
         #[test]
         fn does_not_relay_stdout_when_collecting_into_string() {
             let context = Context::test();
-            let StdoutTrimmed(_) = Split("echo foo")
-                .run_result_with_context(context.clone())
-                .unwrap();
+            let StdoutTrimmed(_) =
+                run_result_with_context(Split("echo foo"), context.clone()).unwrap();
             assert_eq!(context.stdout(), "");
         }
 
@@ -804,7 +802,7 @@ mod tests {
         fn does_not_relay_stdout_when_collecting_into_result_of_string() {
             let context = Context::test();
             let _: Result<StdoutTrimmed, Error> =
-                Split("echo foo").run_result_with_context(context.clone());
+                run_result_with_context(Split("echo foo"), context.clone());
             assert_eq!(context.stdout(), "");
         }
     }
@@ -825,8 +823,10 @@ mod tests {
         #[test]
         fn relays_stderr_for_non_zero_exit_codes() {
             let context = Context::test();
-            let _: Result<(), Error> = (test_helper(), "write to stderr and exit with 42")
-                .run_result_with_context(context.clone());
+            let _: Result<(), Error> = run_result_with_context(
+                (test_helper(), "write to stderr and exit with 42"),
+                context.clone(),
+            );
             assert_eq!(context.stderr(), "foo\n");
         }
 
@@ -888,9 +888,9 @@ mod tests {
         #[test]
         fn does_not_relay_stderr_when_catpuring() {
             let context = Context::test();
-            let Stderr(_) = (test_helper(), "write to stderr")
-                .run_result_with_context(context.clone())
-                .unwrap();
+            let Stderr(_) =
+                run_result_with_context((test_helper(), "write to stderr"), context.clone())
+                    .unwrap();
             assert_eq!(context.stderr(), "");
         }
     }
@@ -1142,9 +1142,8 @@ mod tests {
             #[test]
             fn does_not_relay_stdout() {
                 let context = Context::test();
-                let StdoutTrimmed(_) = Split("echo foo")
-                    .run_result_with_context(context.clone())
-                    .unwrap();
+                let StdoutTrimmed(_) =
+                    run_result_with_context(Split("echo foo"), context.clone()).unwrap();
                 assert_eq!(context.stdout(), "");
             }
         }
@@ -1167,9 +1166,8 @@ mod tests {
             #[test]
             fn does_not_relay_stdout() {
                 let context = Context::test();
-                let StdoutUntrimmed(_) = Split("echo foo")
-                    .run_result_with_context(context.clone())
-                    .unwrap();
+                let StdoutUntrimmed(_) =
+                    run_result_with_context(Split("echo foo"), context.clone()).unwrap();
                 assert_eq!(context.stdout(), "");
             }
         }
