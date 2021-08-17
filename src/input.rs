@@ -151,19 +151,32 @@ pub trait Input: Sized {
         O: Output,
     {
         let context = Context::production();
-        run_result_with_context(self, context)
+        run_result_with_context(context, self)
     }
 }
 
-pub(crate) fn run_result_with_context<I, O, Stdout, Stderr>(
-    input: I,
+#[cfg(test)]
+pub(crate) fn run_result_with_context_unit<Stdout, Stderr, I>(
     context: Context<Stdout, Stderr>,
-) -> Result<O, Error>
+    input: I,
+) -> Result<(), Error>
 where
-    I: Input,
-    O: Output,
     Stdout: Write + Clone + Send + 'static,
     Stderr: Write + Clone + Send + 'static,
+    I: Input,
+{
+    run_result_with_context(context, input)
+}
+
+pub(crate) fn run_result_with_context<Stdout, Stderr, I, O>(
+    context: Context<Stdout, Stderr>,
+    input: I,
+) -> Result<O, Error>
+where
+    Stdout: Write + Clone + Send + 'static,
+    Stderr: Write + Clone + Send + 'static,
+    I: Input,
+    O: Output,
 {
     let mut config = Config::default();
     input.configure(&mut config);
