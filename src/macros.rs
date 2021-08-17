@@ -46,7 +46,7 @@ macro_rules! run {
 #[macro_export]
 macro_rules! run_output {
     ($($args:tt)*) => {{
-      $crate::input::Input::run_output($crate::tuple_up!($($args)*))
+        $crate::input::Input::run_output($crate::tuple_up!($($args)*))
     }}
 }
 
