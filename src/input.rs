@@ -111,7 +111,7 @@ pub trait Input: Sized {
     /// ```
     #[rustversion::attr(since(1.46), track_caller)]
     fn run(self) {
-        let () = self.run_output();
+        self.run_output()
     }
 
     /// `input.run()` runs `input` as a child process.
