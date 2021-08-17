@@ -17,7 +17,7 @@ pub struct ChildOutput {
 }
 
 impl ChildOutput {
-    pub fn run_child_process_output<Stdout, Stderr, T>(
+    pub(crate) fn run_child_process_output<Stdout, Stderr, T>(
         context: Context<Stdout, Stderr>,
         mut config: Config,
     ) -> Result<T, Error>

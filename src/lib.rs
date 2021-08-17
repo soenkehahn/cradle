@@ -234,8 +234,7 @@ pub mod child_output;
 mod collected_output;
 #[doc(hidden)]
 pub mod config;
-#[doc(hidden)]
-pub mod context;
+mod context;
 pub mod error;
 pub mod input;
 mod macros;
