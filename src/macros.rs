@@ -84,6 +84,7 @@ mod tests {
         use super::*;
 
         #[test]
+        #[allow(clippy::eq_op)]
         fn one_value() {
             assert_eq!(tuple_up!(1), 1);
         }
