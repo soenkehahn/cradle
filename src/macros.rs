@@ -15,7 +15,7 @@
 #[macro_export]
 macro_rules! run {
     ($($args:tt)*) => {{
-        let () = $crate::run_output!($($args)*);
+        $crate::input::Input::run($crate::tuple_up!($($args)*))
     }}
 }
 
@@ -46,8 +46,7 @@ macro_rules! run {
 #[macro_export]
 macro_rules! run_output {
     ($($args:tt)*) => {{
-        let context = $crate::context::Context::production();
-        $crate::error::panic_on_error($crate::run_result_with_context!(context, $($args)*))
+        $crate::input::Input::run_output($crate::tuple_up!($($args)*))
     }}
 }
 
@@ -56,36 +55,76 @@ macro_rules! run_output {
 #[macro_export]
 macro_rules! run_result {
     ($($args:tt)*) => {{
-        let context = $crate::context::Context::production();
-        $crate::run_result_with_context!(context, $($args)*)
+        $crate::input::Input::run_result($crate::tuple_up!($($args)*))
     }}
 }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! run_result_with_context {
-    ($context:expr, $($args:tt)*) => {{
-        let mut config = $crate::config::Config::default();
-        $crate::configure!(config: config, args: $($args)*);
-        $crate::child_output::ChildOutput::run_child_process_output($context, config)
-    }}
+macro_rules! tuple_up {
+    (% $last:expr $(,)?) => {
+        $crate::input::Split($last)
+    };
+    ($last:expr $(,)?) => {
+        $last
+    };
+    (% $head:expr, $($tail:tt)*) => {
+        ($crate::input::Split($head), $crate::tuple_up!($($tail)*))
+    };
+    ($head:expr, $($tail:tt)*) => {
+        ($head, $crate::tuple_up!($($tail)*))
+    };
 }
 
-#[doc(hidden)]
-#[macro_export]
-macro_rules! configure {
-    (config: $config:ident, args: % $head:expr $(,)?) => {
-        $crate::input::Input::configure($crate::input::Split($head), &mut $config);
-    };
-    (config: $config:ident, args: $head:expr $(,)?) => {
-        $crate::input::Input::configure($head, &mut $config);
-    };
-    (config: $config:ident, args: % $head:expr, $($tail:tt)*) => {
-        $crate::input::Input::configure($crate::input::Split($head), &mut $config);
-        $crate::configure!(config: $config, args: $($tail)*);
-    };
-    (config: $config:ident, args: $head:expr, $($tail:tt)*) => {
-        $crate::input::Input::configure($head, &mut $config);
-        $crate::configure!(config: $config, args: $($tail)*);
-    };
+#[cfg(test)]
+mod tests {
+    use crate::prelude::*;
+
+    mod tuple_up {
+        use super::*;
+
+        #[test]
+        #[allow(clippy::eq_op)]
+        fn one_value() {
+            assert_eq!(tuple_up!(1), 1);
+        }
+
+        #[test]
+        fn two_values() {
+            assert_eq!(tuple_up!(1, 2), (1, 2));
+        }
+
+        #[test]
+        fn three_values() {
+            assert_eq!(tuple_up!(1, 2, 3), (1, (2, 3)));
+        }
+
+        #[test]
+        fn nested_tuples() {
+            assert_eq!(tuple_up!(1, (2, 3), 4), (1, ((2, 3), 4)));
+        }
+
+        #[test]
+        fn percent_shortcut() {
+            assert_eq!(tuple_up!(%"foo"), Split("foo"));
+        }
+
+        #[test]
+        fn percent_shortcut_with_subsequent_values() {
+            assert_eq!(tuple_up!(%"foo", "bar"), (Split("foo"), "bar"));
+        }
+
+        #[test]
+        fn percent_shortcut_with_preceeding_values() {
+            assert_eq!(tuple_up!("foo", %"bar"), ("foo", Split("bar")));
+        }
+
+        #[test]
+        fn percent_shortcut_with_multiple_values() {
+            assert_eq!(
+                tuple_up!(%"foo", "bar", %"baz"),
+                (Split("foo"), ("bar", Split("baz")))
+            );
+        }
+    }
 }

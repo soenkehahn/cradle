@@ -1,8 +1,15 @@
 //! The [`Input`] trait that defines all possible inputs to a child process.
 
-use crate::{config::Config, output::Output};
+use crate::{
+    child_output::ChildOutput,
+    config::Config,
+    context::Context,
+    error::{panic_on_error, Error},
+    output::Output,
+};
 use std::{
     ffi::{OsStr, OsString},
+    io::Write,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -88,7 +95,7 @@ use std::{
 /// let hex = to_hex((Stdin(&[14, 15, 16]), Stdin(&[17, 18, 19])));
 /// assert_eq!(hex, "0E0F10111213");
 /// ```
-pub trait Input {
+pub trait Input: Sized {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
 
@@ -102,11 +109,9 @@ pub trait Input {
     ///
     /// ("touch", "foo").run();
     /// ```
-    fn run(self)
-    where
-        Self: Sized,
-    {
-        crate::run!(self);
+    #[rustversion::attr(since(1.46), track_caller)]
+    fn run(self) {
+        self.run_output()
     }
 
     /// `input.run()` runs `input` as a child process.
@@ -118,12 +123,12 @@ pub trait Input {
     /// let StdoutTrimmed(output) = ("echo", "foo").run_output();
     /// assert_eq!(output, "foo");
     /// ```
+    #[rustversion::attr(since(1.46), track_caller)]
     fn run_output<O>(self) -> O
     where
-        Self: Sized,
         O: Output,
     {
-        crate::run_output!(self)
+        panic_on_error(self.run_result())
     }
 
     /// `input.run_result()` runs `input` as a child process.
@@ -143,11 +148,39 @@ pub trait Input {
     /// ```
     fn run_result<O>(self) -> Result<O, crate::error::Error>
     where
-        Self: Sized,
         O: Output,
     {
-        crate::run_result!(self)
+        let context = Context::production();
+        run_result_with_context(context, self)
     }
+}
+
+pub(crate) fn run_result_with_context<Stdout, Stderr, I, O>(
+    context: Context<Stdout, Stderr>,
+    input: I,
+) -> Result<O, Error>
+where
+    Stdout: Write + Clone + Send + 'static,
+    Stderr: Write + Clone + Send + 'static,
+    I: Input,
+    O: Output,
+{
+    let mut config = Config::default();
+    input.configure(&mut config);
+    ChildOutput::run_child_process_output(context, config)
+}
+
+#[cfg(test)]
+pub(crate) fn run_result_with_context_unit<Stdout, Stderr, I>(
+    context: Context<Stdout, Stderr>,
+    input: I,
+) -> Result<(), Error>
+where
+    Stdout: Write + Clone + Send + 'static,
+    Stderr: Write + Clone + Send + 'static,
+    I: Input,
+{
+    run_result_with_context(context, input)
 }
 
 /// Blanket implementation for `&_`.
@@ -251,7 +284,7 @@ impl Input for String {
 /// ```
 ///
 /// [`split_whitespace`]: str::split_whitespace
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Split<T: AsRef<str>>(pub T);
 
 impl<T: AsRef<str>> Input for crate::input::Split<T> {
