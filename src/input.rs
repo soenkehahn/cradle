@@ -1,8 +1,15 @@
 //! The [`Input`] trait that defines all possible inputs to a child process.
 
-use crate::{config::Config, output::Output};
+use crate::{
+    child_output::ChildOutput,
+    config::Config,
+    context::Context,
+    error::{panic_on_error, Error},
+    output::Output,
+};
 use std::{
     ffi::{OsStr, OsString},
+    io::Write,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -102,8 +109,9 @@ pub trait Input: Sized {
     ///
     /// ("touch", "foo").run();
     /// ```
+    #[rustversion::attr(since(1.46), track_caller)]
     fn run(self) {
-        crate::run!(self);
+        self.run_output()
     }
 
     /// `input.run()` runs `input` as a child process.
@@ -115,11 +123,12 @@ pub trait Input: Sized {
     /// let StdoutTrimmed(output) = ("echo", "foo").run_output();
     /// assert_eq!(output, "foo");
     /// ```
+    #[rustversion::attr(since(1.46), track_caller)]
     fn run_output<O>(self) -> O
     where
         O: Output,
     {
-        crate::run_output!(self)
+        panic_on_error(self.run_result())
     }
 
     /// `input.run_result()` runs `input` as a child process.
@@ -141,8 +150,37 @@ pub trait Input: Sized {
     where
         O: Output,
     {
-        crate::run_result!(self)
+        let context = Context::production();
+        run_result_with_context(context, self)
     }
+}
+
+pub(crate) fn run_result_with_context<Stdout, Stderr, I, O>(
+    context: Context<Stdout, Stderr>,
+    input: I,
+) -> Result<O, Error>
+where
+    Stdout: Write + Clone + Send + 'static,
+    Stderr: Write + Clone + Send + 'static,
+    I: Input,
+    O: Output,
+{
+    let mut config = Config::default();
+    input.configure(&mut config);
+    ChildOutput::run_child_process_output(context, config)
+}
+
+#[cfg(test)]
+pub(crate) fn run_result_with_context_unit<Stdout, Stderr, I>(
+    context: Context<Stdout, Stderr>,
+    input: I,
+) -> Result<(), Error>
+where
+    Stdout: Write + Clone + Send + 'static,
+    Stderr: Write + Clone + Send + 'static,
+    I: Input,
+{
+    run_result_with_context(context, input)
 }
 
 /// Blanket implementation for `&_`.
@@ -246,7 +284,7 @@ impl Input for String {
 /// ```
 ///
 /// [`split_whitespace`]: str::split_whitespace
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Split<T: AsRef<str>>(pub T);
 
 impl<T: AsRef<str>> Input for crate::input::Split<T> {

@@ -3,7 +3,7 @@
 use std::io::{self, Write};
 
 #[derive(Clone, Debug)]
-pub struct Stdout;
+pub(crate) struct Stdout;
 
 impl Write for Stdout {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
@@ -16,7 +16,7 @@ impl Write for Stdout {
 }
 
 #[derive(Clone, Debug)]
-pub struct Stderr;
+pub(crate) struct Stderr;
 
 impl Write for Stderr {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
@@ -30,13 +30,13 @@ impl Write for Stderr {
 
 #[doc(hidden)]
 #[derive(Clone, Debug)]
-pub struct Context<Stdout, Stderr> {
+pub(crate) struct Context<Stdout, Stderr> {
     pub(crate) stdout: Stdout,
     pub(crate) stderr: Stderr,
 }
 
 impl Context<Stdout, Stderr> {
-    pub fn production() -> Self {
+    pub(crate) fn production() -> Self {
         Context {
             stdout: Stdout,
             stderr: Stderr,
@@ -81,12 +81,12 @@ mod test {
             }
         }
 
-        pub fn stdout(&self) -> String {
+        pub(crate) fn stdout(&self) -> String {
             let lock = self.stdout.0.lock().unwrap();
             String::from_utf8(lock.clone().into_inner()).unwrap()
         }
 
-        pub fn stderr(&self) -> String {
+        pub(crate) fn stderr(&self) -> String {
             let lock = self.stderr.0.lock().unwrap();
             String::from_utf8(lock.clone().into_inner()).unwrap()
         }
