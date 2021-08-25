@@ -324,6 +324,25 @@ mod run_interface {
     }
 }
 
+#[test]
+fn root_re_exports_everything_from_the_prelude() {
+    // This does not import everything that we want to be re-exported from the root module,
+    // but items that are hopefully good test proxies for everything.
+
+    // run macros
+    #[allow(unused_imports)]
+    use cradle::{run, run_output, run_result};
+    // items from input
+    #[allow(unused_imports)]
+    use cradle::{CurrentDir, Input};
+    // items from output
+    #[allow(unused_imports)]
+    use cradle::{Output, Status};
+    // the cradle error type
+    #[allow(unused_imports)]
+    use cradle::Error;
+}
+
 #[cfg(target_os = "linux")]
 #[test]
 fn memory_test() {

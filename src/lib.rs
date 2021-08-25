@@ -241,7 +241,7 @@ mod macros;
 pub mod output;
 pub mod prelude;
 
-pub use crate::error::Error;
+include!("common_re_exports.rs.snippet");
 
 #[cfg(test)]
 mod tests {

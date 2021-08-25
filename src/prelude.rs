@@ -6,9 +6,5 @@
 //! For documentation about how to use cradle,
 //! see the documentation in the [crate root](crate).
 
-pub use crate::{
-    error::Error,
-    input::{CurrentDir, Env, Input, LogCommand, Split, Stdin},
-    output::{Output, Status, Stderr, StdoutTrimmed, StdoutUntrimmed},
-    run, run_output, run_result,
-};
+include!("common_re_exports.rs.snippet");
+pub use crate::{run, run_output, run_result};
