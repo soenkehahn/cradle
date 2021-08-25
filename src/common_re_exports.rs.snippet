@@ -1,0 +1,10 @@
+// This file contains common re-exports included in both `src/lib.rs` and `src/prelude.rs`.
+// Putting these into a common file ensures that they stay in sync.
+//
+// Note that the macros defined in `src/macros.rs` are already exported from the root module.
+// So they can't be included here, since that would clash.
+pub use crate::{
+    error::Error,
+    input::{CurrentDir, Env, Input, LogCommand, Split, Stdin},
+    output::{Output, Status, Stderr, StdoutTrimmed, StdoutUntrimmed},
+};
