@@ -488,10 +488,10 @@ mod tests {
             fn missing_executable_file_error_can_be_matched_against() {
                 let result: Result<(), Error> = run_result!("does-not-exist");
                 match result {
-                    Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
+                    Err(Error::FileNotFound { executable, .. }) => {
                         assert_eq!(executable, "does-not-exist");
                     }
-                    _ => panic!("should match Error::FileNotFoundWhenExecuting"),
+                    _ => panic!("should match Error::FileNotFound"),
                 }
             }
 
@@ -499,10 +499,10 @@ mod tests {
             fn missing_executable_file_error_can_be_caused_by_relative_paths() {
                 let result: Result<(), Error> = run_result!("./does-not-exist");
                 match result {
-                    Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
+                    Err(Error::FileNotFound { executable, .. }) => {
                         assert_eq!(executable, "./does-not-exist");
                     }
-                    _ => panic!("should match Error::FileNotFoundWhenExecuting"),
+                    _ => panic!("should match Error::FileNotFound"),
                 }
             }
 
@@ -1502,8 +1502,8 @@ mod tests {
             assert_eq!(output, "foo");
             let result: Result<(), Error> = "does-not-exist".run_result();
             match result {
-                Err(Error::FileNotFoundWhenExecuting { .. }) => {}
-                _ => panic!("should match Error::FileNotFoundWhenExecuting"),
+                Err(Error::FileNotFound { .. }) => {}
+                _ => panic!("should match Error::FileNotFound"),
             }
         }
     }

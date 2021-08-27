@@ -29,7 +29,7 @@ pub enum Error {
     ///
     /// let result: Result<(), Error> = run_result!("does-not-exist");
     /// match result {
-    ///   Err(Error::FileNotFoundWhenExecuting { .. }) => {}
+    ///   Err(Error::FileNotFound { .. }) => {}
     ///   _ => panic!(),
     /// }
     /// ```
@@ -43,7 +43,7 @@ pub enum Error {
     /// - the executable starts with a
     ///   [hashbang](https://en.wikipedia.org/wiki/Shebang_(Unix)),
     ///   but the interpreter specified in the hashbang cannot be found.
-    FileNotFoundWhenExecuting {
+    FileNotFound {
         executable: OsString,
         source: Arc<io::Error>,
     },
@@ -51,7 +51,7 @@ pub enum Error {
     /// This can occurr e.g. when:
     ///
     /// - spawning the child process fails (for another reason than
-    ///   [`FileNotFoundWhenExecuting`](Error::FileNotFoundWhenExecuting)),
+    ///   [`FileNotFound`](Error::FileNotFound)),
     /// - writing to `stdin` of the child process fails,
     /// - reading from `stdout` or `stderr` of the child process fails,
     /// - writing to the parent's `stdout` or `stderr` fails,
@@ -177,7 +177,7 @@ impl Display for Error {
         use Error::*;
         match self {
             NoArgumentsGiven => write!(f, "no arguments given"),
-            FileNotFoundWhenExecuting { executable, .. } => {
+            FileNotFound { executable, .. } => {
                 let executable = executable.to_string_lossy();
                 write!(f, "File not found error when executing '{}'", executable)?;
                 if let Some(whitespace_note) = executable_with_whitespace_note(executable.as_ref())
@@ -223,9 +223,7 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         use Error::*;
         match self {
-            FileNotFoundWhenExecuting { source, .. } | CommandIoError { source, .. } => {
-                Some(&**source)
-            }
+            FileNotFound { source, .. } | CommandIoError { source, .. } => Some(&**source),
             InvalidUtf8ToStdout { source, .. } | InvalidUtf8ToStderr { source, .. } => {
                 Some(&**source)
             }

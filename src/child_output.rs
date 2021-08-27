@@ -58,7 +58,7 @@ impl ChildOutput {
         }
         let mut child = command.spawn().map_err(|error| {
             if error.kind() == std::io::ErrorKind::NotFound {
-                Error::FileNotFoundWhenExecuting {
+                Error::FileNotFound {
                     executable,
                     source: Arc::new(error),
                 }
