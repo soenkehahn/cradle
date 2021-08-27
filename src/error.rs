@@ -3,29 +3,98 @@
 use crate::config::Config;
 use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8Error, sync::Arc};
 
+/// Error type returned when an error occurs while using [`run_result!`].
+///
+/// [`run!`] and [`run_output!`] will turn these errors into panics.
 #[derive(Debug, Clone)]
 pub enum Error {
+    /// No [`Input`](crate::input::Input)s were given to `cradle`
+    /// that would produce a runnable command.
+    ///
+    /// ```
+    /// use cradle::prelude::*;
+    ///
+    /// let result: Result<(), cradle::Error> = run_result!(());
+    /// match result {
+    ///   Err(Error::NoArgumentsGiven) => {}
+    ///   _ => panic!(),
+    /// }
+    /// ```
     NoArgumentsGiven,
+    /// A `file not found` error occurred while trying to spawn
+    /// the child process:
+    ///
+    /// ```
+    /// use cradle::prelude::*;
+    ///
+    /// let result: Result<(), Error> = run_result!("does-not-exist");
+    /// match result {
+    ///   Err(Error::FileNotFoundWhenExecuting { .. }) => {}
+    ///   _ => panic!(),
+    /// }
+    /// ```
+    ///
+    /// Note that this error doesn't necessarily mean that the executable file
+    /// could not be found.
+    /// It will also happen when e.g.
+    ///
+    /// - a binary is dynamically linked against a library,
+    ///   but that library cannot be found, or
+    /// - the executable starts with a
+    ///   [hashbang](https://en.wikipedia.org/wiki/Shebang_(Unix)),
+    ///   but the interpreter specified in the hashbang cannot be found.
     FileNotFoundWhenExecuting {
         executable: OsString,
         source: Arc<io::Error>,
     },
+    /// The operating system raised an IO error.
+    /// This can occurr e.g. when:
+    ///
+    /// - spawning the child process fails (for another reason than
+    ///   [`FileNotFoundWhenExecuting`](Error::FileNotFoundWhenExecuting)),
+    /// - writing to `stdin` of the child process fails,
+    /// - reading from `stdout` or `stderr` of the child process fails,
+    /// - writing to the parent's `stdout` or `stderr` fails,
+    /// - the given executable doesn't have the executable flag set.
     CommandIoError {
         message: String,
         source: Arc<io::Error>,
     },
+    /// The child process exited with a non-zero exit code.
+    ///
+    /// ```
+    /// use cradle::prelude::*;
+    ///
+    /// let result: Result<(), cradle::Error> = run_result!("false");
+    /// match result {
+    ///   Err(Error::NonZeroExitCode { .. }) => {}
+    ///   _ => panic!(),
+    /// }
+    /// ```
+    ///
+    /// This error will be suppressed when [`Status`](crate::output::Status) is used.
     NonZeroExitCode {
         full_command: String,
         exit_status: ExitStatus,
     },
+    /// The child process's `stdout` is being captured,
+    /// (e.g. with [`StdoutUntrimmed`](crate::output::StdoutUntrimmed)),
+    /// but the process wrote bytes to its `stdout` that are not
+    /// valid utf-8.
     InvalidUtf8ToStdout {
         full_command: String,
         source: Arc<FromUtf8Error>,
     },
+    /// The child process's `stderr` is being captured,
+    /// (with [`Stderr`](crate::output::Stderr)),
+    /// but the process wrote bytes to its `stderr` that are not
+    /// valid utf-8.
     InvalidUtf8ToStderr {
         full_command: String,
         source: Arc<FromUtf8Error>,
     },
+    /// This error is raised if an internal invariant of `cradle` is being broken.
+    /// So hopefully you won't ever encounter this.
     Internal {
         message: String,
         full_command: String,
