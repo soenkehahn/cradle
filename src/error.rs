@@ -47,8 +47,7 @@ pub enum Error {
         executable: OsString,
         source: Arc<io::Error>,
     },
-    /// The operating system raised an IO error.
-    /// This can occurr e.g. when:
+    /// An IO error during execution. A few circumstances in which this can occur are:
     ///
     /// - spawning the child process fails (for another reason than
     ///   [`FileNotFound`](Error::FileNotFound)),
