@@ -41,8 +41,8 @@ pub enum Error {
     /// - a binary is dynamically linked against a library,
     ///   but that library cannot be found, or
     /// - the executable starts with a
-    ///   [hashbang](https://en.wikipedia.org/wiki/Shebang_(Unix)),
-    ///   but the interpreter specified in the hashbang cannot be found.
+    ///   [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)),
+    ///   but the interpreter specified in the shebang cannot be found.
     FileNotFound {
         executable: OsString,
         source: Arc<io::Error>,
