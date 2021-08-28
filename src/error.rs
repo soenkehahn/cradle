@@ -92,8 +92,8 @@ pub enum Error {
         full_command: String,
         source: Arc<FromUtf8Error>,
     },
-    /// This error is raised if an internal invariant of `cradle` is being broken.
-    /// So hopefully you won't ever encounter this.
+    /// This error is raised when an internal invariant of `cradle` is broken,
+    /// and likely indicates a bug.
     Internal {
         message: String,
         full_command: String,
