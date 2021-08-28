@@ -36,7 +36,7 @@ pub enum Error {
     ///
     /// Note that this error doesn't necessarily mean that the executable file
     /// could not be found.
-    /// It will also happen when e.g.
+    /// A few other circumstances in which this can occur are:
     ///
     /// - a binary is dynamically linked against a library,
     ///   but that library cannot be found, or
