@@ -102,19 +102,40 @@ use std::{
 /// for the [`Input`] trait.
 /// But sometimes it can be helpful, e.g. when you're writing helper
 /// functions around `cradle`.
-/// Here's an example that
+/// Here's an example of an `InContainer` struct, that makes it easy to
+/// run commands in a [`podman`](https://podman.io/) container,
+/// and all without taking away the flexibility that `cradle` provides:
 ///
 /// ```
-/// # #[cfg(linux)]
+/// # #[cfg(target_os = "linux")]
 /// # {
 /// use cradle::prelude::*;
+/// use cradle::config::Config;
 ///
-/// let StdoutTrimmed(output) = run_output!(%"podman run ubuntu:21.04 echo foo");
+/// struct InContainer;
+///
+/// impl Input for InContainer {
+///     fn configure(self, config: &mut Config) {
+///         (LogCommand, Split("podman run alpine:3.14")).configure(config);
+///     }
+/// }
+///
+/// let StdoutTrimmed(output) = run_output!(InContainer, %"echo foo");
 /// assert_eq!(output, "foo");
+///
+/// let StdoutUntrimmed(output) = run_output!(InContainer, "env");
+/// assert!(output.contains("container=podman"));
+///
+/// let StdoutTrimmed(output) = run_output!(InContainer, %"apk --version");
+/// assert!(output.starts_with("apk-tools 2.12.7, compiled for x86_64."));
 /// # }
 /// ```
 pub trait Input: Sized {
-    #[doc(hidden)]
+    /// Configures the given [`Config`](crate::config::Config) for the [`Input`] `self`.
+    /// Usually you won't have to write your own custom impls for [`Input`],
+    /// nor call this function yourself.
+    /// So you can safely ignore this method.
+    /// See also [Custom `Input` impls](#custom-input-impls).
     fn configure(self, config: &mut Config);
 
     /// `input.run()` runs `input` as a child process.
