@@ -3,9 +3,9 @@
 use crate::config::Config;
 use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8Error, sync::Arc};
 
-/// Error type returned when an error occurs while using [`run_result!`].
+/// Error type returned when an error occurs while using [`run_result!`] or [`Input::run_result`].
 ///
-/// [`run!`] and [`run_output!`] will turn these errors into panics.
+/// [`run!`], [`Input::run`], [`run_output!`], and [`Input::run_output`] will turn these errors into panics.
 #[derive(Debug, Clone)]
 pub enum Error {
     /// No [`Input`](crate::input::Input)s were given to `cradle`
