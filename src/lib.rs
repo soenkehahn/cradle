@@ -120,13 +120,17 @@
 //!
 //! # Error Handling
 //!
-//! By default [`run!`] and [`run_output!`] panic for a few reasons, e.g.:
+//! **tl;dr:** [`run!`] and [`run_output!`] will panic on errors,
+//! [`run_result!`] will not.
 //!
-//! - when the child process exits with a non-zero exitcode,
-//! - when the given executable cannot be found,
-//! - when no strings are given as arguments.
+//! ## Panicking
 //!
-//! For example:
+//! By default [`run!`] and [`run_output!`] panic when something goes wrong,
+//! for example when the executable cannot be found or
+//! when a child process exits with a non-zero exit code.
+//! This is by design to allow `cradle` to be used in contexts
+//! where more complex error handling is not needed or desired,
+//! for example in scripts.
 //!
 //! ``` should_panic
 //! use cradle::prelude::*;
@@ -135,15 +139,10 @@
 //! run!("false");
 //! ```
 //!
-//! You can suppress panics caused by non-zero exit codes by using the
-//! [`Status`](output::Status) type as a return type of [`run_output!`]:
+//! For a full list of reasons why [`run!`] and [`run_output!`] may panic,
+//! see the documentation of `cradle`'s [`Error`] type.
 //!
-//! ```
-//! use cradle::prelude::*;
-//!
-//! let Status(exit_status) = run_output!("false");
-//! assert_eq!(exit_status.code(), Some(1));
-//! ```
+//! ## Preventing Panics
 //!
 //! You can also turn **all** panics into [`std::result::Result::Err`]s
 //! by using [`run_result!`]. This will return a value of type
@@ -180,6 +179,10 @@
 //!     Ok(())
 //! }
 //! ```
+//!
+//! If you don't want to prevent **all** panics,
+//! but just panics caused by non-zero exit codes,
+//! you can use [`status`](output::Status).
 //!
 //! # Alternative Interface: Methods on [`input::Input`]
 //!
@@ -485,10 +488,10 @@ mod tests {
             fn missing_executable_file_error_can_be_matched_against() {
                 let result: Result<(), Error> = run_result!("does-not-exist");
                 match result {
-                    Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
+                    Err(Error::FileNotFound { executable, .. }) => {
                         assert_eq!(executable, "does-not-exist");
                     }
-                    _ => panic!("should match Error::FileNotFoundWhenExecuting"),
+                    _ => panic!("should match Error::FileNotFound"),
                 }
             }
 
@@ -496,10 +499,10 @@ mod tests {
             fn missing_executable_file_error_can_be_caused_by_relative_paths() {
                 let result: Result<(), Error> = run_result!("./does-not-exist");
                 match result {
-                    Err(Error::FileNotFoundWhenExecuting { executable, .. }) => {
+                    Err(Error::FileNotFound { executable, .. }) => {
                         assert_eq!(executable, "./does-not-exist");
                     }
-                    _ => panic!("should match Error::FileNotFoundWhenExecuting"),
+                    _ => panic!("should match Error::FileNotFound"),
                 }
             }
 
@@ -1499,8 +1502,8 @@ mod tests {
             assert_eq!(output, "foo");
             let result: Result<(), Error> = "does-not-exist".run_result();
             match result {
-                Err(Error::FileNotFoundWhenExecuting { .. }) => {}
-                _ => panic!("should match Error::FileNotFoundWhenExecuting"),
+                Err(Error::FileNotFound { .. }) => {}
+                _ => panic!("should match Error::FileNotFound"),
             }
         }
     }

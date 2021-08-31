@@ -231,7 +231,9 @@ impl Output for Stderr {
 /// ```
 ///
 /// Also, when using [`Status`], non-zero exit codes won't
-/// result in neither a panic nor a [`std::result::Result::Err`]:
+/// result in neither a panic (when used with [`run!`] or
+/// [`run_output!`]) nor an [`std::result::Result::Err`]
+/// (when used with [`run_result!`]):
 ///
 /// ```
 /// use cradle::prelude::*;

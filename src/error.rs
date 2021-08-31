@@ -3,29 +3,100 @@
 use crate::config::Config;
 use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8Error, sync::Arc};
 
+/// Error type returned when an error occurs while using [`run_result!`]
+/// or [`crate::input::Input::run_result`].
+///
+/// [`run!`], [`crate::input::Input::run`], [`run_output!`],
+/// and [`crate::input::Input::run_output`] will turn these errors
+/// into panics.
 #[derive(Debug, Clone)]
 pub enum Error {
-    NoArgumentsGiven,
-    FileNotFoundWhenExecuting {
+    /// The [`Input`](crate::input::Input)s to a command must produce
+    /// at least one argument: the executable to run.
+    ///
+    /// ```
+    /// use cradle::prelude::*;
+    ///
+    /// let result: Result<(), cradle::Error> = run_result!(());
+    /// match result {
+    ///   Err(Error::NoExecutableGiven) => {}
+    ///   _ => panic!(),
+    /// }
+    /// ```
+    NoExecutableGiven,
+    /// A `file not found` error occurred while trying to spawn
+    /// the child process:
+    ///
+    /// ```
+    /// use cradle::prelude::*;
+    ///
+    /// let result: Result<(), Error> = run_result!("does-not-exist");
+    /// match result {
+    ///   Err(Error::FileNotFound { .. }) => {}
+    ///   _ => panic!(),
+    /// }
+    /// ```
+    ///
+    /// Note that this error doesn't necessarily mean that the executable file
+    /// could not be found.
+    /// A few other circumstances in which this can occur are:
+    ///
+    /// - a binary is dynamically linked against a library,
+    ///   but that library cannot be found, or
+    /// - the executable starts with a
+    ///   [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)),
+    ///   but the interpreter specified in the shebang cannot be found.
+    FileNotFound {
         executable: OsString,
         source: Arc<io::Error>,
     },
+    /// An IO error during execution. A few circumstances in which this can occur are:
+    ///
+    /// - spawning the child process fails (for another reason than
+    ///   [`FileNotFound`](Error::FileNotFound)),
+    /// - writing to `stdin` of the child process fails,
+    /// - reading from `stdout` or `stderr` of the child process fails,
+    /// - writing to the parent's `stdout` or `stderr` fails,
+    /// - the given executable doesn't have the executable flag set.
     CommandIoError {
         message: String,
         source: Arc<io::Error>,
     },
+    /// The child process exited with a non-zero exit code.
+    ///
+    /// ```
+    /// use cradle::prelude::*;
+    ///
+    /// let result: Result<(), cradle::Error> = run_result!("false");
+    /// match result {
+    ///   Err(Error::NonZeroExitCode { .. }) => {}
+    ///   _ => panic!(),
+    /// }
+    /// ```
+    ///
+    /// This error will be suppressed when [`Status`](crate::output::Status) is used.
     NonZeroExitCode {
         full_command: String,
         exit_status: ExitStatus,
     },
+    /// The child process's `stdout` is being captured,
+    /// (e.g. with [`StdoutUntrimmed`](crate::output::StdoutUntrimmed)),
+    /// but the process wrote bytes to its `stdout` that are not
+    /// valid utf-8.
     InvalidUtf8ToStdout {
         full_command: String,
         source: Arc<FromUtf8Error>,
     },
+    /// The child process's `stderr` is being captured,
+    /// (with [`Stderr`](crate::output::Stderr)),
+    /// but the process wrote bytes to its `stderr` that are not
+    /// valid utf-8.
     InvalidUtf8ToStderr {
         full_command: String,
         source: Arc<FromUtf8Error>,
     },
+    /// This error is raised when an internal invariant of `cradle` is broken,
+    /// and likely indicates a bug.
     Internal {
         message: String,
         full_command: String,
@@ -107,8 +178,8 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use Error::*;
         match self {
-            NoArgumentsGiven => write!(f, "no arguments given"),
-            FileNotFoundWhenExecuting { executable, .. } => {
+            NoExecutableGiven => write!(f, "no arguments given"),
+            FileNotFound { executable, .. } => {
                 let executable = executable.to_string_lossy();
                 write!(f, "File not found error when executing '{}'", executable)?;
                 if let Some(whitespace_note) = executable_with_whitespace_note(executable.as_ref())
@@ -154,13 +225,11 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         use Error::*;
         match self {
-            FileNotFoundWhenExecuting { source, .. } | CommandIoError { source, .. } => {
-                Some(&**source)
-            }
+            FileNotFound { source, .. } | CommandIoError { source, .. } => Some(&**source),
             InvalidUtf8ToStdout { source, .. } | InvalidUtf8ToStderr { source, .. } => {
                 Some(&**source)
             }
-            NoArgumentsGiven | NonZeroExitCode { .. } | Internal { .. } => None,
+            NoExecutableGiven | NonZeroExitCode { .. } | Internal { .. } => None,
         }
     }
 }
