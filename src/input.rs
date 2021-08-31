@@ -95,6 +95,21 @@ use std::{
 /// let hex = to_hex((Stdin(&[14, 15, 16]), Stdin(&[17, 18, 19])));
 /// assert_eq!(hex, "0E0F10111213");
 /// ```
+///
+/// ## Custom [`Input`] impls
+///
+/// For most use-cases, it's not needed to write your own impls
+/// for the [`Input`] trait.
+/// But sometimes it can be helpful, e.g. when you're writing helper
+/// functions around `cradle`.
+/// Here's an example that
+///
+/// ```
+/// use cradle::prelude::*;
+///
+/// let StdoutTrimmed(output) = run_output!(%"podman run ubuntu:21.04 echo foo");
+/// assert_eq!(output, "foo");
+/// ```
 pub trait Input: Sized {
     #[doc(hidden)]
     fn configure(self, config: &mut Config);
