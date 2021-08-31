@@ -11,8 +11,8 @@ use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8
 /// into panics.
 #[derive(Debug, Clone)]
 pub enum Error {
-    /// No [`Input`](crate::input::Input)s were given to `cradle`
-    /// that would produce a runnable command.
+    /// The [`Input`](crate::input::Input)s to a command must produce at least one argument
+    /// for it to be runnable.
     ///
     /// ```
     /// use cradle::prelude::*;
