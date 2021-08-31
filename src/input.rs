@@ -105,10 +105,13 @@ use std::{
 /// Here's an example that
 ///
 /// ```
+/// # #[cfg(linux)]
+/// # {
 /// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = run_output!(%"podman run ubuntu:21.04 echo foo");
 /// assert_eq!(output, "foo");
+/// # }
 /// ```
 pub trait Input: Sized {
     #[doc(hidden)]
