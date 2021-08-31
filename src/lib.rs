@@ -20,8 +20,7 @@
 //! # Input
 //!
 //! You can pass in multiple arguments (of different types) to [`run!`]
-//! to specify arguments, as long as they implement the [`Input`](input::Input)
-//! trait:
+//! to specify arguments, as long as they implement the [`Input`] trait:
 //!
 //! ```
 //! # let temp_dir = tempfile::TempDir::new().unwrap();
@@ -33,7 +32,7 @@
 //! assert!(Path::new("foo/bar/baz").is_dir());
 //! ```
 //!
-//! For all possible inputs to [`run!`], see the documentation of [`Input`](input::Input).
+//! For all possible inputs to [`run!`], see the documentation of [`Input`].
 //!
 //! # Output
 //!
@@ -41,8 +40,8 @@
 //! It allows to capture outputs of the child process.
 //! It uses return-type polymorphism, so you can control which outputs
 //! are captured by choosing the return type of [`run_output!`].
-//! The only constraint is that the chosen return type has to implement [`Output`](output::Output).
-//! For example you can use e.g. [`StdoutTrimmed`](output::StdoutTrimmed)
+//! The only constraint is that the chosen return type has to implement [`Output`].
+//! For example you can use e.g. [`StdoutTrimmed`]
 //! to collect what the child process writes to `stdout`,
 //! trimmed of leading and trailing whitespace:
 //!
@@ -95,7 +94,7 @@
 //! In this code `cradle` tries to run a process from an executable called
 //! `"echo foo"`, including the space in the file name of the executable.
 //! That fails, because an executable with that name doesn't exist.
-//! `cradle` provides a new-type wrapper [`Split`](input::Split) to help with that:
+//! `cradle` provides a new-type wrapper [`Split`] to help with that:
 //!
 //! ```
 //! use cradle::prelude::*;
@@ -104,12 +103,12 @@
 //! assert_eq!(output, "foo");
 //! ```
 //!
-//! Wrapping an argument of type `&str` in [`Split`](input::Split) will cause `cradle` to first
+//! Wrapping an argument of type `&str` in [`Split`] will cause `cradle` to first
 //! split it by whitespace and then use the resulting words as if they were passed
 //! into [`run_output!`] as separate arguments.
 //!
 //! And -- since this is such a common case -- `cradle` provides a syntactic shortcut
-//! for [`Split`](input::Split), the `%` symbol:
+//! for [`Split`], the `%` symbol:
 //!
 //! ```
 //! use cradle::prelude::*;
@@ -182,18 +181,18 @@
 //!
 //! If you don't want to prevent **all** panics,
 //! but just panics caused by non-zero exit codes,
-//! you can use [`status`](output::Status).
+//! you can use [`Status`].
 //!
 //! # Alternative Interface: Methods on [`input::Input`]
 //!
 //! `cradle` also provides an alternative interface to execute commands
-//! through methods on the [`Input`](input::Input) trait:
-//! [`.run()`](input::Input::run), [`.run_output()`](input::Input::run_output)
-//! and [`.run_result()`](input::Input::run_result).
+//! through methods on the [`Input`] trait:
+//! [`.run()`](Input::run), [`.run_output()`](Input::run_output)
+//! and [`.run_result()`](Input::run_result).
 //! These methods can be invoked on all values whose types implement
-//! [`Input`](input::Input).
+//! [`Input`].
 //! When using these methods, it's especially useful that
-//! [`Input`](input::Input) is implemented by tuples.
+//! [`Input`] is implemented by tuples.
 //! They work analog to [`run!`], [`run_output!`] and [`run_result!`].
 //! Here are some examples:
 //!
@@ -215,8 +214,8 @@
 //! );
 //! ```
 //!
-//! Note: The `%` shortcut for [`Split`](input::Split) is not available in this notation.
-//! You can either use tuples, or [`Split`](input::Split) explicitly:
+//! Note: The `%` shortcut for [`Split`] is not available in this notation.
+//! You can either use tuples, or [`Split`] explicitly:
 //!
 //! ```
 //! use cradle::prelude::*;
