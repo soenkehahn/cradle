@@ -99,7 +99,7 @@ impl ChildOutput {
         let mut words = input.into_iter();
         {
             match words.next() {
-                None => Err(Error::NoArgumentsGiven),
+                None => Err(Error::NoExecutableGiven),
                 Some(command) => Ok((command, words)),
             }
         }

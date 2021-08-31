@@ -11,19 +11,19 @@ use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8
 /// into panics.
 #[derive(Debug, Clone)]
 pub enum Error {
-    /// The [`Input`](crate::input::Input)s to a command must produce at least one argument
-    /// for it to be runnable.
+    /// The [`Input`](crate::input::Input)s to a command must produce
+    /// at least one argument: the executable to run.
     ///
     /// ```
     /// use cradle::prelude::*;
     ///
     /// let result: Result<(), cradle::Error> = run_result!(());
     /// match result {
-    ///   Err(Error::NoArgumentsGiven) => {}
+    ///   Err(Error::NoExecutableGiven) => {}
     ///   _ => panic!(),
     /// }
     /// ```
-    NoArgumentsGiven,
+    NoExecutableGiven,
     /// A `file not found` error occurred while trying to spawn
     /// the child process:
     ///
@@ -178,7 +178,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use Error::*;
         match self {
-            NoArgumentsGiven => write!(f, "no arguments given"),
+            NoExecutableGiven => write!(f, "no arguments given"),
             FileNotFound { executable, .. } => {
                 let executable = executable.to_string_lossy();
                 write!(f, "File not found error when executing '{}'", executable)?;
@@ -229,7 +229,7 @@ impl std::error::Error for Error {
             InvalidUtf8ToStdout { source, .. } | InvalidUtf8ToStderr { source, .. } => {
                 Some(&**source)
             }
-            NoArgumentsGiven | NonZeroExitCode { .. } | Internal { .. } => None,
+            NoExecutableGiven | NonZeroExitCode { .. } | Internal { .. } => None,
         }
     }
 }
