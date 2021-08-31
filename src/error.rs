@@ -11,7 +11,7 @@ use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8
 /// into panics.
 #[derive(Debug, Clone)]
 pub enum Error {
-    /// The [`Input`](crate::input::Input)s to a command must produce
+    /// The [`Input`](crate::Input)s to a command must produce
     /// at least one argument: the executable to run.
     ///
     /// ```
@@ -74,13 +74,13 @@ pub enum Error {
     /// }
     /// ```
     ///
-    /// This error will be suppressed when [`Status`](crate::output::Status) is used.
+    /// This error will be suppressed when [`Status`](crate::Status) is used.
     NonZeroExitCode {
         full_command: String,
         exit_status: ExitStatus,
     },
     /// The child process's `stdout` is being captured,
-    /// (e.g. with [`StdoutUntrimmed`](crate::output::StdoutUntrimmed)),
+    /// (e.g. with [`StdoutUntrimmed`](crate::StdoutUntrimmed)),
     /// but the process wrote bytes to its `stdout` that are not
     /// valid utf-8.
     InvalidUtf8ToStdout {
@@ -88,7 +88,7 @@ pub enum Error {
         source: Arc<FromUtf8Error>,
     },
     /// The child process's `stderr` is being captured,
-    /// (with [`Stderr`](crate::output::Stderr)),
+    /// (with [`Stderr`](crate::Stderr)),
     /// but the process wrote bytes to its `stderr` that are not
     /// valid utf-8.
     InvalidUtf8ToStderr {

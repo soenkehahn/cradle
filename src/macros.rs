@@ -51,7 +51,7 @@ macro_rules! run_output {
 }
 
 /// Like [`run_output!`], but fixes the return type to [`Result<T, Error>`],
-/// where `T` is any type that implements [`Output`](crate::output::Output).
+/// where `T` is any type that implements [`Output`](crate::Output).
 #[macro_export]
 macro_rules! run_result {
     ($($args:tt)*) => {{
