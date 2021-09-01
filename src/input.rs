@@ -504,7 +504,7 @@ impl Input for LogCommand {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// # #[cfg(linux)]
+/// # #[cfg(target_os = "linux")]
 /// # {
 /// let StdoutTrimmed(output) = run_output!("pwd", CurrentDir("/tmp"));
 /// assert_eq!(output, "/tmp");
@@ -568,7 +568,7 @@ impl Input for &Path {
 /// ```
 /// use cradle::prelude::*;
 ///
-/// # #[cfg(linux)]
+/// # #[cfg(target_os = "linux")]
 /// # {
 /// let StdoutUntrimmed(output) = run_output!("sort", Stdin("foo\nbar\n"));
 /// assert_eq!(output, "bar\nfoo\n");
