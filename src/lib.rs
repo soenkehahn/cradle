@@ -1,9 +1,5 @@
 #![deny(missing_debug_implementations)]
 
-//! (`cradle` is in an early stage of development.
-//! APIs may change drastically!
-//! Use at your own risk!)
-//!
 //! `cradle` provides the [`run!`] macro, that makes
 //! it easy to run child processes from rust programs.
 //!
