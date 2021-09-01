@@ -147,6 +147,7 @@ pub trait Input: Sized {
     /// Usually you won't have to write your own custom impls for [`Input`],
     /// nor call this function yourself.
     /// So you can safely ignore this method.
+    ///
     /// See also [Custom `Input` impls](#custom-input-impls).
     fn configure(self, config: &mut Config);
 
