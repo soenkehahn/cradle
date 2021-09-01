@@ -104,7 +104,7 @@ use std::{
 /// functions around `cradle`.
 /// Here's an example of an `InContainer` struct, that makes it easy to
 /// run commands in a [`podman`](https://podman.io/) container,
-/// and all without taking away the flexibility that `cradle` provides:
+/// without taking away the flexibility that `cradle` provides:
 ///
 /// ```
 /// # #[cfg(target_os = "linux")]
