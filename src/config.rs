@@ -6,6 +6,7 @@ use std::{ffi::OsString, path::PathBuf, sync::Arc};
 /// Usually you don't have to use this type directly.
 ///
 /// See also [Custom `Input` impls](crate::Input#custom-input-impls).
+/// fixme: mention output
 #[rustversion::attr(since(1.48), allow(clippy::rc_buffer))]
 #[derive(Debug, Clone)]
 pub struct Config {

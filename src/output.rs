@@ -40,7 +40,7 @@ use std::process::ExitStatus;
 /// Also, [`Output`] is implemented for tuples.
 /// You can use this to combine multiple return types that implement [`Output`].
 /// The following code for example retrieves the command's [`ExitStatus`]
-/// **and** what it writes to `stdout`:
+/// _and_ what it writes to `stdout`:
 ///
 /// ```
 /// use cradle::prelude::*;
@@ -51,11 +51,61 @@ use std::process::ExitStatus;
 /// ```
 ///
 /// [`()`]: trait.Output.html#impl-Output-for-()
+///
+/// ## Custom [`Output`] impls
+///
+/// Usually you don't have to write your own impls for the [`Output`] trait.
+/// There's some uncommon situations where it might be beneficial.
+/// Here's a simple example:
+///
+/// ```
+/// use cradle::{child_output::ChildOutput, config::Config, prelude::*};
+/// use std::process::ExitStatus;
+///
+/// struct CommandOutput {
+///     stdout: String,
+///     stderr: String,
+///     status: ExitStatus,
+/// }
+///
+/// impl Output for CommandOutput {
+///     fn configure(config: &mut Config) {
+///       StdoutUntrimmed::configure(config);
+///       Stderr::configure(config);
+///       Status::configure(config);
+///     }
+///
+///     fn from_run_result(
+///         config: &Config,
+///         child_output: ChildOutput,
+///     ) -> Result<Self, Error> {
+///         let StdoutUntrimmed(stdout) =
+///             StdoutUntrimmed::from_run_result(config, child_output.clone())?;
+///         let Stderr(stderr) = Stderr::from_run_result(config, child_output.clone())?;
+///         let Status(status) = Status::from_run_result(config, child_output)?;
+///         Ok(
+///             CommandOutput {
+///                 stdout,
+///                 stderr,
+///                 status,
+///             }
+///         )
+///     }
+/// }
+///
+/// let output: CommandOutput = run_output!(%"echo foo");
+/// assert_eq!(output.stdout, "foo\n");
+/// assert_eq!(output.stderr, "");
+/// assert!(output.status.success());
+/// ```
+///
+/// todo:
+/// - implement in terms of
+/// - fields of config and childoutput are private
+/// - call configure on the same types that you are using in from_run_result, otherwise Internal
 pub trait Output: Sized {
-    #[doc(hidden)]
     fn configure(config: &mut Config);
 
-    #[doc(hidden)]
     fn from_child_output(config: &Config, result: &ChildOutput) -> Result<Self, Error>;
 }
 
