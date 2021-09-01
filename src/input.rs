@@ -141,7 +141,7 @@ use std::{
 /// of the various [`Input`] types that `cradle` provides --
 /// as demonstrated in the code snippet above.
 /// [`Config`]'s fields are private to allow to add new features to `cradle`
-/// without breaking API changes.
+/// without introducing breaking API changes.
 pub trait Input: Sized {
     /// Configures the given [`Config`](crate::config::Config) for the [`Input`] `self`.
     /// Usually you won't have to write your own custom impls for [`Input`],
