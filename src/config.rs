@@ -2,7 +2,10 @@
 
 use std::{ffi::OsString, path::PathBuf, sync::Arc};
 
-#[doc(hidden)]
+/// Internal type that configures how to run a child process.
+/// Usually you don't have to use this type directly.
+///
+/// See also [Custom `Input` impls](crate::Input#custom-input-impls).
 #[rustversion::attr(since(1.48), allow(clippy::rc_buffer))]
 #[derive(Debug, Clone)]
 pub struct Config {

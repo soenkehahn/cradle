@@ -130,6 +130,18 @@ use std::{
 /// assert!(output.starts_with("apk-tools 2.12.7, compiled for x86_64."));
 /// # }
 /// ```
+///
+/// It is not recommended to override [`run`](Input::run),
+/// [`run_output`](Input::run_output) or [`run_result`](Input::run_result).
+///
+/// Also note that all fields of the type [`Config`] are private.
+/// That means that when you're writing your own [`Input`] impls,
+/// you _have_ to implement the [`Input::configure`] method
+/// of your type in terms of the [`Input::configure`] methods
+/// of the various [`Input`] types that `cradle` provides --
+/// as demonstrated in the code snippet above.
+/// [`Config`]'s fields are private to allow to add new features to `cradle`
+/// without breaking API changes.
 pub trait Input: Sized {
     /// Configures the given [`Config`](crate::config::Config) for the [`Input`] `self`.
     /// Usually you won't have to write your own custom impls for [`Input`],
