@@ -2,7 +2,7 @@
 
 use std::{ffi::OsString, path::PathBuf, sync::Arc};
 
-/// Internal type that configures how to run a child process.
+/// Used by `Input` implementations to configure how child processes are run.
 /// Usually you don't have to use this type directly.
 ///
 /// See also [Custom `Input` impls](crate::Input#custom-input-impls).
