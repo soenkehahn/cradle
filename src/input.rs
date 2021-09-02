@@ -101,31 +101,39 @@ use std::{
 /// The provided `Input` implementations should be sufficient for most use cases,
 /// but custom `Input` implementations can be written to extend `cradle`.
 ///
-/// Here's an example of an `InContainer` struct, that makes it easy to
-/// run commands in a [`podman`](https://podman.io/) container:
+/// Here's an example of an `AbsolutePath` type, that wraps [`PathBuf`]
+/// and is meant to represent only absolute paths.
+/// By writing a custom [`Input`] impl, you can use `AbsolutePath`s as
+/// an input to `cradle` functions:
 ///
 /// ```
 /// # #[cfg(target_os = "linux")]
 /// # {
+/// # let temp_dir = tempfile::TempDir::new().unwrap();
+/// # std::env::set_current_dir(&temp_dir).unwrap();
 /// use cradle::prelude::*;
 /// use cradle::config::Config;
+/// use std::path::{Path, PathBuf};
 ///
-/// struct InContainer;
+/// struct AbsolutePath(PathBuf);
 ///
-/// impl Input for InContainer {
-///     fn configure(self, config: &mut Config) {
-///         (LogCommand, Split("podman run alpine:3.14")).configure(config);
+/// impl AbsolutePath {
+///     fn new(path: &Path) -> Result<AbsolutePath, std::io::Error> {
+///         Ok(AbsolutePath(path.canonicalize()?))
 ///     }
 /// }
 ///
-/// let StdoutTrimmed(output) = run_output!(InContainer, %"echo foo");
+/// impl Input for AbsolutePath {
+///     fn configure(self, config: &mut Config) {
+///         self.0.configure(config);
+///     }
+/// }
+///
+/// std::fs::write("file", "foo").unwrap();
+/// let path = AbsolutePath::new(&Path::new("file")).unwrap();
+///
+/// let StdoutTrimmed(output) = run_output!("cat", path);
 /// assert_eq!(output, "foo");
-///
-/// let StdoutUntrimmed(output) = run_output!(InContainer, "env");
-/// assert!(output.contains("container=podman"));
-///
-/// let StdoutTrimmed(output) = run_output!(InContainer, %"apk --version");
-/// assert!(output.starts_with("apk-tools 2.12.7, compiled for x86_64."));
 /// # }
 /// ```
 ///
