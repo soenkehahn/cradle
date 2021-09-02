@@ -198,7 +198,7 @@ impl Output for StdoutUntrimmed {
 /// By default, what is written to `stderr` by the child process
 /// is relayed to the parent's `stderr`. However, when [`Stderr`]
 /// is used, this is switched off.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Stderr(pub String);
 
 impl Output for Stderr {
@@ -250,7 +250,7 @@ impl Output for Stderr {
 /// Also see the
 /// [section about error handling](index.html#error-handling) in
 /// the module documentation.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Status(pub ExitStatus);
 
 impl Output for Status {

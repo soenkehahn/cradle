@@ -284,7 +284,7 @@ impl Input for String {
 /// ```
 ///
 /// [`split_whitespace`]: str::split_whitespace
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Split<T: AsRef<str>>(pub T);
 
 impl<T: AsRef<str>> Input for crate::input::Split<T> {
@@ -449,7 +449,7 @@ where
 /// run!(LogCommand, %"echo foo");
 /// // writes '+ echo foo' to stderr
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub struct LogCommand;
 
 impl Input for LogCommand {
@@ -473,7 +473,7 @@ impl Input for LogCommand {
 /// ```
 ///
 /// Paths that are relative to the parent's current directory are allowed.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CurrentDir<T: AsRef<Path>>(pub T);
 
 impl<T> Input for CurrentDir<T>
@@ -538,7 +538,7 @@ impl Input for &Path {
 ///
 /// If `Stdin` is used multiple times, all given bytes slices will be written
 /// to the child's standard input in order.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Stdin<T: AsRef<[u8]>>(pub T);
 
 impl<T> Input for Stdin<T>
@@ -564,7 +564,7 @@ where
 /// [`Env`] only adds environment variables to that inherited environment.
 /// If the environment variable is also set in the parent process,
 /// it is overwritten by [`Env`].
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Env<Key, Value>(pub Key, pub Value)
 where
     Key: AsRef<OsStr>,
