@@ -98,10 +98,8 @@ use std::{
 ///
 /// ## Custom [`Input`] impls
 ///
-/// For most use-cases, it's not needed to write your own impls
-/// for the [`Input`] trait.
-/// But sometimes it can be helpful, e.g. when you're writing helper
-/// functions around `cradle`.
+/// The provided `Input` implementations should be sufficient for most use cases,
+/// but custom `Input` implementations can be written to extend `cradle`.
 /// Here's an example of an `InContainer` struct, that makes it easy to
 /// run commands in a [`podman`](https://podman.io/) container,
 /// without taking away the flexibility that `cradle` provides:
