@@ -1,7 +1,7 @@
 //! The [`Output`] trait that defines all possible outputs of a child process.
 
 use crate::{child_output::ChildOutput, config::Config, error::Error};
-use std::{process::ExitStatus, sync::Arc};
+use std::process::ExitStatus;
 
 /// All possible return types of [`run!`], [`run_output!`] or
 /// [`run_result!`] must implement this trait.
@@ -175,7 +175,7 @@ impl Output for StdoutUntrimmed {
         Ok(StdoutUntrimmed(String::from_utf8(stdout).map_err(
             |source| Error::InvalidUtf8ToStdout {
                 full_command: config.full_command(),
-                source: Arc::new(source),
+                source,
             },
         )?))
     }
@@ -216,7 +216,7 @@ impl Output for Stderr {
         Ok(Stderr(String::from_utf8(stderr).map_err(|source| {
             Error::InvalidUtf8ToStderr {
                 full_command: config.full_command(),
-                source: Arc::new(source),
+                source,
             }
         })?))
     }
