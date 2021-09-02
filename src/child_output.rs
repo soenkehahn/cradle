@@ -5,7 +5,6 @@ use std::{
     ffi::OsString,
     io::Write,
     process::{Command, ExitStatus, Stdio},
-    sync::Arc,
 };
 
 #[doc(hidden)]
@@ -56,14 +55,11 @@ impl ChildOutput {
         if let Some(working_directory) = &config.working_directory {
             command.current_dir(working_directory);
         }
-        let mut child = command.spawn().map_err(|error| {
-            if error.kind() == std::io::ErrorKind::NotFound {
-                Error::FileNotFound {
-                    executable,
-                    source: Arc::new(error),
-                }
+        let mut child = command.spawn().map_err(|source| {
+            if source.kind() == std::io::ErrorKind::NotFound {
+                Error::FileNotFound { executable, source }
             } else {
-                Error::command_io_error(config, error)
+                Error::command_io_error(config, source)
             }
         })?;
         let waiter = Waiter::spawn_standard_stream_relaying(

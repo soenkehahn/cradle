@@ -1,7 +1,7 @@
 //! The [`Error`] type used in the return type of [`run_result!`].
 
 use crate::config::Config;
-use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8Error, sync::Arc};
+use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8Error};
 
 /// Error type returned when an error occurs while using [`run_result!`]
 /// or [`crate::input::Input::run_result`].
@@ -9,7 +9,7 @@ use std::{ffi::OsString, fmt::Display, io, process::ExitStatus, string::FromUtf8
 /// [`run!`], [`crate::input::Input::run`], [`run_output!`],
 /// and [`crate::input::Input::run_output`] will turn these errors
 /// into panics.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Error {
     /// The [`Input`](crate::Input)s to a command must produce
     /// at least one argument: the executable to run.
@@ -48,7 +48,7 @@ pub enum Error {
     ///   but the interpreter specified in the shebang cannot be found.
     FileNotFound {
         executable: OsString,
-        source: Arc<io::Error>,
+        source: io::Error,
     },
     /// An IO error during execution. A few circumstances in which this can occur are:
     ///
@@ -58,10 +58,7 @@ pub enum Error {
     /// - reading from `stdout` or `stderr` of the child process fails,
     /// - writing to the parent's `stdout` or `stderr` fails,
     /// - the given executable doesn't have the executable flag set.
-    CommandIoError {
-        message: String,
-        source: Arc<io::Error>,
-    },
+    CommandIoError { message: String, source: io::Error },
     /// The child process exited with a non-zero exit code.
     ///
     /// ```
@@ -85,7 +82,7 @@ pub enum Error {
     /// valid utf-8.
     InvalidUtf8ToStdout {
         full_command: String,
-        source: Arc<FromUtf8Error>,
+        source: FromUtf8Error,
     },
     /// The child process's `stderr` is being captured,
     /// (with [`Stderr`](crate::Stderr)),
@@ -93,7 +90,7 @@ pub enum Error {
     /// valid utf-8.
     InvalidUtf8ToStderr {
         full_command: String,
-        source: Arc<FromUtf8Error>,
+        source: FromUtf8Error,
     },
     /// This error is raised when an internal invariant of `cradle` is broken,
     /// and likely indicates a bug.
@@ -105,10 +102,10 @@ pub enum Error {
 }
 
 impl Error {
-    pub(crate) fn command_io_error(config: &Config, error: io::Error) -> Error {
+    pub(crate) fn command_io_error(config: &Config, source: io::Error) -> Error {
         Error::CommandIoError {
-            message: format!("{}:\n  {}", config.full_command(), error),
-            source: Arc::new(error),
+            message: format!("{}:\n  {}", config.full_command(), source),
+            source,
         }
     }
 
@@ -225,10 +222,8 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         use Error::*;
         match self {
-            FileNotFound { source, .. } | CommandIoError { source, .. } => Some(&**source),
-            InvalidUtf8ToStdout { source, .. } | InvalidUtf8ToStderr { source, .. } => {
-                Some(&**source)
-            }
+            FileNotFound { source, .. } | CommandIoError { source, .. } => Some(source),
+            InvalidUtf8ToStdout { source, .. } | InvalidUtf8ToStderr { source, .. } => Some(source),
             NoExecutableGiven | NonZeroExitCode { .. } | Internal { .. } => None,
         }
     }
