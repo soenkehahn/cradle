@@ -1,7 +1,7 @@
 //! The [`Output`] trait that defines all possible outputs of a child process.
 
 use crate::{child_output::ChildOutput, config::Config, error::Error};
-use std::{process::ExitStatus, sync::Arc};
+use std::process::ExitStatus;
 
 /// All possible return types of [`run!`], [`run_output!`] or
 /// [`run_result!`] must implement this trait.
@@ -56,7 +56,7 @@ pub trait Output: Sized {
     fn configure(config: &mut Config);
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, result: ChildOutput) -> Result<Self, Error>;
+    fn from_child_output(config: &Config, result: &ChildOutput) -> Result<Self, Error>;
 }
 
 /// Use this when you don't need any result from the child process.
@@ -80,7 +80,7 @@ impl Output for () {
     fn configure(_config: &mut Config) {}
 
     #[doc(hidden)]
-    fn from_run_result(_config: &Config, _child_output: ChildOutput) -> Result<Self, Error> {
+    fn from_child_output(_config: &Config, _child_output: &ChildOutput) -> Result<Self, Error> {
         Ok(())
     }
 }
@@ -97,9 +97,9 @@ macro_rules! tuple_impl {
             }
 
             #[doc(hidden)]
-            fn from_run_result(config: &Config, child_output: ChildOutput) -> Result<Self, Error> {
+            fn from_child_output(config: &Config, child_output: &ChildOutput) -> Result<Self, Error> {
                 Ok((
-                    $(<$generics as Output>::from_run_result(config, child_output.clone())?,)+
+                    $(<$generics as Output>::from_child_output(config, child_output)?,)+
                 ))
             }
         }
@@ -143,8 +143,8 @@ impl Output for StdoutTrimmed {
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, child_output: ChildOutput) -> Result<Self, Error> {
-        let StdoutUntrimmed(stdout) = StdoutUntrimmed::from_run_result(config, child_output)?;
+    fn from_child_output(config: &Config, child_output: &ChildOutput) -> Result<Self, Error> {
+        let StdoutUntrimmed(stdout) = StdoutUntrimmed::from_child_output(config, child_output)?;
         Ok(StdoutTrimmed(stdout.trim().to_owned()))
     }
 }
@@ -167,14 +167,15 @@ impl Output for StdoutUntrimmed {
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, child_output: ChildOutput) -> Result<Self, Error> {
+    fn from_child_output(config: &Config, child_output: &ChildOutput) -> Result<Self, Error> {
         let stdout = child_output
             .stdout
+            .clone()
             .ok_or_else(|| Error::internal("stdout not captured", config))?;
         Ok(StdoutUntrimmed(String::from_utf8(stdout).map_err(
             |source| Error::InvalidUtf8ToStdout {
                 full_command: config.full_command(),
-                source: Arc::new(source),
+                source,
             },
         )?))
     }
@@ -197,7 +198,7 @@ impl Output for StdoutUntrimmed {
 /// By default, what is written to `stderr` by the child process
 /// is relayed to the parent's `stderr`. However, when [`Stderr`]
 /// is used, this is switched off.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Stderr(pub String);
 
 impl Output for Stderr {
@@ -207,14 +208,15 @@ impl Output for Stderr {
     }
 
     #[doc(hidden)]
-    fn from_run_result(config: &Config, child_output: ChildOutput) -> Result<Self, Error> {
+    fn from_child_output(config: &Config, child_output: &ChildOutput) -> Result<Self, Error> {
         let stderr = child_output
             .stderr
+            .clone()
             .ok_or_else(|| Error::internal("stderr not captured", config))?;
         Ok(Stderr(String::from_utf8(stderr).map_err(|source| {
             Error::InvalidUtf8ToStderr {
                 full_command: config.full_command(),
-                source: Arc::new(source),
+                source,
             }
         })?))
     }
@@ -248,7 +250,7 @@ impl Output for Stderr {
 /// Also see the
 /// [section about error handling](index.html#error-handling) in
 /// the module documentation.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Status(pub ExitStatus);
 
 impl Output for Status {
@@ -258,7 +260,7 @@ impl Output for Status {
     }
 
     #[doc(hidden)]
-    fn from_run_result(_config: &Config, child_output: ChildOutput) -> Result<Self, Error> {
+    fn from_child_output(_config: &Config, child_output: &ChildOutput) -> Result<Self, Error> {
         Ok(Status(child_output.exit_status))
     }
 }
@@ -297,7 +299,7 @@ impl Output for bool {
     }
 
     #[doc(hidden)]
-    fn from_run_result(_config: &Config, child_output: ChildOutput) -> Result<Self, Error> {
+    fn from_child_output(_config: &Config, child_output: &ChildOutput) -> Result<Self, Error> {
         Ok(child_output.exit_status.success())
     }
 }
