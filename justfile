@@ -33,6 +33,6 @@ render-readme-check:
 
 forbidden-words:
   ! grep -rni \
-    'dbg!\|fixme\|todo\|ignore' \
+    'dbg!\|fixme\|todo\|#\[ignore\]' \
     src tests examples
   @echo No forbidden words found

@@ -95,8 +95,69 @@ use std::{
 /// let hex = to_hex((Stdin(&[14, 15, 16]), Stdin(&[17, 18, 19])));
 /// assert_eq!(hex, "0E0F10111213");
 /// ```
+///
+/// ## Custom [`Input`] impls
+///
+/// The provided `Input` implementations should be sufficient for most use cases,
+/// but custom `Input` implementations can be written to extend `cradle`.
+///
+/// Here's an example of an `Environment` type, that wraps
+/// [`BTreeMap`](std::collections::BTreeMap) and adds all contained
+/// key-value pairs to the environment of the child process.
+///
+/// ```
+/// use cradle::prelude::*;
+/// use cradle::config::Config;
+/// use std::collections::BTreeMap;
+///
+/// struct Environment(BTreeMap<String, String>);
+///
+/// impl Environment {
+///     fn new() -> Self {
+///         Environment(BTreeMap::new())
+///     }
+///
+///     fn add(mut self, key: &str, value: &str) -> Self {
+///         self.0.insert(key.to_owned(), value.to_owned());
+///         self
+///     }
+/// }
+///
+/// impl Input for Environment {
+///     fn configure(self, config: &mut Config) {
+///         for (key, value) in self.0.into_iter() {
+///             Env(key, value).configure(config)
+///         }
+///     }
+/// }
+///
+/// let env_vars = Environment::new()
+///     .add("FOO", "foo")
+///     .add("BAR", "bar");
+///
+/// let StdoutUntrimmed(output) = run_output!("env", env_vars);
+/// assert!(output.contains("FOO=foo\n"));
+/// assert!(output.contains("BAR=bar\n"));
+/// ```
+///
+/// It is not recommended to override [`run`](Input::run),
+/// [`run_output`](Input::run_output) or [`run_result`](Input::run_result).
+///
+/// Also note that all fields of the type [`Config`] are private.
+/// That means that when you're writing your own [`Input`] impls,
+/// you _have_ to implement the [`Input::configure`] method
+/// of your type in terms of the [`Input::configure`] methods
+/// of the various [`Input`] types that `cradle` provides --
+/// as demonstrated in the code snippet above.
+/// [`Config`]'s fields are private to allow to add new features to `cradle`
+/// without introducing breaking API changes.
 pub trait Input: Sized {
-    #[doc(hidden)]
+    /// Configures the given [`Config`](crate::config::Config) for the [`Input`] `self`.
+    /// Usually you won't have to write your own custom impls for [`Input`],
+    /// nor call this function yourself.
+    /// So you can safely ignore this method.
+    ///
+    /// See also [Custom `Input` impls](#custom-input-impls).
     fn configure(self, config: &mut Config);
 
     /// `input.run()` runs `input` as a child process.
