@@ -101,40 +101,43 @@ use std::{
 /// The provided `Input` implementations should be sufficient for most use cases,
 /// but custom `Input` implementations can be written to extend `cradle`.
 ///
-/// Here's an example of an `AbsolutePath` type, that wraps [`PathBuf`]
-/// and is meant to represent only absolute paths.
-/// By writing a custom [`Input`] impl, you can use `AbsolutePath`s as
-/// an input to `cradle` functions:
+/// Here's an example of an `Environment` type, that wraps
+/// [`BTreeMap`](std::collections::BTreeMap) and adds all contained
+/// key-value pairs to the environment of the child process.
 ///
 /// ```
-/// # #[cfg(target_os = "linux")]
-/// # {
-/// # let temp_dir = tempfile::TempDir::new().unwrap();
-/// # std::env::set_current_dir(&temp_dir).unwrap();
 /// use cradle::prelude::*;
 /// use cradle::config::Config;
-/// use std::path::{Path, PathBuf};
+/// use std::collections::BTreeMap;
 ///
-/// struct AbsolutePath(PathBuf);
+/// struct Environment(BTreeMap<String, String>);
 ///
-/// impl AbsolutePath {
-///     fn new(path: &Path) -> Result<AbsolutePath, std::io::Error> {
-///         Ok(AbsolutePath(path.canonicalize()?))
+/// impl Environment {
+///     fn new() -> Self {
+///         Environment(BTreeMap::new())
+///     }
+///
+///     fn add(mut self, key: &str, value: &str) -> Self {
+///         self.0.insert(key.to_owned(), value.to_owned());
+///         self
 ///     }
 /// }
 ///
-/// impl Input for AbsolutePath {
+/// impl Input for Environment {
 ///     fn configure(self, config: &mut Config) {
-///         self.0.configure(config);
+///         for (key, value) in self.0.into_iter() {
+///             Env(key, value).configure(config)
+///         }
 ///     }
 /// }
 ///
-/// std::fs::write("file", "foo").unwrap();
-/// let path = AbsolutePath::new(&Path::new("file")).unwrap();
+/// let env_vars = Environment::new()
+///     .add("FOO", "foo")
+///     .add("BAR", "bar");
 ///
-/// let StdoutTrimmed(output) = run_output!("cat", path);
-/// assert_eq!(output, "foo");
-/// # }
+/// let StdoutUntrimmed(output) = run_output!("env", env_vars);
+/// assert!(output.contains("FOO=foo\n"));
+/// assert!(output.contains("BAR=bar\n"));
 /// ```
 ///
 /// It is not recommended to override [`run`](Input::run),
