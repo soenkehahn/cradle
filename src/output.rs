@@ -54,55 +54,16 @@ use std::process::ExitStatus;
 ///
 /// ## Custom [`Output`] impls
 ///
-/// Usually you don't have to write your own impls for the [`Output`] trait.
-/// There's some uncommon situations where it might be beneficial.
-/// Here's a simple example:
+/// It is not recommended to write `Output` impls for your own types.
+/// In theory it is possible, but the API is
 ///
-/// ```
-/// use cradle::{child_output::ChildOutput, config::Config, prelude::*};
-/// use std::process::ExitStatus;
+/// - not designed to do that conveniently,
+/// - underdocumented and
+/// - easy to misuse, i.e. it is possible to provoke [`Internal`](Error::Internal)
+///   errors.
 ///
-/// struct CommandOutput {
-///     stdout: String,
-///     stderr: String,
-///     status: ExitStatus,
-/// }
-///
-/// impl Output for CommandOutput {
-///     fn configure(config: &mut Config) {
-///       StdoutUntrimmed::configure(config);
-///       Stderr::configure(config);
-///       Status::configure(config);
-///     }
-///
-///     fn from_run_result(
-///         config: &Config,
-///         child_output: ChildOutput,
-///     ) -> Result<Self, Error> {
-///         let StdoutUntrimmed(stdout) =
-///             StdoutUntrimmed::from_run_result(config, child_output.clone())?;
-///         let Stderr(stderr) = Stderr::from_run_result(config, child_output.clone())?;
-///         let Status(status) = Status::from_run_result(config, child_output)?;
-///         Ok(
-///             CommandOutput {
-///                 stdout,
-///                 stderr,
-///                 status,
-///             }
-///         )
-///     }
-/// }
-///
-/// let output: CommandOutput = run_output!(%"echo foo");
-/// assert_eq!(output.stdout, "foo\n");
-/// assert_eq!(output.stderr, "");
-/// assert!(output.status.success());
-/// ```
-///
-/// todo:
-/// - implement in terms of
-/// - fields of config and childoutput are private
-/// - call configure on the same types that you are using in from_run_result, otherwise Internal
+/// See also
+/// [Issue 184: Provide a better API for writing custom Output impls](https://github.com/soenkehahn/cradle/issues/184).
 pub trait Output: Sized {
     fn configure(config: &mut Config);
 

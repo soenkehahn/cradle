@@ -11,6 +11,9 @@ use std::{
 
 /// Internal type to capture all the outputs of a child process.
 /// Usually you don't have to use this type directly.
+///
+/// See also the documentation for
+/// [Custom `Output` impls](crate::Output#custom-output-impls).
 #[derive(Clone, Debug)]
 pub struct ChildOutput {
     pub(crate) stdout: Option<Vec<u8>>,
