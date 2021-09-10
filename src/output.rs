@@ -55,8 +55,9 @@ use std::process::ExitStatus;
 /// ## Custom [`Output`] impls
 ///
 /// It is possible, but not recommended, to write [`Output`] implementations for your
-/// own types. The API is inconvenient, under-documented, and easy to misuse, i.e
-/// easy to provoke [`Internal`](Error::Internal) errors.
+/// own types.
+/// The API is inconvenient, under-documented, and easy to misuse,
+/// i.e. it is easily possible to provoke [`Internal`](Error::Internal) errors.
 ///
 /// See
 /// [Issue 184: Provide a better API for writing custom Output impls](https://github.com/soenkehahn/cradle/issues/184)
