@@ -5,7 +5,9 @@ use std::{ffi::OsString, path::PathBuf, sync::Arc};
 /// Used by `Input` implementations to configure how child processes are run.
 /// Usually you don't have to use this type directly.
 ///
-/// See also [Custom `Input` impls](crate::Input#custom-input-impls).
+/// See also the documentation for
+/// [Custom `Input` impls](crate::Input#custom-input-impls) and
+/// [Custom `Output` impls](crate::Output#custom-output-impls).
 #[rustversion::attr(since(1.48), allow(clippy::rc_buffer))]
 #[derive(Debug, Clone)]
 pub struct Config {

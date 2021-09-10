@@ -40,7 +40,7 @@ use std::process::ExitStatus;
 /// Also, [`Output`] is implemented for tuples.
 /// You can use this to combine multiple return types that implement [`Output`].
 /// The following code for example retrieves the command's [`ExitStatus`]
-/// **and** what it writes to `stdout`:
+/// _and_ what it writes to `stdout`:
 ///
 /// ```
 /// use cradle::prelude::*;
@@ -51,11 +51,29 @@ use std::process::ExitStatus;
 /// ```
 ///
 /// [`()`]: trait.Output.html#impl-Output-for-()
+///
+/// ## Custom [`Output`] impls
+///
+/// It is possible, but not recommended, to write [`Output`] implementations for your
+/// own types.
+/// The API is inconvenient, under-documented, and easy to misuse,
+/// i.e. it is easily possible to provoke [`Internal`](Error::Internal) errors.
+///
+/// See
+/// [Issue 184: Provide a better API for writing custom Output impls](https://github.com/soenkehahn/cradle/issues/184)
+/// for more details and discussion.
 pub trait Output: Sized {
-    #[doc(hidden)]
+    /// Configures the given [`Config`](crate::config::Config) for the [`Output`] type.
+    /// This is an internal function that should be ignored.
+    ///
+    /// See also [Custom `Output` impls](crate::Output#custom-output-impls).
     fn configure(config: &mut Config);
 
-    #[doc(hidden)]
+    /// Converts [`ChildOutput`](crate::child_output::ChildOutput)s
+    /// from running a child process into values of the [`Output`] type.
+    /// This is an internal function that should be ignored.
+    ///
+    /// See also [Custom `Output` impls](crate::Output#custom-output-impls).
     fn from_child_output(config: &Config, result: &ChildOutput) -> Result<Self, Error>;
 }
 
