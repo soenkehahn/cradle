@@ -54,16 +54,13 @@ use std::process::ExitStatus;
 ///
 /// ## Custom [`Output`] impls
 ///
-/// It is not recommended to write `Output` impls for your own types.
-/// In theory it is possible, but the API is
+/// It is possible, but not recommended, to write `Output` implementations for your
+/// own types. The API is inconvenient, under-documented, and easy to misuse, i.e
+/// easy to provoke [`Internal`](Error::Internal) errors.
 ///
-/// - not designed to do that conveniently,
-/// - underdocumented and
-/// - easy to misuse, i.e. it is possible to provoke [`Internal`](Error::Internal)
-///   errors.
-///
-/// See also
-/// [Issue 184: Provide a better API for writing custom Output impls](https://github.com/soenkehahn/cradle/issues/184).
+/// See
+/// [Issue 184: Provide a better API for writing custom Output impls](https://github.com/soenkehahn/cradle/issues/184)
+/// for more details and discussion.
 pub trait Output: Sized {
     fn configure(config: &mut Config);
 
