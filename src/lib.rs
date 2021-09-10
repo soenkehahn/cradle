@@ -227,7 +227,6 @@
 //! [`cmd`](https://hackage.haskell.org/package/shake-0.19.4/docs/Development-Shake.html#v:cmd)
 //! function.
 
-#[doc(hidden)]
 pub mod child_output;
 mod collected_output;
 pub mod config;
