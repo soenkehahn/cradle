@@ -54,7 +54,7 @@ use std::process::ExitStatus;
 ///
 /// ## Custom [`Output`] impls
 ///
-/// It is possible, but not recommended, to write `Output` implementations for your
+/// It is possible, but not recommended, to write [`Output`] implementations for your
 /// own types. The API is inconvenient, under-documented, and easy to misuse, i.e
 /// easy to provoke [`Internal`](Error::Internal) errors.
 ///
