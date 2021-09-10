@@ -62,8 +62,17 @@ use std::process::ExitStatus;
 /// [Issue 184: Provide a better API for writing custom Output impls](https://github.com/soenkehahn/cradle/issues/184)
 /// for more details and discussion.
 pub trait Output: Sized {
+    /// Configures the given [`Config`](crate::config::Config) for the [`Output`] type.
+    /// This is an internal function that should be ignored.
+    ///
+    /// See also [Custom `Output` impls](crate::Output#custom-output-impls).
     fn configure(config: &mut Config);
 
+    /// Converts [`ChildOutput`](crate::child_output::ChildOutput)s
+    /// from running a child process into values of the [`Output`] type.
+    /// This is an internal function that should be ignored.
+    ///
+    /// See also [Custom `Output` impls](crate::Output#custom-output-impls).
     fn from_child_output(config: &Config, result: &ChildOutput) -> Result<Self, Error>;
 }
 
