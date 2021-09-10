@@ -14,9 +14,17 @@ Here's an example:
 For comprehensive documentation, head over to
 [docs.rs/cradle](https://docs.rs/cradle/latest/cradle/).
 
-## MSRV
-The minimal supported rust version is `0.41`.
-
 ## Design Goals
 
-`cradle` is meant to bla
+`cradle` is meant to make it as easy as possible to run child processes,
+while making it very hard to use incorrectly.
+As such it provides an interface that is very concise, yet flexible,
+but tries to avoid any behavior that would be unexpected or surprising.
+
+`cradle` decidedly does _not_ try to emulate any syntax of `bash` or other shells,
+like piping (`|`) or shell expansion (e.g. globs, like `*`).
+Instead, it is aiming to be a convenience wrapper around your
+operating system's interface for running child processes.
+
+## MSRV
+The minimal supported rust version is `0.41`.
