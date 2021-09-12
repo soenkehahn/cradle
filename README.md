@@ -30,8 +30,7 @@ For comprehensive documentation, head over to
 
 `cradle` is meant to make it as easy as possible to run child processes,
 while making it hard to use incorrectly.
-As such it provides an interface that is very concise, yet flexible,
-but tries to avoid any behavior that would be unexpected or surprising.
+As such it provides an interface that is concise and flexible, and tries to avoid surprising behavior.
 
 `cradle` decidedly does _not_ try to emulate any syntax of `bash` or other shells,
 like piping (`|`) or shell expansion (e.g. globs, like `*`).
