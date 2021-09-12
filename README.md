@@ -32,9 +32,9 @@ For comprehensive documentation, head over to
 while making it hard to use incorrectly.
 As such it provides an interface that is concise and flexible, and tries to avoid surprising behavior.
 
-`cradle` decidedly does _not_ try to emulate any syntax of `bash` or other shells,
-like piping (`|`) or shell expansion (e.g. globs, like `*`).
-Instead, it is aiming to be a convenience wrapper around your
+`cradle` does not try to emulate the syntax or functionality of `bash` or other shells,
+such as pipes (`|`), globs (`*`), or other string expansion.
+Instead, it aims to be a convenient wrapper around the
 operating system's interface for running child processes.
 
 ## MSRV
