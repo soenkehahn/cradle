@@ -29,7 +29,7 @@ For comprehensive documentation, head over to
 ## Design Goals
 
 `cradle` is meant to make it as easy as possible to run child processes,
-while making it very hard to use incorrectly.
+while making it hard to use incorrectly.
 As such it provides an interface that is very concise, yet flexible,
 but tries to avoid any behavior that would be unexpected or surprising.
 
