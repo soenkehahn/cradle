@@ -17,13 +17,12 @@ For comprehensive documentation, head over to
 ## Design Goals
 
 `cradle` is meant to make it as easy as possible to run child processes,
-while making it very hard to use incorrectly.
-As such it provides an interface that is very concise, yet flexible,
-but tries to avoid any behavior that would be unexpected or surprising.
+while making it hard to use incorrectly.
+As such it provides an interface that is concise and flexible, and tries to avoid surprising behavior.
 
-`cradle` decidedly does _not_ try to emulate any syntax of `bash` or other shells,
-like piping (`|`) or shell expansion (e.g. globs, like `*`).
-Instead, it is aiming to be a convenience wrapper around your
+`cradle` does not try to emulate the syntax or functionality of `bash` or other shells,
+such as pipes (`|`), globs (`*`), or other string expansion.
+Instead, it aims to be a convenient wrapper around the
 operating system's interface for running child processes.
 
 ## MSRV
