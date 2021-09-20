@@ -329,9 +329,6 @@ impl Input for String {
 ///
 /// let StdoutTrimmed(output) = run_output!(Split("echo foo"));
 /// assert_eq!(output, "foo");
-///
-/// let StdoutTrimmed(output) = run_output!(Split(format!("echo {}", 100)));
-/// assert_eq!(output, "100");
 /// ```
 ///
 /// Since this is such a common case, `cradle` also provides a syntactic shortcut
@@ -346,12 +343,12 @@ impl Input for String {
 ///
 /// [`split_whitespace`]: str::split_whitespace
 #[derive(Debug, PartialEq, Clone)]
-pub struct Split<T: AsRef<str>>(pub T);
+pub struct Split(pub &'static str);
 
-impl<T: AsRef<str>> Input for crate::input::Split<T> {
+impl Input for crate::input::Split {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
-        for argument in self.0.as_ref().split_whitespace() {
+        for argument in self.0.split_whitespace() {
             argument.configure(config);
         }
     }
