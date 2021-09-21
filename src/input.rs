@@ -366,7 +366,7 @@ impl Input for crate::input::Split {
 /// Arguments to [`split`] must be of type [`char`].
 ///
 /// [`split`]: str::split
-impl<'a> Input for std::str::Split<'a, char> {
+impl Input for std::str::Split<'static, char> {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
         for word in self {
@@ -385,7 +385,7 @@ impl<'a> Input for std::str::Split<'a, char> {
 /// ```
 ///
 /// [`split_whitespace`]: str::split_whitespace
-impl<'a> Input for std::str::SplitWhitespace<'a> {
+impl Input for std::str::SplitWhitespace<'static> {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
         for word in self {
@@ -404,7 +404,7 @@ impl<'a> Input for std::str::SplitWhitespace<'a> {
 /// ```
 ///
 /// [`split_ascii_whitespace`]: str::split_ascii_whitespace
-impl<'a> Input for std::str::SplitAsciiWhitespace<'a> {
+impl Input for std::str::SplitAsciiWhitespace<'static> {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
         for word in self {
