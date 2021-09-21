@@ -1170,12 +1170,6 @@ mod tests {
         }
 
         #[test]
-        fn splits_owned_strings() {
-            let StdoutTrimmed(output) = run_output!(Split("echo foo".to_string()));
-            assert_eq!(output, "foo");
-        }
-
-        #[test]
         fn skips_multiple_whitespace_characters() {
             let StdoutUntrimmed(output) = run_output!("echo", Split("foo  bar"));
             assert_eq!(output, "foo bar\n");
