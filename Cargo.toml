@@ -9,6 +9,7 @@ repository = "https://github.com/soenkehahn/cradle"
 homepage = "https://github.com/soenkehahn/cradle"
 keywords = ["child", "child-process", "command", "process", "shell"]
 categories = ["filesystem", "os"]
+exclude = ["/.github"]
 
 [workspace]
 members = [".", "memory-tests"]
