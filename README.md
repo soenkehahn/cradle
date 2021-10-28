@@ -39,4 +39,4 @@ Instead, it aims to be a convenient wrapper around the
 operating system's interface for running child processes.
 
 ## MSRV
-The minimal supported rust version is `0.41`.
+The minimal supported rust version is `0.48`.

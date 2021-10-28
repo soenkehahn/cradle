@@ -9,10 +9,10 @@ use crate::{
 };
 use std::{
     ffi::{OsStr, OsString},
-    io::Write,
     path::{Path, PathBuf},
     sync::Arc,
 };
+use tokio::io::AsyncWrite;
 
 /// All types that are possible arguments to [`run!`], [`run_output!`] or
 /// [`run_result!`] must implement this trait.
@@ -221,14 +221,20 @@ pub(crate) fn run_result_with_context<Stdout, Stderr, I, O>(
     input: I,
 ) -> Result<O, Error>
 where
-    Stdout: Write + Clone + Send + 'static,
-    Stderr: Write + Clone + Send + 'static,
+    Stdout: AsyncWrite + Clone + Send + Unpin + 'static,
+    Stderr: AsyncWrite + Clone + Send + Unpin + 'static,
     I: Input,
     O: Output,
 {
-    let mut config = Config::default();
-    input.configure(&mut config);
-    ChildOutput::run_child_process_output(context, config)
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .build()
+        .expect("fixme");
+    runtime.block_on(async {
+        let mut config = Config::default();
+        input.configure(&mut config);
+        ChildOutput::run_child_process_output(context, config).await
+    })
 }
 
 #[cfg(test)]
@@ -237,8 +243,8 @@ pub(crate) fn run_result_with_context_unit<Stdout, Stderr, I>(
     input: I,
 ) -> Result<(), Error>
 where
-    Stdout: Write + Clone + Send + 'static,
-    Stderr: Write + Clone + Send + 'static,
+    Stdout: AsyncWrite + Clone + Send + Unpin + 'static,
+    Stderr: AsyncWrite + Clone + Send + Unpin + 'static,
     I: Input,
 {
     run_result_with_context(context, input)

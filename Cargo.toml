@@ -17,6 +17,11 @@ members = [".", "memory-tests"]
 [dependencies]
 rustversion = "1.0.4"
 
+[dependencies.tokio]
+version = "1.12.0"
+features = [ "rt", "io-util", "process", "io-std" ]
+default-features = false
+
 [dev-dependencies]
 bitflags = "=1.2.1"
 executable-path = "1.0.0"

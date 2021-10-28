@@ -5,8 +5,11 @@ use crate::{
 };
 use std::{
     ffi::OsString,
-    io::Write,
-    process::{Command, ExitStatus, Stdio},
+    process::{ExitStatus, Stdio},
+};
+use tokio::{
+    io::{AsyncWrite, AsyncWriteExt},
+    process::Command,
 };
 
 /// Internal type to capture all the outputs of a child process.
@@ -22,31 +25,34 @@ pub struct ChildOutput {
 }
 
 impl ChildOutput {
-    pub(crate) fn run_child_process_output<Stdout, Stderr, T>(
+    pub(crate) async fn run_child_process_output<Stdout, Stderr, T>(
         context: Context<Stdout, Stderr>,
         mut config: Config,
     ) -> Result<T, Error>
     where
-        Stdout: Write + Clone + Send + 'static,
-        Stderr: Write + Clone + Send + 'static,
+        Stdout: AsyncWrite + Clone + Send + Unpin + 'static,
+        Stderr: AsyncWrite + Clone + Send + Unpin + 'static,
         T: Output,
     {
         <T as Output>::configure(&mut config);
-        let child_output = ChildOutput::run_child_process(context, &config)?;
+        let child_output = ChildOutput::run_child_process(context, &config).await?;
         T::from_child_output(&config, &child_output)
     }
 
-    fn run_child_process<Stdout, Stderr>(
+    async fn run_child_process<Stdout, Stderr>(
         mut context: Context<Stdout, Stderr>,
         config: &Config,
     ) -> Result<Self, Error>
     where
-        Stdout: Write + Clone + Send + 'static,
-        Stderr: Write + Clone + Send + 'static,
+        Stdout: AsyncWrite + Clone + Send + Unpin + 'static,
+        Stderr: AsyncWrite + Clone + Send + Unpin + 'static,
     {
         let (executable, arguments) = Self::parse_input(config.arguments.clone())?;
         if config.log_command {
-            writeln!(context.stderr, "+ {}", config.full_command())
+            context
+                .stderr
+                .write_all(format!("+ {}\n", config.full_command()).as_bytes())
+                .await
                 .map_err(|error| Error::command_io_error(config, error))?;
         }
         let mut command = Command::new(&executable);
@@ -83,9 +89,11 @@ impl ChildOutput {
         );
         let exit_status = child
             .wait()
+            .await
             .map_err(|error| Error::command_io_error(config, error))?;
         let collected_output = waiter
             .join()
+            .await
             .map_err(|error| Error::command_io_error(config, error))?;
         Self::check_exit_status(config, exit_status)?;
         Ok(Self {
