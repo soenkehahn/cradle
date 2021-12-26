@@ -507,7 +507,7 @@ where
 /// run!(LogCommand, %"echo foo");
 /// // writes '+ echo foo' to stderr
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct LogCommand;
 
 impl Input for LogCommand {
