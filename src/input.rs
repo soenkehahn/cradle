@@ -439,6 +439,22 @@ tuple_impl!(0, A, 1, B, 2, C, 3, D,);
 tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E,);
 tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F,);
 tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G, 7, H,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G, 7, H, 8, I,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G, 7, H, 8, I, 9, J,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G, 7, H, 8, I, 9, J, 10, K,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G, 7, H, 8, I, 9, J, 10, K, 11, L,);
+tuple_impl!(0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G, 7, H, 8, I, 9, J, 10, K, 11, L, 12, M,);
+tuple_impl!(
+    0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G, 7, H, 8, I, 9, J, 10, K, 11, L, 12, M, 13, N,
+);
+tuple_impl!(
+    0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G, 7, H, 8, I, 9, J, 10, K, 11, L, 12, M, 13, N, 14, O,
+);
+tuple_impl!(
+    0, A, 1, B, 2, C, 3, D, 4, E, 5, F, 6, G, 7, H, 8, I, 9, J, 10, K, 11, L, 12, M, 13, N, 14, O,
+    15, P,
+);
 
 /// All elements of the given [`Vec`] are used as arguments to the child process.
 /// Same as passing in the elements separately.

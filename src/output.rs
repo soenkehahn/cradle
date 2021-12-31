@@ -130,6 +130,16 @@ tuple_impl!(A, B, C,);
 tuple_impl!(A, B, C, D,);
 tuple_impl!(A, B, C, D, E,);
 tuple_impl!(A, B, C, D, E, F,);
+tuple_impl!(A, B, C, D, E, F, G,);
+tuple_impl!(A, B, C, D, E, F, G, H,);
+tuple_impl!(A, B, C, D, E, F, G, H, I,);
+tuple_impl!(A, B, C, D, E, F, G, H, I, J,);
+tuple_impl!(A, B, C, D, E, F, G, H, I, J, K,);
+tuple_impl!(A, B, C, D, E, F, G, H, I, J, K, L,);
+tuple_impl!(A, B, C, D, E, F, G, H, I, J, K, L, M,);
+tuple_impl!(A, B, C, D, E, F, G, H, I, J, K, L, M, N,);
+tuple_impl!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O,);
+tuple_impl!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P,);
 
 /// Returns what the child process writes to `stdout`, interpreted as utf-8,
 /// collected into a string, trimmed of leading and trailing whitespace.
