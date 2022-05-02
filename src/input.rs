@@ -495,11 +495,11 @@ where
 {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
-        #[rustversion::all(since(1.51), before(1.59))]
+        #[rustversion::before(1.59)]
         fn array_to_iter<T, const N: usize>(array: [T; N]) -> impl Iterator<Item = T> {
             std::array::IntoIter::new(array)
         }
-        #[rustversion::all(since(1.59))]
+        #[rustversion::since(1.59)]
         fn array_to_iter<T, const N: usize>(array: [T; N]) -> impl Iterator<Item = T> {
             IntoIterator::into_iter(array)
         }
