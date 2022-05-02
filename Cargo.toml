@@ -23,6 +23,7 @@ lazy_static = "1.4.0"
 pretty_assertions = "1.0.0"
 tempfile = "3.2.0"
 unindent = "0.1.7"
+bitflags = "=1.2.1"
 
 [[bin]]
 name = "context_integration_tests"
