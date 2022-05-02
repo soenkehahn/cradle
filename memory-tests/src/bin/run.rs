@@ -14,6 +14,7 @@ fn main() -> Result<()> {
 fn test(stream_type: &str) -> Result<()> {
     let bytes = from_mib(64);
     let memory_consumption = measure_memory_consumption(stream_type, bytes)?;
+    dbg!(memory_consumption);
     let allowed_memory_consumption = from_mib(16);
     assert!(
         memory_consumption < allowed_memory_consumption,

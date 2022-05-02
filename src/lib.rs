@@ -1331,9 +1331,11 @@ mod tests {
         }
 
         #[test]
+        #[cfg(unix)]
         fn writing_too_many_bytes_into_a_non_reading_child_may_error() {
             let big_string = String::from_utf8(vec![b'a'; 2_usize.pow(16) + 1]).unwrap();
             let result: Result<(), crate::Error> = run_result!("true", Stdin(big_string));
+            dbg!(&result);
             let message = result.unwrap_err().to_string();
             assert!(if cfg!(unix) {
                 message == "true:\n  Broken pipe (os error 32)"

@@ -1,30 +1,59 @@
 //! An internal module used for testing cradle.
 
-use std::io::{self, Write};
+use std::{pin::Pin, task::Poll};
+use tokio::io::AsyncWrite;
 
 #[derive(Clone, Debug)]
 pub(crate) struct Stdout;
 
-impl Write for Stdout {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        io::stdout().write(buf)
+impl AsyncWrite for Stdout {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        context: &mut std::task::Context<'_>,
+        buffer: &[u8],
+    ) -> Poll<Result<usize, std::io::Error>> {
+        AsyncWrite::poll_write(Pin::new(&mut tokio::io::stdout()), context, buffer)
     }
 
-    fn flush(&mut self) -> io::Result<()> {
-        io::stdout().flush()
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        context: &mut std::task::Context<'_>,
+    ) -> Poll<Result<(), std::io::Error>> {
+        AsyncWrite::poll_flush(Pin::new(&mut tokio::io::stdout()), context)
+    }
+
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        context: &mut std::task::Context<'_>,
+    ) -> Poll<Result<(), std::io::Error>> {
+        AsyncWrite::poll_shutdown(Pin::new(&mut tokio::io::stdout()), context)
     }
 }
 
 #[derive(Clone, Debug)]
 pub(crate) struct Stderr;
 
-impl Write for Stderr {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        io::stderr().write(buf)
+impl AsyncWrite for Stderr {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        context: &mut std::task::Context<'_>,
+        buffer: &[u8],
+    ) -> Poll<Result<usize, std::io::Error>> {
+        AsyncWrite::poll_write(Pin::new(&mut tokio::io::stderr()), context, buffer)
     }
 
-    fn flush(&mut self) -> io::Result<()> {
-        io::stderr().flush()
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        _context: &mut std::task::Context<'_>,
+    ) -> Poll<Result<(), std::io::Error>> {
+        todo!()
+    }
+
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        _context: &mut std::task::Context<'_>,
+    ) -> Poll<Result<(), std::io::Error>> {
+        todo!()
     }
 }
 
@@ -61,15 +90,28 @@ mod test {
         }
     }
 
-    impl Write for TestOutput {
-        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+    impl AsyncWrite for TestOutput {
+        fn poll_write(
+            self: Pin<&mut Self>,
+            _context: &mut std::task::Context<'_>,
+            buffer: &[u8],
+        ) -> Poll<Result<usize, std::io::Error>> {
             let mut lock = self.0.lock().unwrap();
-            lock.write(buf)
+            Poll::Ready(std::io::Write::write(&mut *lock, buffer))
         }
 
-        fn flush(&mut self) -> io::Result<()> {
-            let mut lock = self.0.lock().unwrap();
-            lock.flush()
+        fn poll_flush(
+            self: Pin<&mut Self>,
+            _context: &mut std::task::Context<'_>,
+        ) -> Poll<Result<(), std::io::Error>> {
+            todo!()
+        }
+
+        fn poll_shutdown(
+            self: Pin<&mut Self>,
+            _context: &mut std::task::Context<'_>,
+        ) -> Poll<Result<(), std::io::Error>> {
+            todo!()
         }
     }
 
