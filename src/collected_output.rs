@@ -52,13 +52,12 @@ impl Waiter {
         Stdout: Write + Send + Clone + 'static,
         Stderr: Write + Send + Clone + 'static,
     {
-        let stdin_join_handle = match config.stdin.clone() {
-            Some(config_stdin) => Some(thread::spawn(move || -> io::Result<()> {
+        let stdin_join_handle = config.stdin.clone().map(|config_stdin| {
+            thread::spawn(move || -> io::Result<()> {
                 child_stdin.write_all(&config_stdin)?;
                 Ok(())
-            })),
-            None => None,
-        };
+            })
+        });
         let stdout_join_handle = Self::spawn_standard_stream_handler(
             config.capture_stdout,
             child_stdout,
