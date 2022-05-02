@@ -7,7 +7,7 @@ use std::{
 
 #[derive(Debug)]
 pub(crate) struct Waiter {
-    stdin: JoinHandle<io::Result<()>>,
+    stdin: Option<JoinHandle<io::Result<()>>>,
     stdout: JoinHandle<io::Result<Option<Vec<u8>>>>,
     stderr: JoinHandle<io::Result<Option<Vec<u8>>>>,
 }
@@ -52,11 +52,13 @@ impl Waiter {
         Stdout: Write + Send + Clone + 'static,
         Stderr: Write + Send + Clone + 'static,
     {
-        let config_stdin = config.stdin.clone();
-        let stdin_join_handle = thread::spawn(move || -> io::Result<()> {
-            child_stdin.write_all(&config_stdin)?;
-            Ok(())
-        });
+        let stdin_join_handle = match config.stdin.clone() {
+            Some(config_stdin) => Some(thread::spawn(move || -> io::Result<()> {
+                child_stdin.write_all(&config_stdin)?;
+                Ok(())
+            })),
+            None => None,
+        };
         let stdout_join_handle = Self::spawn_standard_stream_handler(
             config.capture_stdout,
             child_stdout,
@@ -75,9 +77,9 @@ impl Waiter {
     }
 
     pub(crate) fn join(self) -> io::Result<CollectedOutput> {
-        self.stdin
-            .join()
-            .expect("stdout relaying thread panicked")?;
+        if let Some(stdin) = self.stdin {
+            stdin.join().expect("stdout relaying thread panicked")?;
+        }
         Ok(CollectedOutput {
             stdout: self
                 .stdout

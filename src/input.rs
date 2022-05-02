@@ -621,7 +621,14 @@ where
 {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
-        Arc::make_mut(&mut config.stdin).extend_from_slice(self.0.as_ref());
+        match config.stdin.as_mut() {
+            Some(mut arc) => {
+                Arc::make_mut(&mut arc).extend_from_slice(self.0.as_ref());
+            }
+            None => {
+                config.stdin = Some(Arc::new(self.0.as_ref().to_vec()));
+            }
+        }
     }
 }
 
