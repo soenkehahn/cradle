@@ -1,6 +1,6 @@
 [package]
 name = "cradle"
-version = "0.2.1"
+version = "0.2.2"
 description = "Execute child processes with ease"
 authors = ["Sönke Hahn <soenkehahn@gmail.com>"]
 license = "CC0-1.0"
