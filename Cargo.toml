@@ -23,6 +23,10 @@ lazy_static = "1.4.0"
 pretty_assertions = "1.0.0"
 tempfile = "3.2.0"
 unindent = "0.1.7"
+# cradle only indirectly depends on bitflags (for tests).
+# But newer bitflags versions don't compile with older compilers anymore.
+# So we put in this exact dependency to force a working bitflags version.
+bitflags = "=1.2.1"
 
 [[bin]]
 name = "context_integration_tests"

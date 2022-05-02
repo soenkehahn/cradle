@@ -495,7 +495,16 @@ where
 {
     #[doc(hidden)]
     fn configure(self, config: &mut Config) {
-        for t in std::array::IntoIter::new(self) {
+        #[rustversion::before(1.59)]
+        fn array_to_iter<T, const N: usize>(array: [T; N]) -> impl Iterator<Item = T> {
+            std::array::IntoIter::new(array)
+        }
+        #[rustversion::since(1.59)]
+        fn array_to_iter<T, const N: usize>(array: [T; N]) -> impl Iterator<Item = T> {
+            IntoIterator::into_iter(array)
+        }
+
+        for t in array_to_iter(self) {
             t.configure(config);
         }
     }
