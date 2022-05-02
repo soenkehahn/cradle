@@ -47,9 +47,9 @@ all-rustc-versions *args="ci":
   versions=$(cat .github/workflows/ci.yaml \
     | yq -r '.jobs.all.strategy.matrix.rust | sort | join(" ")' \
     ;)
-  for version in $versions
+  for RUSTUP_TOOLCHAIN in $versions
   do
-    rustup override set $version
+    export RUSTUP_TOOLCHAIN
+    cargo version
     just {{ args }}
   done
-  rustup override unset
