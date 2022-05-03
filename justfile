@@ -36,3 +36,20 @@ forbidden-words:
     'dbg!\|fixme\|todo\|#\[ignore\]' \
     src tests examples
   @echo No forbidden words found
+
+all-rustc-versions *args="ci":
+  #!/usr/bin/env bash
+  set -eu
+
+  export RUSTFLAGS="--deny warnings"
+
+  # install yq with: pip3 install yq
+  versions=$(cat .github/workflows/ci.yaml \
+    | yq -r '.jobs.all.strategy.matrix.rust | sort | join(" ")' \
+    ;)
+  for RUSTUP_TOOLCHAIN in $versions
+  do
+    export RUSTUP_TOOLCHAIN
+    cargo version
+    just {{ args }}
+  done
