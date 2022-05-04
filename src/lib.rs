@@ -237,6 +237,9 @@ mod macros;
 pub mod output;
 pub mod prelude;
 
+#[cfg(test)]
+mod test_script;
+
 include!("common_re_exports.rs.snippet");
 
 #[cfg(test)]
@@ -245,6 +248,7 @@ mod tests {
         context::Context,
         input::{run_result_with_context, run_result_with_context_unit},
         prelude::*,
+        test_script::TestScript,
     };
     use lazy_static::lazy_static;
     use std::{
@@ -344,7 +348,8 @@ mod tests {
             #[test]
             #[should_panic(expected = "exited with exit code: 42")]
             fn other_exit_codes() {
-                run!(test_helper(), "exit code 42");
+                let script = TestScript::new("import sys; sys.exit(42)");
+                run!(&script);
             }
 
             #[test]
@@ -461,7 +466,8 @@ mod tests {
 
             #[test]
             fn other_exit_codes() {
-                let result: Result<(), Error> = run_result!(test_helper(), "exit code 42");
+                let script = TestScript::new("import sys; sys.exit(42)");
+                let result: Result<(), Error> = run_result!(&script);
                 assert!(result
                     .unwrap_err()
                     .to_string()
@@ -947,7 +953,8 @@ mod tests {
 
         #[test]
         fn forty_two() {
-            let Status(exit_status) = run_output!(test_helper(), "exit code 42");
+            let script = TestScript::new("import sys; sys.exit(42)");
+            let Status(exit_status) = run_output!(&script);
             assert!(!exit_status.success());
             assert_eq!(exit_status.code(), Some(42));
         }

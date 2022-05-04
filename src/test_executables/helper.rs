@@ -11,7 +11,6 @@ fn main() {
     match args.next().unwrap().as_str() {
         "invalid utf-8 stdout" => io::stdout().write_all(&[0x80]).unwrap(),
         "invalid utf-8 stderr" => io::stderr().write_all(&[0x80]).unwrap(),
-        "exit code 42" => std::process::exit(42),
         "stream chunk then wait for file" => {
             println!("foo");
             io::stdout().flush().unwrap();
