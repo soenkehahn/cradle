@@ -365,20 +365,6 @@ mod tests {
                 run!(without_executable_bit, %"foo bar");
             }
 
-            #[rustversion::since(1.46)]
-            #[test]
-            fn includes_source_location_of_run_run_call() {
-                let (Status(_), Stderr(stderr)) =
-                    run_output!(test_executable("test_executables_panic"));
-                let expected = "src/test_executables/panic.rs:4:5";
-                assert!(
-                    stderr.contains(expected),
-                    "{:?}\n  does not contain\n{:?}",
-                    stderr,
-                    expected
-                );
-            }
-
             #[test]
             #[should_panic(expected = "cradle error: no arguments given")]
             fn no_executable() {
