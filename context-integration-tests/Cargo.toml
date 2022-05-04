@@ -8,3 +8,5 @@ publish = false
 cradle = { path = ".." }
 executable-path = "1.0.0"
 gag = "0.1.10"
+tempfile = "3.2.0"
+unindent = "0.1.7"

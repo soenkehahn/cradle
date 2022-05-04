@@ -23,9 +23,6 @@ fn main() {
             println!("foo");
             std::process::exit(42)
         }
-        "write to stderr" => {
-            eprintln!("foo");
-        }
         "write to stderr and exit with 42" => {
             eprintln!("foo");
             std::process::exit(42)
