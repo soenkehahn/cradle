@@ -29,7 +29,7 @@ fn get_panic_location(f: fn()) -> Option<String> {
     let mutex_clone = mutex.clone();
     set_hook(Box::new(move |info| {
         let mut guard = mutex_clone.lock().unwrap();
-        *guard = info.location().map(|x| x.clone().to_string());
+        *guard = info.location().map(ToString::to_string);
     }));
     let _ = std::panic::catch_unwind(f);
     let _ = take_hook();
