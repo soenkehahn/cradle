@@ -1348,7 +1348,14 @@ mod tests {
         #[test]
         #[cfg(unix)]
         fn stdin_is_closed_by_default() {
-            let StdoutTrimmed(output) = run_output!(test_helper(), "wait until stdin is closed");
+            let script = TestScript::new(
+                "
+                    import sys
+                    sys.stdin.read(-1)
+                    print('stdin is closed')
+                ",
+            );
+            let StdoutTrimmed(output) = run_output!(&script);
             assert_eq!(output, "stdin is closed");
         }
 
