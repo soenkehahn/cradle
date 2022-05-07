@@ -809,10 +809,10 @@ mod tests {
         fn relays_stderr_by_default() {
             let context = Context::test();
             let script = TestScript::new(
-                r#"
+                "
                     import sys
-                    print("foo", file=sys.stderr)
-                "#,
+                    print('foo', file=sys.stderr)
+                ",
             );
             run_result_with_context_unit(context.clone(), &script).unwrap();
             assert_eq!(context.stderr(), "foo\n");
@@ -862,10 +862,10 @@ mod tests {
         #[test]
         fn capture_stderr() {
             let script = TestScript::new(
-                r#"
+                "
                     import sys
-                    print("foo", file=sys.stderr)
-                "#,
+                    print('foo', file=sys.stderr)
+                ",
             );
             let Stderr(stderr) = run_output!(&script);
             assert_eq!(stderr, "foo\n");
@@ -893,10 +893,10 @@ mod tests {
         fn does_not_relay_stderr_when_catpuring() {
             let context = Context::test();
             let script = TestScript::new(
-                r#"
+                "
                     import sys
-                    print("foo", file=sys.stderr)
-                "#,
+                    print('foo', file=sys.stderr)
+                ",
             );
             let Stderr(_) = run_result_with_context(context.clone(), &script).unwrap();
             assert_eq!(context.stderr(), "");
