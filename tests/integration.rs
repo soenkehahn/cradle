@@ -345,8 +345,15 @@ fn root_re_exports_everything_from_the_prelude() {
 
 #[cfg(target_os = "linux")]
 #[test]
-fn memory_test() {
+fn memory_tests() {
     use cradle::prelude::*;
     run!(%"cargo build -p memory-tests --release");
     run!(%"cargo run -p memory-tests --bin run");
+}
+
+#[test]
+fn context_integration_tests() {
+    use cradle::prelude::*;
+    run!(%"cargo build -p context-integration-tests --release");
+    run!(%"cargo run -p context-integration-tests");
 }
