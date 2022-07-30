@@ -94,5 +94,8 @@ jobs:
           cargo clippy --version
           cargo fmt --version
 
+      - name: Pin bitflags version
+        run: cargo update -p bitflags --precise "1.2.1"
+
       - name: Ci
         run: just ci
