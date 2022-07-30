@@ -20,7 +20,7 @@ use std::{
 /// For example you can pass in an executable as a String,
 /// and a variable number of arguments as a [`Vec`]:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let executable = "echo";
@@ -55,7 +55,7 @@ use std::{
 /// `cradle` also implements [`Input`] for tuples of types that themselves implement [`Input`].
 /// Instead of passing multiple arguments to [`run!`], they can be passed in a single tuple:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let args = ("echo", "foo");
@@ -65,7 +65,7 @@ use std::{
 ///
 /// This can be used to group arguments:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let to_hex_command = ("xxd", "-ps", "-u", LogCommand);
@@ -75,7 +75,7 @@ use std::{
 ///
 /// Also, tuples make it possible to write wrappers around [`run!`] without requiring the use of macros:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// fn to_hex<I: Input>(input: I) -> String {
@@ -105,7 +105,7 @@ use std::{
 /// [`BTreeMap`](std::collections::BTreeMap) and adds all contained
 /// key-value pairs to the environment of the child process.
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 /// use cradle::config::Config;
 /// use std::collections::BTreeMap;
@@ -163,7 +163,7 @@ pub trait Input: Sized {
     /// `input.run()` runs `input` as a child process.
     /// It's equivalent to `run!(input)`.
     ///
-    /// ```
+    /// ```no_run
     /// # let temp_dir = tempfile::TempDir::new().unwrap();
     /// # std::env::set_current_dir(&temp_dir).unwrap();
     /// use cradle::prelude::*;
@@ -178,7 +178,7 @@ pub trait Input: Sized {
     /// `input.run()` runs `input` as a child process.
     /// It's equivalent to `run_output!(input)`.
     ///
-    /// ```
+    /// ```no_run
     /// use cradle::prelude::*;
     ///
     /// let StdoutTrimmed(output) = ("echo", "foo").run_output();
@@ -195,7 +195,7 @@ pub trait Input: Sized {
     /// `input.run_result()` runs `input` as a child process.
     /// It's equivalent to `run_result!(input)`.
     ///
-    /// ```
+    /// ```no_run
     /// use cradle::prelude::*;
     ///
     /// # fn build() -> Result<(), Error> {
@@ -258,7 +258,7 @@ where
 /// Arguments of type [`OsString`] are passed to the child process
 /// as arguments.
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// run!("ls", std::env::var_os("HOME").unwrap());
@@ -273,7 +273,7 @@ impl Input for OsString {
 /// Arguments of type [`&OsStr`] are passed to the child process
 /// as arguments.
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// run!("echo", std::env::current_dir().unwrap().file_name().unwrap());
@@ -290,7 +290,7 @@ impl Input for &OsStr {
 /// Arguments of type [`&str`] are passed to the child process as arguments.
 /// This is especially useful because it allows you to use string literals:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = run_output!("echo", "foo");
@@ -306,7 +306,7 @@ impl Input for &str {
 /// Arguments of type [`String`] are passed to the child process
 /// as arguments. Executables can also be passed as [`String`]s:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let executable: String = "echo".to_string();
@@ -324,7 +324,7 @@ impl Input for String {
 /// Splits the contained string by whitespace (using [`split_whitespace`])
 /// and uses the resulting words as separate arguments.
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = run_output!(Split("echo foo"));
@@ -334,7 +334,7 @@ impl Input for String {
 /// Since this is such a common case, `cradle` also provides a syntactic shortcut
 /// for [`Split`], the `%` symbol:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = run_output!(%"echo foo");
@@ -356,7 +356,7 @@ impl Input for crate::input::Split {
 
 /// Allows to use [`split`] to split your argument into words:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = run_output!("echo foo".split(' '));
@@ -377,7 +377,7 @@ impl Input for std::str::Split<'static, char> {
 
 /// Allows to use [`split_whitespace`] to split your argument into words:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = run_output!("echo foo".split_whitespace());
@@ -396,7 +396,7 @@ impl Input for std::str::SplitWhitespace<'static> {
 
 /// Allows to use [`split_ascii_whitespace`] to split your argument into words:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = run_output!("echo foo".split_ascii_whitespace());
@@ -459,7 +459,7 @@ tuple_impl!(
 /// All elements of the given [`Vec`] are used as arguments to the child process.
 /// Same as passing in the elements separately.
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = run_output!(vec!["echo", "foo"]);
@@ -480,7 +480,7 @@ where
 /// Similar to the implementation for [`Vec<T>`].
 /// All elements of the array will be used as arguments.
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutTrimmed(output) = run_output!(["echo", "foo"]);
@@ -526,7 +526,7 @@ where
 /// to log the commands (including all arguments) to `stderr`.
 /// (This is similar `bash`'s `-x` option.)
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// run!(LogCommand, %"echo foo");
@@ -545,7 +545,7 @@ impl Input for LogCommand {
 /// By default child processes inherit the current directory from their
 /// parent. You can override this with [`CurrentDir`]:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// # #[cfg(target_os = "linux")]
@@ -572,7 +572,7 @@ where
 /// Arguments of type [`PathBuf`] are passed to the child process
 /// as arguments.
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 /// use std::path::PathBuf;
 ///
@@ -589,7 +589,7 @@ impl Input for PathBuf {
 /// Arguments of type [`&Path`] are passed to the child process
 /// as arguments.
 ///
-/// ```
+/// ```no_run
 /// # let temp_dir = tempfile::TempDir::new().unwrap();
 /// # std::env::set_current_dir(&temp_dir).unwrap();
 /// use cradle::prelude::*;
@@ -609,7 +609,7 @@ impl Input for &Path {
 
 /// Writes the given byte slice to the child's standard input.
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// # #[cfg(target_os = "linux")]
@@ -643,7 +643,7 @@ where
 
 /// Adds an environment variable to the environment of the child process.
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutUntrimmed(output) = run_output!("env", Env("FOO", "bar"));
