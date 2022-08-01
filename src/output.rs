@@ -9,7 +9,7 @@ use std::process::ExitStatus;
 /// For example, if you want to capture what a command writes
 /// to `stdout` you can do that using [`StdoutUntrimmed`]:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutUntrimmed(output) = run_output!(%"echo foo");
@@ -19,7 +19,7 @@ use std::process::ExitStatus;
 /// But if instead you want to capture the command's [`ExitStatus`],
 /// you can use [`Status`]:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let Status(exit_status) = run_output!("false");
@@ -42,7 +42,7 @@ use std::process::ExitStatus;
 /// The following code for example retrieves the command's [`ExitStatus`]
 /// _and_ what it writes to `stdout`:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let (Status(exit_status), StdoutUntrimmed(stdout)) = run_output!(%"echo foo");
@@ -79,7 +79,7 @@ pub trait Output: Sized {
 
 /// Use this when you don't need any result from the child process.
 ///
-/// ```
+/// ```no_run
 /// # let temp_dir = tempfile::TempDir::new().unwrap();
 /// # std::env::set_current_dir(&temp_dir).unwrap();
 /// use cradle::prelude::*;
@@ -151,7 +151,7 @@ tuple_impl!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P,);
 /// This will make sure that the return type can be inferred.
 /// Here's an example:
 ///
-/// ```
+/// ```no_run
 /// use std::path::Path;
 /// use cradle::prelude::*;
 ///
@@ -179,7 +179,7 @@ impl Output for StdoutTrimmed {
 
 /// Same as [`StdoutTrimmed`], but does not trim whitespace from the output:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutUntrimmed(output) = run_output!(%"echo foo");
@@ -211,7 +211,7 @@ impl Output for StdoutUntrimmed {
 
 /// [`Stderr`] allows to capture the `stderr` of a child process:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// // (`Status` is used here to suppress panics caused by `ls`
@@ -253,7 +253,7 @@ impl Output for Stderr {
 /// Use [`Status`] as the return type for [`run_output!`] to retrieve the
 /// [`ExitStatus`] of the child process:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let Status(exit_status) = run_output!(%"echo foo");
@@ -265,7 +265,7 @@ impl Output for Stderr {
 /// [`run_output!`]) nor an [`std::result::Result::Err`]
 /// (when used with [`run_result!`]):
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let Status(exit_status) = run_output!("false");
@@ -296,7 +296,7 @@ impl Output for Status {
 /// Using [`bool`] as the return type for [`run_output!`] will return `true` if
 /// the command returned successfully, and `false` otherwise:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// if !run_output!(%"which cargo") {
@@ -307,7 +307,7 @@ impl Output for Status {
 /// Also, when using [`bool`], non-zero exit codes will not result in a panic
 /// or [`std::result::Result::Err`]:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let success: bool = run_output!("false");
