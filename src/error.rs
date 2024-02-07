@@ -24,6 +24,9 @@ pub enum Error {
     /// }
     /// ```
     NoExecutableGiven,
+    Deserialize {
+        source: serde_json::Error,
+    },
     /// A `file not found` error occurred while trying to spawn
     /// the child process:
     ///
@@ -58,7 +61,10 @@ pub enum Error {
     /// - reading from `stdout` or `stderr` of the child process fails,
     /// - writing to the parent's `stdout` or `stderr` fails,
     /// - the given executable doesn't have the executable flag set.
-    CommandIoError { message: String, source: io::Error },
+    CommandIoError {
+        message: String,
+        source: io::Error,
+    },
     /// The child process exited with a non-zero exit code.
     ///
     /// ```
@@ -176,6 +182,7 @@ impl Display for Error {
         use Error::*;
         match self {
             NoExecutableGiven => write!(f, "no arguments given"),
+            Deserialize { source } => write!(f, "JSON deserialization failed: {source}"),
             FileNotFound { executable, .. } => {
                 let executable = executable.to_string_lossy();
                 write!(f, "File not found error when executing '{}'", executable)?;
@@ -223,6 +230,7 @@ impl std::error::Error for Error {
         use Error::*;
         match self {
             FileNotFound { source, .. } | CommandIoError { source, .. } => Some(source),
+            Deserialize { source } => Some(source),
             InvalidUtf8ToStdout { source, .. } | InvalidUtf8ToStderr { source, .. } => Some(source),
             NoExecutableGiven | NonZeroExitCode { .. } | Internal { .. } => None,
         }

@@ -1,6 +1,7 @@
 //! The [`Output`] trait that defines all possible outputs of a child process.
 
 use crate::{child_output::ChildOutput, config::Config, error::Error};
+use serde::de::DeserializeOwned;
 use std::process::ExitStatus;
 
 /// All possible return types of [`run!`], [`run_output!`] or
@@ -174,6 +175,24 @@ impl Output for StdoutTrimmed {
     fn from_child_output(config: &Config, child_output: &ChildOutput) -> Result<Self, Error> {
         let StdoutUntrimmed(stdout) = StdoutUntrimmed::from_child_output(config, child_output)?;
         Ok(StdoutTrimmed(stdout.trim().to_owned()))
+    }
+}
+
+#[derive(Debug)]
+pub struct Json<T: DeserializeOwned>(T);
+
+impl<T: DeserializeOwned> Output for Json<T> {
+    #[doc(hidden)]
+    fn configure(config: &mut Config) {
+        StdoutUntrimmed::configure(config);
+    }
+
+    #[doc(hidden)]
+    fn from_child_output(config: &Config, child_output: &ChildOutput) -> Result<Self, Error> {
+        let StdoutUntrimmed(stdout) = StdoutUntrimmed::from_child_output(config, child_output)?;
+        Ok(Self(
+            serde_json::from_str::<T>(&stdout).map_err(|source| Error::Deserialize { source })?,
+        ))
     }
 }
 

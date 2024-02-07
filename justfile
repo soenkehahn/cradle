@@ -50,3 +50,6 @@ all-rustc-versions *args="ci":
     cargo version
     just {{ args }}
   done
+
+watch +args='test':
+  cargo watch --clear --exec '{{args}}'
