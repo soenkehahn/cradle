@@ -40,3 +40,7 @@ operating system's interface for running child processes.
 
 ## MSRV
 The minimal supported rust version is `0.41`.
+
+## Related Software
+
+- [`cradle` for Haskell](https://github.com/garnix-io/cradle#readme): The same ideas from the same people in another good language.
