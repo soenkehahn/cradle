@@ -15,18 +15,15 @@ exclude = ["/.github"]
 members = [".", "context-integration-tests", "memory-tests"]
 
 [dependencies]
-rustversion = "1.0.4"
+rustversion = "1"
 
 [dev-dependencies]
-executable-path = "1.0.0"
-lazy_static = "1.4.0"
-pretty_assertions = "1.0.0"
-tempfile = "3.2.0"
-unindent = "0.1.7"
-# cradle only indirectly depends on bitflags (for tests).
-# But newer bitflags versions don't compile with older compilers anymore.
-# So we put in this exact dependency to force a working bitflags version.
-bitflags = "=1.2.1"
+executable-path = "1"
+lazy_static = "1"
+pretty_assertions = "1"
+tempfile = "3"
+unindent = "0.1"
+bitflags = "1"
 
 [[bin]]
 name = "test_executables_helper"
@@ -39,7 +36,7 @@ path = "src/test_executables/panic.rs"
 required-features = ["test_executables"]
 
 [target.'cfg(unix)'.dependencies.nix]
-version = "0.22.2"
+version = "0.22"
 optional = true
 
 [features]
