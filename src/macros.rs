@@ -1,6 +1,6 @@
 /// Executes a child process without capturing any output.
 ///
-/// ```
+/// ```no_run
 /// # let temp_dir = tempfile::TempDir::new().unwrap();
 /// # std::env::set_current_dir(&temp_dir).unwrap();
 /// use cradle::prelude::*;
@@ -22,7 +22,7 @@ macro_rules! run {
 /// Execute child processes, and capture some output.
 /// For example you can capture what the child process writes to stdout:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let StdoutUntrimmed(output) = run_output!(%"echo foo");
@@ -34,7 +34,7 @@ macro_rules! run {
 /// you can control what outputs of child processes you want to capture.
 /// Here's an example to capture an exit code:
 ///
-/// ```
+/// ```no_run
 /// use cradle::prelude::*;
 ///
 /// let Status(status) = run_output!("false");

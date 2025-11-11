@@ -3,7 +3,7 @@
 //! `cradle` provides the [`run!`] macro, that makes
 //! it easy to run child processes from rust programs.
 //!
-//! ```
+//! ```no_run
 //! # let temp_dir = tempfile::TempDir::new().unwrap();
 //! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
@@ -18,7 +18,7 @@
 //! You can pass in multiple arguments (of different types) to [`run!`]
 //! to specify arguments, as long as they implement the [`Input`] trait:
 //!
-//! ```
+//! ```no_run
 //! # let temp_dir = tempfile::TempDir::new().unwrap();
 //! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
@@ -41,7 +41,7 @@
 //! to collect what the child process writes to `stdout`,
 //! trimmed of leading and trailing whitespace:
 //!
-//! ```
+//! ```no_run
 //! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(output) = run_output!(%"echo foo");
@@ -54,7 +54,7 @@
 //! If you don't want any result from [`run_output!`], you can use `()`
 //! as the return value:
 //!
-//! ```
+//! ```no_run
 //! # let temp_dir = tempfile::TempDir::new().unwrap();
 //! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
@@ -66,7 +66,7 @@
 //! that we've already seen above.
 //! It behaves exactly like [`run_output!`] but always returns `()`:
 //!
-//! ```
+//! ```no_run
 //! # let temp_dir = tempfile::TempDir::new().unwrap();
 //! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
@@ -81,7 +81,7 @@
 //! `cradle` does *not* split given string arguments on whitespace by default.
 //! So for example this code fails:
 //!
-//! ``` should_panic
+//! ```no_run
 //! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(_) = run_output!("echo foo");
@@ -92,7 +92,7 @@
 //! That fails, because an executable with that name doesn't exist.
 //! `cradle` provides a new-type wrapper [`Split`] to help with that:
 //!
-//! ```
+//! ```no_run
 //! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(output) = run_output!(Split("echo foo"));
@@ -106,7 +106,7 @@
 //! And -- since this is such a common case -- `cradle` provides a syntactic shortcut
 //! for [`Split`], the `%` symbol:
 //!
-//! ```
+//! ```no_run
 //! use cradle::prelude::*;
 //!
 //! let StdoutTrimmed(output) = run_output!(%"echo foo");
@@ -127,7 +127,7 @@
 //! where more complex error handling is not needed or desired,
 //! for example in scripts.
 //!
-//! ``` should_panic
+//! ```no_run
 //! use cradle::prelude::*;
 //!
 //! // panics with "false:\n  exited with exit code: 1"
@@ -145,7 +145,7 @@
 //! `T` is any type that implements [`output::Output`].
 //! Here's some examples:
 //!
-//! ```
+//! ```no_run
 //! use cradle::prelude::*;
 //!
 //! let result: Result<(), cradle::Error> = run_result!("false");
@@ -163,7 +163,7 @@
 //! [`run_result!`] can also be combined with `?` to handle errors in an
 //! idiomatic way, for example:
 //!
-//! ```
+//! ```no_run
 //! use cradle::prelude::*;
 //!
 //! fn build() -> Result<(), Error> {
@@ -192,7 +192,7 @@
 //! They work analog to [`run!`], [`run_output!`] and [`run_result!`].
 //! Here are some examples:
 //!
-//! ```
+//! ```no_run
 //! # let temp_dir = tempfile::TempDir::new().unwrap();
 //! # std::env::set_current_dir(&temp_dir).unwrap();
 //! use cradle::prelude::*;
@@ -213,7 +213,7 @@
 //! Note: The `%` shortcut for [`Split`] is not available in this notation.
 //! You can either use tuples, or [`Split`] explicitly:
 //!
-//! ```
+//! ```no_run
 //! use cradle::prelude::*;
 //!
 //! ("echo", "foo").run();

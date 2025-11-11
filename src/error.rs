@@ -27,7 +27,7 @@ pub enum Error {
     /// A `file not found` error occurred while trying to spawn
     /// the child process:
     ///
-    /// ```
+    /// ```no_run
     /// use cradle::prelude::*;
     ///
     /// let result: Result<(), Error> = run_result!("does-not-exist");
@@ -61,7 +61,7 @@ pub enum Error {
     CommandIoError { message: String, source: io::Error },
     /// The child process exited with a non-zero exit code.
     ///
-    /// ```
+    /// ```no_run
     /// use cradle::prelude::*;
     ///
     /// let result: Result<(), cradle::Error> = run_result!("false");
